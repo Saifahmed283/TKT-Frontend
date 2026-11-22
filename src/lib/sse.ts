@@ -15,7 +15,7 @@ import { getAccessToken } from './api'
 const API_BASE = import.meta.env.VITE_API_BASE ?? '/api'
 const RETRY_MS = 3_000
 
-type SseKind = 'access' | 'incident' | 'task' | 'announcement' | 'activity'
+type SseKind = 'access' | 'incident' | 'task' | 'announcement' | 'activity' | 'reservation'
 
 function openSseStream(
   channel: string,

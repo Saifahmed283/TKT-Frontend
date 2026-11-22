@@ -8,13 +8,15 @@ export class ApiError extends Error {
   status: number
   code: string
   details?: { path: string; message: string }[]
+  data?: unknown
 
-  constructor(status: number, body: { error: ApiErrorBody }) {
+  constructor(status: number, body: { error: ApiErrorBody; data?: unknown }) {
     super(body.error.message)
     this.name = 'ApiError'
     this.status = status
     this.code = body.error.code
     this.details = body.error.details
+    this.data = body.data
   }
 }
 
@@ -69,9 +71,9 @@ export async function request<T>(
   }
 
   if (!res.ok) {
-    let body: { error: ApiErrorBody }
+    let body: { error: ApiErrorBody; data?: unknown }
     try {
-      body = (await res.json()) as { error: ApiErrorBody }
+      body = (await res.json()) as { error: ApiErrorBody; data?: unknown }
     } catch {
       throw new ApiError(res.status, {
         error: { code: 'NETWORK_ERROR', message: `Request failed (${res.status})` },

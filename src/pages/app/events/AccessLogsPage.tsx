@@ -17,6 +17,7 @@ type AccessLog = {
   reason: string
   timestamp: string
   offline: boolean
+  metadata?: { parseSource?: string; lookupMethod?: string; tampered?: boolean } | null
   area: { id: string; name: string } | null
   operator: { id: string; name: string } | null
   attendee: { id: string; name: string } | null
@@ -47,13 +48,15 @@ export function AccessLogsPage() {
       .get<{ rows: AccessLog[] }>(`/events/${eid}/access/logs?page=1&pageSize=100000`)
       .catch(() => null)
     if (!all) return
-    const headers = ['Attendee', 'Credential', 'Area', 'Result', 'Reason', 'Operator', 'Timestamp']
+    const headers = ['Attendee', 'Credential', 'Area', 'Result', 'Reason', 'Parse', 'Lookup', 'Operator', 'Timestamp']
     const rows = all.rows.map((l) => [
       l.attendee?.name ?? 'Unknown',
       l.credential?.code ?? '',
       l.area?.name ?? '',
       l.result,
       l.reason,
+      l.metadata?.parseSource ?? '',
+      l.metadata?.lookupMethod ?? '',
       l.operator?.name ?? '',
       new Date(l.timestamp).toLocaleString(),
     ])
@@ -85,8 +88,8 @@ export function AccessLogsPage() {
         }
       />
       <div className="px-6 pt-5">
-        <Table headers={['Attendee', 'Credential', 'Area', 'Decision', 'Operator', 'When']}>
-          {data.rows.length === 0 && <EmptyState colSpan={6} title="No scans recorded" />}
+        <Table headers={['Attendee', 'Credential', 'Area', 'Decision', 'Source', 'Operator', 'When']}>
+          {data.rows.length === 0 && <EmptyState colSpan={7} title="No scans recorded" />}
           {data.rows.map((l) => (
             <tr key={l.id}>
               <Td className="text-[13px]">{l.attendee?.name ?? 'Unknown'}</Td>
@@ -103,6 +106,12 @@ export function AccessLogsPage() {
                     <span className="font-mono text-[10px] text-ink-3">{l.reason}</span>
                   </span>
                 )}
+              </Td>
+              <Td>
+                <div className="flex flex-col gap-0.5 font-mono text-[10px] text-ink-3">
+                  <span>{l.metadata?.parseSource ?? 'unknown'}</span>
+                  <span>{l.metadata?.lookupMethod ?? 'none'}</span>
+                </div>
               </Td>
               <Td className="text-[12px] text-ink-3">{l.operator?.name ?? '—'}</Td>
               <Td className={cn('text-[12px] text-ink-3', sse > 0 && 'text-signal')}>{timeAgo(l.timestamp)}</Td>

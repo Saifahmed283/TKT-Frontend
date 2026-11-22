@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import QRCode from 'qrcode'
 import { CheckCircle2, Copy, Lock, QrCode, ShieldCheck, Ticket } from 'lucide-react'
 import { Modal, ErrorBanner } from '../ui'
-import { api } from '../../lib/api'
+import { api, ApiError } from '../../lib/api'
 import { useLanguage } from '../../lib/i18n'
 import { useReservationStatus, type PublicEvent, type ReservationResult } from '../../lib/public'
 
@@ -43,7 +43,26 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
   const [done, setDone] = useState<ReservationResult | null>(null)
   const [checkingCode, setCheckingCode] = useState('')
   const [copied, setCopied] = useState(false)
+  const [existingReservation, setExistingReservation] = useState<{ reservationCode: string; approval?: string; qr?: string | null } | null>(null)
   const qrUrl = useQrDataUrl(done?.approval === 'APPROVED' && done.qr ? done.qr : null)
+  const pending = done?.approval === 'PENDING'
+  const status = useReservationStatus(event.id, pending && checkingCode ? checkingCode : null)
+
+  useEffect(() => {
+    if (!done || done.approval === 'APPROVED') return
+    if (status.data?.approval === 'APPROVED' && status.data.qr) {
+      setDone((prev) =>
+        prev
+          ? {
+              ...prev,
+              approval: 'APPROVED',
+              qr: status.data?.qr ?? prev.qr,
+              paymentStatus: status.data?.paymentStatus ?? prev.paymentStatus,
+            }
+          : prev,
+      )
+    }
+  }, [done, status.data])
 
   const reserve = useMutation({
     mutationFn: () =>
@@ -55,7 +74,21 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
       }),
     onSuccess: (data) => {
       setDone(data)
+      setExistingReservation(null)
       void qc.invalidateQueries({ queryKey: ['public-events'] })
+    },
+    onError: (error) => {
+      if (error instanceof ApiError && error.code === 'RESERVATION_EXISTS') {
+        const d = (error.data ?? {}) as { reservationCode?: string; approval?: string; qr?: string | null }
+        if (d.reservationCode) {
+          setExistingReservation({
+            reservationCode: d.reservationCode,
+            approval: d.approval,
+            qr: d.qr ?? null,
+          })
+          setCheckingCode(d.reservationCode)
+        }
+      }
     },
   })
 
@@ -66,8 +99,6 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
   }
 
   const selected = event.ticketTypes.find((x) => x.id === ticketTypeId)
-  const pending = done?.approval === 'PENDING'
-  const status = useReservationStatus(event.id, pending && checkingCode ? checkingCode : null)
 
   const copyCode = async (code: string) => {
     try {
@@ -143,7 +174,10 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
               {status.data?.approval === 'APPROVED' && status.data.qr && (
                 <div className="mt-4 flex items-center gap-4">
                   <QrDataImg code={status.data.qr} />
-                  <p className="text-sm text-ok">{t('ticketReady')}</p>
+                  <div>
+                    <p className="text-sm text-ok">{t('ticketReady')}</p>
+                    <p className="text-[11px] text-ink-3">{status.data.deliveryStatus ? `Delivery: ${status.data.deliveryStatus}` : ''}</p>
+                  </div>
                 </div>
               )}
             </div>
@@ -156,6 +190,28 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
       ) : (
         <form onSubmit={onSubmit} className="space-y-4">
           {reserve.error && <ErrorBanner error={reserve.error} />}
+          {existingReservation && (
+            <div className="rounded-xl border border-signal/25 bg-signal/8 px-4 py-3 text-sm text-ink-1">
+              <p className="font-medium text-ink-0">A reservation already exists for this email.</p>
+              <p className="mt-1 font-mono text-[12px] text-signal">{existingReservation.reservationCode}</p>
+              <button
+                type="button"
+                className="btn-ghost mt-3 !px-3 !py-1.5 text-[11px]"
+                onClick={() => {
+                  setDone({
+                    attendeeId: '',
+                    ticketId: '',
+                    reservationCode: existingReservation.reservationCode,
+                    price: selected?.price ?? '0',
+                    approval: (existingReservation.approval as ReservationResult['approval']) ?? 'PENDING',
+                    qr: existingReservation.qr ?? null,
+                  })
+                }}
+              >
+                View reservation
+              </button>
+            </div>
+          )}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label className="label mb-1.5 block" htmlFor="res-name">{t('fullName')}</label>

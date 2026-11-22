@@ -18,11 +18,18 @@ type Credential = {
   id: string
   code: string
   status: string
-  payloadVersion: string
+  payloadVersion?: string
   issuedAt: string
-  lastUsedAt: string | null
+  lastUsedAt?: string | null
   attendee: { id: string; name: string }
-  ticket: { id: string; typeName: string }
+  ticket: {
+    id: string
+    typeName?: string
+    deliveryStatus?: string | null
+    deliveryChannel?: string | null
+    lastDeliveryAt?: string | null
+    ticketType?: { name: string }
+  }
 }
 
 type EventSummary = {
@@ -36,13 +43,24 @@ export function CredentialsPage() {
   const { eventId } = useParams()
   const qc = useQueryClient()
   const toast = useToast()
-  const sse = useSse(eventId, 'activity')
+  const activitySse = useSse(eventId, 'activity')
+  const reservationSse = useSse(eventId, 'reservation')
   const [issueOpen, setIssueOpen] = useState(false)
   const [attendeeId, setAttendeeId] = useState('')
   const [showQr, setShowQr] = useState<string | null>(null)
+  const [historyId, setHistoryId] = useState<string | null>(null)
+
+  const history = useQuery({
+    queryKey: ['credential-detail', eventId, historyId],
+    queryFn: () =>
+      api.get<{ deliveryLogs?: Array<{ id: string; channel: string; status: string; recipient: string | null; provider: string | null; attempt: number; createdAt: string; error: string | null }> }>(
+        `/events/${eventId}/credentials/${historyId}`,
+      ),
+    enabled: !!historyId,
+  })
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['credentials', eventId, sse],
+    queryKey: ['credentials', eventId, activitySse, reservationSse],
     queryFn: () => api.get<Credential[]>(`/events/${eventId}/credentials`).catch(() => []),
   })
 
@@ -51,12 +69,14 @@ export function CredentialsPage() {
     queryFn: () => api.get<EventSummary>(`/events/${eventId}`).catch(() => null),
   })
 
+  const ticketTypeName = (c: Credential) => c.ticket.ticketType?.name ?? c.ticket.typeName ?? 'Ticket'
+
   const pdfIdentity = (c: Credential): CardIdentity => ({
     eventName: event.data?.name ?? 'TKT Event',
     eventDate: event.data?.startAt ? new Date(event.data.startAt).toLocaleDateString() : '',
     venue: event.data?.venueName ?? null,
     attendeeName: c.attendee.name,
-    ticketType: c.ticket.typeName,
+    ticketType: ticketTypeName(c),
     code: c.code,
   })
 
@@ -112,8 +132,8 @@ export function CredentialsPage() {
       />
 
       <div className="px-6 pt-5">
-        <Table headers={['Credential', 'Attendee', 'Ticket', 'Status', 'Issued', 'Last used', '']}>
-          {data.length === 0 && <EmptyState colSpan={7} title="No credentials issued" />}
+        <Table headers={['Credential', 'Attendee', 'Ticket', 'Status', 'Delivery', 'Issued', 'Last used', '']}>
+          {data.length === 0 && <EmptyState colSpan={8} title="No credentials issued" />}
           {data.map((c) => (
             <tr key={c.id} className="group">
               <Td>
@@ -122,11 +142,17 @@ export function CredentialsPage() {
               <Td className="text-[13px]">{c.attendee.name}</Td>
               <Td>
                 <span className="rounded border border-line bg-elevated px-1.5 py-0.5 text-[10px] text-ink-2">
-                  {c.ticket.typeName}
+                  {ticketTypeName(c)}
                 </span>
               </Td>
               <Td>
                 <Badge tone={c.status === 'ACTIVE' ? 'ok' : 'default'}>{c.status}</Badge>
+              </Td>
+              <Td>
+                <div className="flex flex-col gap-0.5 font-mono text-[10px] text-ink-3">
+                  <span>{c.ticket.deliveryChannel ?? 'EMAIL'}</span>
+                  <span>{c.ticket.deliveryStatus ?? 'PENDING'}</span>
+                </div>
               </Td>
               <Td className="text-[12px] text-ink-3">{c.issuedAt.split('T')[0]}</Td>
               <Td className="text-[12px] text-ink-3">{c.lastUsedAt ? c.lastUsedAt.split('T')[0] : '—'}</Td>
@@ -138,6 +164,13 @@ export function CredentialsPage() {
                     aria-label="Show QR"
                   >
                     <QrCode className="size-4" />
+                  </button>
+                  <button
+                    className="rounded p-1.5 text-ink-2 hover:bg-raised"
+                    onClick={() => setHistoryId(c.id)}
+                    aria-label="Delivery history"
+                  >
+                    <span className="font-mono text-[10px]">LOG</span>
                   </button>
                   <button
                     className="rounded p-1.5 text-ink-2 hover:bg-raised"
@@ -200,6 +233,22 @@ export function CredentialsPage() {
         eventId={eventId!}
         credentialId={showQr}
       />
+
+      <Dialog open={!!historyId} onClose={() => setHistoryId(null)} title="Delivery history">
+        <div className="space-y-2">
+          {history.isLoading && <p className="text-[13px] text-ink-3">Loading...</p>}
+          {!history.isLoading && (history.data?.deliveryLogs?.length ?? 0) === 0 && <p className="text-[13px] text-ink-3">No delivery attempts recorded.</p>}
+          {history.data?.deliveryLogs?.map((d) => (
+            <div key={d.id} className="border border-line-soft bg-elevated/20 px-3 py-2">
+              <div className="flex items-center justify-between gap-3 text-[12px]">
+                <span className="font-mono text-ink-2">{d.channel} · {d.status}</span>
+                <span className="text-ink-3">{new Date(d.createdAt).toLocaleString()}</span>
+              </div>
+              <p className="mt-1 font-mono text-[10px] text-ink-3">{d.recipient ?? '—'} · attempt {d.attempt}{d.provider ? ` · ${d.provider}` : ''}{d.error ? ` · ${d.error}` : ''}</p>
+            </div>
+          ))}
+        </div>
+      </Dialog>
     </div>
   )
 }
@@ -242,7 +291,7 @@ function CredentialQrDialog({
             <div className="w-full rounded-lg border border-line bg-raised px-4 py-3 text-center">
               <p className="text-[13px] font-medium">{data.attendee.name}</p>
               <p className="mt-0.5 text-[11px] text-ink-3">
-                {data.ticket.typeName} · {data.status}
+                {(data.ticket.ticketType?.name ?? data.ticket.typeName ?? 'Ticket')} · {data.status}
               </p>
             </div>
             <Button variant="outline" onClick={() => download(data.code, data.code.slice(0, 16))} icon={<Download className="size-4" />}>

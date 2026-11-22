@@ -45,12 +45,15 @@ export interface ReservationResult {
   reservationCode: string
   price: string
   approval: ReservationApproval
+  paymentStatus?: 'NOT_REQUIRED' | 'PENDING' | 'CONFIRMED' | 'FAILED' | 'REFUNDED'
   qr: string | null
 }
 
 export interface ReservationStatus {
   reservationCode: string
   approval: ReservationApproval
+  paymentStatus?: 'NOT_REQUIRED' | 'PENDING' | 'CONFIRMED' | 'FAILED' | 'REFUNDED'
+  deliveryStatus?: string | null
   ticketStatus: string
   price: string
   ticketName: string
