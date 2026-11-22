@@ -87,13 +87,13 @@ export default function WebsiteIntro() {
             .tkt-intro .mono-stroke { stroke-dasharray: 1; stroke-dashoffset: 1; animation: tktDrawMono 1.05s 0.32s var(--ease-arch) forwards; }
             .tkt-intro .seal-static { opacity: 0; animation: tktFadeIn 0.01s 1.45s linear forwards; }
             .tkt-intro .halo-dot { opacity: 0; transform-box: fill-box; transform-origin: center; animation: tktPopDot 0.4s var(--ease-arch) forwards; }
-            .tkt-intro .intro-wordmark { font-family: 'Italiana', serif; font-size: clamp(36px, 5vw, 54px); letter-spacing: 0.36em; padding-left: 0.36em; color: #E8D08B; opacity: 0; transform: translateY(14px); animation: tktFadeUp 0.9s 0.75s var(--ease-arch) forwards; }
+            .tkt-intro .intro-wordmark { font-family: 'Poppins', 'Cairo', sans-serif; font-size: clamp(40px, 5.5vw, 60px); font-weight: 600; letter-spacing: 0.28em; padding-left: 0.28em; color: #E8D08B; opacity: 0; transform: translateY(14px); animation: tktFadeUp 0.9s 0.75s var(--ease-arch) forwards; text-transform: uppercase; }
             .tkt-intro .intro-hairline { width: 0; height: 1px; background: #C8A25C; margin: 14px 0 16px; opacity: 0; animation: tktLineGrow 0.8s 0.95s var(--ease-arch) forwards; }
-            .tkt-intro .intro-descriptor { font-family: 'Jura', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.42em; padding-left: 0.42em; color: #FAF8F4; opacity: 0; transform: translateY(10px); animation: tktFadeUp 0.8s 1.05s var(--ease-arch) forwards; }
+            .tkt-intro .intro-descriptor { font-family: 'Poppins', 'Cairo', sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 0.42em; padding-left: 0.42em; color: #FAF8F4; opacity: 0; transform: translateY(10px); animation: tktFadeUp 0.8s 1.05s var(--ease-arch) forwards; }
             .tkt-intro .intro-progress-track { width: min(280px, 70vw); height: 2px; background: #1C1B1B; margin-top: 40px; position: relative; overflow: hidden; }
             .tkt-intro .intro-progress-fill { height: 100%; background: linear-gradient(90deg, #C8A25C, #E8D08B); box-shadow: 0 0 12px rgba(232,208,139,0.35); transition: width 0.1s linear; }
-            .tkt-intro .intro-counter { margin-top: 14px; font-family: 'Jura', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.28em; color: #6E6A62; text-transform: uppercase; }
-            .tkt-intro .skip-btn { position: absolute; bottom: max(28px, env(safe-area-inset-bottom)); right: max(28px, env(safe-area-inset-right)); background: transparent; border: none; color: #6E6A62; font-family: 'Jura', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer; padding: 10px 0; transition: color 0.25s; }
+            .tkt-intro .intro-counter { margin-top: 14px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.28em; color: #6E6A62; text-transform: uppercase; }
+            .tkt-intro .skip-btn { position: absolute; bottom: max(28px, env(safe-area-inset-bottom)); right: max(28px, env(safe-area-inset-right)); background: transparent; border: none; color: #6E6A62; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer; padding: 10px 0; transition: color 0.25s; }
             .tkt-intro .skip-btn:hover, .tkt-intro .skip-btn:focus-visible { color: #E8D08B; outline: none; }
             @keyframes tktDrawRing { to { stroke-dashoffset: 0; } }
             @keyframes tktDrawMono { to { stroke-dashoffset: 0; } }
@@ -158,7 +158,7 @@ export default function WebsiteIntro() {
             <div className="intro-counter" aria-live="polite">
               {copy.verifying} · {String(progress).padStart(2, '0')}%
             </div>
-            <p className="mt-5 font-mono text-[10px] uppercase tracking-[0.22em] text-[#6E6A62]">{copy.hint}</p>
+            <p className="mt-5 text-[10px] font-medium uppercase tracking-[0.18em] text-[#6E6A62]">{copy.hint}</p>
           </div>
 
           <button type="button" className="skip-btn" onClick={finish}>

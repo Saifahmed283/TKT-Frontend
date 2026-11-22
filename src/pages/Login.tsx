@@ -37,8 +37,8 @@ export default function Login() {
       <div className="relative w-full max-w-md">
         <div className="mb-8 text-center">
           <Link to="/" className="inline-flex justify-center" aria-label="TKT home"><BrandLogo imageClassName="h-12" /></Link>
-          <p className="mt-5 font-mono text-[11px] uppercase tracking-[0.32em] text-signal">{t('loginEyebrow')}</p>
-          <h1 className="mt-3 font-display text-4xl font-bold uppercase tracking-tight text-ink-0">{t('loginTitle')}</h1>
+          <p className="mt-5 text-[11px] font-medium uppercase tracking-[0.2em] text-signal">{t('loginEyebrow')}</p>
+          <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-ink-0">{t('loginTitle')}</h1>
           <p className="mt-3 text-sm leading-relaxed text-ink-3">{t('loginBody')}</p>
         </div>
 
@@ -59,7 +59,7 @@ export default function Login() {
         </form>
 
         <div className="mt-6 flex justify-center">
-          <Link to="/" className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3 transition-colors hover:text-signal">
+          <Link to="/" className="inline-flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3 transition-colors hover:text-signal">
             <Globe size={12} className="text-signal" /> {t('backHome')}
           </Link>
         </div>

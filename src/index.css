@@ -1,17 +1,10 @@
-@import '@fontsource/geist-sans/400.css';
-@import '@fontsource/geist-sans/500.css';
-@import '@fontsource/geist-sans/600.css';
-@import '@fontsource/geist-sans/700.css';
-@import '@fontsource/barlow-condensed/500.css';
-@import '@fontsource/barlow-condensed/600.css';
-@import '@fontsource/barlow-condensed/700.css';
-@import '@fontsource/barlow-condensed/800.css';
 @import 'tailwindcss';
 
 @theme {
-  --font-sans: "Jura", "Geist Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Geist Mono", ui-monospace, monospace;
-  --font-display: "Italiana", "Barlow Condensed", "Arial Narrow", ui-sans-serif, serif;
+  /* TKT Design System — typography (aligned to luxury reference) */
+  --font-sans: "Poppins", "Cairo", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
+  --font-display: "Poppins", "Cairo", ui-sans-serif, system-ui, sans-serif;
 
   /* ——— v1 tokens (legacy pages) ——— */
   --color-ink-950: #0a0a0b;
@@ -201,6 +194,7 @@
   }
   :root[dir='rtl'] .font-display {
     font-family: 'Cairo', 'Segoe UI', Tahoma, system-ui, sans-serif;
+    font-weight: 700;
     letter-spacing: 0;
   }
   :root[dir='rtl'] .tracking-tight,
@@ -293,7 +287,7 @@
 }
 
 @utility btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 font-mono text-xs font-semibold uppercase tracking-[0.12em] transition-all duration-150 select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed;
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-xs font-medium uppercase tracking-[0.1em] transition-all duration-150 select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed;
 }
 
 @utility badge {

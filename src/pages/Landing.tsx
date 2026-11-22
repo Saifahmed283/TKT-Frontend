@@ -1,166 +1,100 @@
-import { useState } from 'react'
+import { Suspense, lazy } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, CalendarDays, QrCode, ShieldCheck, Ticket } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import PublicNav from '../components/public/PublicNav'
-import PublicFooter from '../components/public/PublicFooter'
-import ReservationModal from '../components/public/ReservationModal'
-import { EventCard } from './UpcomingEvents'
-import { Corners, Blink } from '../components/instruments'
-import { Spinner, ErrorBanner } from '../components/ui'
+import BlurText from '../components/reactbits/BlurText'
 import { useLanguage } from '../lib/i18n'
-import { usePublicEvents, type PublicEvent } from '../lib/public'
+import { useTheme } from '../lib/theme'
 
-function Step({ n, title, body }: { n: string; title: string; body: string }) {
-  return (
-    <div className="relative border border-line-soft bg-raised/50 p-5">
-      <Corners className="opacity-50" />
-      <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-signal">{n}</p>
-      <h3 className="mt-3 font-display text-2xl font-semibold uppercase tracking-wide text-ink-0">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-ink-3">{body}</p>
-    </div>
-  )
-}
+const HeroKeystone = lazy(() => import('../components/public/HeroKeystone'))
+const LightRays = lazy(() => import('../components/reactbits/LightRays'))
 
 export default function Landing() {
   const { t } = useLanguage()
+  const { theme } = useTheme()
+  const isLight = theme === 'light'
   const reduce = useReducedMotion()
-  const { data: events, isLoading, error } = usePublicEvents('upcoming')
-  const [reserving, setReserving] = useState<PublicEvent | null>(null)
-  const featured = (events ?? []).slice(0, 3)
 
   const fadeUp = reduce ? {} : { initial: { opacity: 0, y: 18 }, animate: { opacity: 1, y: 0 } }
 
   return (
-    <div className="min-h-screen bg-paper text-ink">
+    <div className="h-[100dvh] overflow-hidden bg-paper text-ink">
       <PublicNav />
 
-      <header className="relative overflow-hidden px-4 pb-16 pt-32 sm:px-6 lg:px-8 lg:pb-20 lg:pt-36">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(200,162,92,0.16),transparent_38%),radial-gradient(circle_at_80%_20%,rgba(200,162,92,0.08),transparent_25%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_45%)]" />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-signal/30 to-transparent" />
-        <div className="relative mx-auto grid max-w-7xl gap-12 lg:grid-cols-[1.05fr_.95fr] lg:items-center">
-          <motion.div {...fadeUp} transition={{ duration: 0.55 }}>
-            <div className="inline-flex items-center gap-2 border border-line-soft bg-raised/60 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.28em] text-ink-2">
-              <Blink className="bg-signal" />
-              {t('heroEyebrow')}
+      <header className="relative h-full overflow-hidden px-4 pt-[4.5rem] sm:px-6 lg:px-8">
+        <style>{`
+          .tkt-hero-vignette{background:radial-gradient(circle at 68% 45%, rgba(11,11,12,0.08) 0%, rgba(11,11,12,0.68) 48%, rgba(11,11,12,0.92) 78%, var(--color-canvas) 100%);}
+          :root[data-theme='light'] .tkt-hero-vignette{background:radial-gradient(circle at 68% 45%, rgba(247,244,238,0) 0%, rgba(247,244,238,0.22) 42%, rgba(247,244,238,0.56) 70%, var(--color-canvas) 100%);}
+        `}</style>
+
+        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+          <Suspense fallback={null}>
+            <LightRays
+              raysOrigin="top-center"
+              raysColor={isLight ? '#B8892E' : '#C8A25C'}
+              raysSpeed={0.35}
+              lightSpread={0.95}
+              rayLength={isLight ? 1.55 : 1.4}
+              fadeDistance={1.1}
+              saturation={isLight ? 1.05 : 0.85}
+              followMouse={false}
+              noiseAmount={0.05}
+              distortion={0.06}
+              lightMode={isLight}
+              intensity={isLight ? 0.9 : 1}
+              className={isLight ? 'opacity-55 mix-blend-multiply' : 'opacity-45'}
+            />
+          </Suspense>
+        </div>
+        <div className={`pointer-events-none absolute inset-0 z-[1] ${isLight ? 'bg-[radial-gradient(ellipse_at_28%_18%,rgba(184,137,46,0.14),transparent_32%),radial-gradient(ellipse_at_72%_58%,rgba(200,162,92,0.1),transparent_38%),linear-gradient(180deg,rgba(255,253,250,0.35),transparent_35%)]' : 'bg-[radial-gradient(ellipse_at_30%_20%,rgba(232,208,139,0.07),transparent_28%),radial-gradient(ellipse_at_70%_55%,rgba(200,162,92,0.05),transparent_34%),linear-gradient(180deg,rgba(250,248,244,0.015),transparent_30%)]'}`} />
+        <div className="tkt-hero-vignette pointer-events-none absolute inset-0 z-[1]" />
+        <div className={`pointer-events-none absolute inset-x-0 top-[4.5rem] z-[2] h-px bg-gradient-to-r from-transparent ${isLight ? 'via-signal/35' : 'via-signal/25'} to-transparent`} />
+
+        <div className="absolute inset-y-0 end-0 z-[3] hidden w-[58%] overflow-hidden pt-[4.5rem] lg:block xl:w-[54%]" aria-hidden="true">
+          <Suspense fallback={null}>
+            <HeroKeystone />
+          </Suspense>
+        </div>
+
+        <div className="pointer-events-none relative z-10 mx-auto grid h-full max-w-7xl items-center gap-8 py-6 lg:grid-cols-[minmax(0,620px)_1fr] lg:gap-6">
+          <motion.div {...fadeUp} transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }} className="pointer-events-auto relative max-w-[620px]">
+            <div className="mb-4 flex items-center gap-3 sm:mb-[18px]">
+              <span className="h-px w-7 bg-signal-dim" aria-hidden="true" />
+              <BlurText
+                text={t('heroEyebrow')}
+                delay={35}
+                animateBy="words"
+                direction="top"
+                className="text-[11px] font-medium uppercase tracking-[0.22em] text-signal-dim"
+              />
             </div>
-            <h1 className="mt-6 max-w-4xl font-display text-5xl font-bold uppercase leading-[0.92] tracking-tight text-ink-0 sm:text-6xl lg:text-7xl">
-              {t('heroTitleA')}
-              <br />
-              <span className="text-outline">{t('heroTitleB')}</span>
-            </h1>
-            <p className="mt-6 max-w-2xl text-base leading-relaxed text-ink-2 sm:text-lg">{t('heroBody')}</p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link to="/upcoming" className="btn-primary !px-6 !py-3 text-sm sm:text-[13px]">
+
+            <div className="font-display text-[clamp(2.25rem,5.5vw,4.6rem)] font-normal leading-[1.12] tracking-[-0.01em] text-ink-0">
+              <BlurText text={t('heroTitleA')} delay={55} animateBy="words" direction="bottom" className="block" />
+              <BlurText text={t('heroTitleB')} delay={75} animateBy="words" direction="bottom" className="block text-signal" />
+            </div>
+
+            <BlurText
+              text={t('heroBody')}
+              delay={18}
+              animateBy="words"
+              direction="bottom"
+              stepDuration={0.28}
+              className="mt-5 max-w-[500px] text-[14px] leading-[1.7] text-ink-2/90 sm:mt-6 sm:text-[15.5px] sm:leading-[1.75]"
+            />
+
+            <div className="mt-7 sm:mt-9">
+              <Link to="/upcoming" className="btn-primary !px-7 !py-3.5 text-[11px] sm:text-xs shadow-[0_10px_30px_-12px_color-mix(in_srgb,var(--color-signal)_45%,transparent)]">
                 {t('browseUpcoming')}
-                <ArrowRight size={16} />
+                <ArrowRight size={15} className="rtl:rotate-180" />
               </Link>
-              <a href="#how-it-works" className="btn-ghost !px-6 !py-3 text-sm sm:text-[13px]">{t('howItWorks')}</a>
-            </div>
-            <div className="mt-10 grid gap-3 sm:grid-cols-3">
-              {[
-                { icon: QrCode, title: t('trustSigned'), body: t('trustSignedBody') },
-                { icon: Ticket, title: t('trustFast'), body: t('trustFastBody') },
-                { icon: ShieldCheck, title: t('trustSecure'), body: t('trustSecureBody') },
-              ].map((item, i) => (
-                <motion.div
-                  key={item.title}
-                  initial={reduce ? false : { opacity: 0, y: 16 }}
-                  animate={reduce ? undefined : { opacity: 1, y: 0 }}
-                  transition={{ duration: 0.45, delay: 0.2 + i * 0.08 }}
-                  className="group border border-line-soft/80 bg-raised/35 p-4 backdrop-blur-sm transition-colors hover:border-signal/35 hover:bg-raised/55"
-                >
-                  <item.icon size={16} className="text-signal transition-transform duration-300 group-hover:-translate-y-0.5" />
-                  <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.22em] text-ink-1">{item.title}</p>
-                  <p className="mt-1.5 text-xs leading-relaxed text-ink-3">{item.body}</p>
-                </motion.div>
-              ))}
             </div>
           </motion.div>
 
-          <motion.div {...fadeUp} transition={{ duration: 0.55, delay: reduce ? 0 : 0.08 }} className="relative">
-            <div className="panel relative overflow-hidden p-5 sm:p-6">
-              <Corners />
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-signal/50 to-transparent" />
-              <div className="flex items-center justify-between gap-3">
-                <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-ink-3">{t('upcomingEvents')}</p>
-                <span className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-ok"><Blink className="bg-ok" />{t('reservationsOpen')}</span>
-              </div>
-              <div className="mt-5 space-y-4">
-                {(featured.length ? featured : [{ id: 'skeleton' } as any]).slice(0, 2).map((e: any, idx: number) => (
-                  <div key={e.id ?? idx} className="border border-line-soft bg-elevated/25 p-4">
-                    {e.id === 'skeleton' ? (
-                      <div className="animate-pulse space-y-3"><div className="h-3 w-24 bg-line-soft" /><div className="h-6 w-3/4 bg-line-soft" /><div className="h-3 w-1/2 bg-line-soft" /></div>
-                    ) : (
-                      <>
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-signal">{new Date(e.startAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</p>
-                            <p className="mt-1 font-display text-xl font-semibold uppercase tracking-wide text-ink-0">{e.name}</p>
-                            <p className="mt-1 text-xs text-ink-3">{e.venueName || t('venueTba')}</p>
-                          </div>
-                          <CalendarDays size={16} className="text-signal" />
-                        </div>
-                        <div className="mt-4 flex items-center justify-between gap-3">
-                          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-3">{e.ticketTypes?.[0] ? `${t('from')} ${Number(e.ticketTypes[0].price) === 0 ? t('free') : `$${Number(e.ticketTypes[0].price).toLocaleString()}`}` : t('tickets')}</span>
-                          <button onClick={() => setReserving(e)} className="btn-primary !px-4 !py-2 text-[11px]">{t('reserve')}</button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-              <div className="mt-5 border-t border-line-soft pt-4">
-                <Link to="/upcoming" className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-signal transition-colors hover:text-signal-300">
-                  {t('viewAllEvents')} <ArrowRight size={14} />
-                </Link>
-              </div>
-            </div>
-          </motion.div>
+          <div className="hidden lg:block" aria-hidden="true" />
         </div>
       </header>
-
-      <section className="px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
-        <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="font-mono text-[11px] uppercase tracking-[0.35em] text-signal">{t('featuredEvents')}</p>
-              <h2 className="mt-3 font-display text-4xl font-bold uppercase leading-none tracking-tight text-ink-0 sm:text-5xl">{t('upcomingEvents')}</h2>
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-3">{t('featuredEventsBody')}</p>
-            </div>
-            <Link to="/upcoming" className="btn-ghost !px-4 !py-2.5">{t('viewAllEvents')}</Link>
-          </div>
-
-          <div className="mt-10">
-            {isLoading && <Spinner label={t('loadingEvents')} />}
-            {error && <div className="panel relative p-5"><Corners /><ErrorBanner error={error} /></div>}
-            {!isLoading && !error && featured.length === 0 && (
-              <div className="panel relative p-10 text-center"><Corners /><p className="font-display text-3xl font-bold uppercase text-ink-0">{t('noUpcomingTitle')}</p><p className="mt-3 text-sm text-ink-3">{t('noUpcomingBody')}</p></div>
-            )}
-            <div className="space-y-5">
-              {featured.map((e, i) => <EventCard key={e.id} e={e} i={i} onReserve={setReserving} />)}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="how-it-works" className="border-t border-line-soft px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
-        <div className="mx-auto max-w-7xl">
-          <p className="font-mono text-[11px] uppercase tracking-[0.35em] text-signal">{t('simpleSteps')}</p>
-          <h2 className="mt-3 font-display text-4xl font-bold uppercase leading-none tracking-tight text-ink-0 sm:text-5xl">{t('howItWorks')}</h2>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-3">{t('simpleStepsBody')}</p>
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
-            {[{ n: '01', title: t('step1Title'), body: t('step1Body') }, { n: '02', title: t('step2Title'), body: t('step2Body') }, { n: '03', title: t('step3Title'), body: t('step3Body') }].map((s, i) => (
-              <motion.div key={s.n} initial={reduce ? false : { opacity: 0, y: 20 }} whileInView={reduce ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, margin: '-40px' }} transition={{ duration: 0.45, delay: i * 0.08 }}>
-                <Step n={s.n} title={s.title} body={s.body} />
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <PublicFooter />
-      {reserving && <ReservationModal event={reserving} onClose={() => setReserving(null)} />}
     </div>
   )
 }

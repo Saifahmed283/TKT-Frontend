@@ -22,11 +22,11 @@ export function PageHeader({
           </span>
         )}
         <div>
-          <p className="mb-1 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.3em] text-signal">
+          <p className="mb-1 flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.22em] text-signal">
             <span className="inline-block h-1 w-1 rounded-full bg-signal" />
             TKT · Control center
           </p>
-          <h1 className="font-display text-[28px] font-bold uppercase leading-none tracking-tight text-ink-0">{title}</h1>
+          <h1 className="font-display text-[28px] font-semibold leading-tight tracking-tight text-ink-0">{title}</h1>
           {subtitle && <p className="mt-1.5 font-mono text-[11px] tracking-[0.05em] text-ink-3">{subtitle}</p>}
         </div>
       </div>

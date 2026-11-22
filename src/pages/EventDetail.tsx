@@ -115,7 +115,7 @@ export default function EventDetail() {
             </span>
             <div>
               <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-ink-0">Public registration</h2>
-              <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em]">
+              <p className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.16em]">
                 {reg.open !== false ? (
                   <span className="flex items-center gap-1.5 text-ok">
                     <Blink className="bg-ok" /> open to the public
@@ -178,11 +178,11 @@ export default function EventDetail() {
         <div className="panel relative overflow-hidden p-0 lg:col-span-2">
           <Corners />
           <div className="flex items-center justify-between border-b border-line-soft px-5 py-3">
-            <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] text-signal">
+            <p className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-signal">
               <Blink className="bg-ok" />
               Recent access decisions
             </p>
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3">SSE · live</span>
+            <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">SSE · live</span>
           </div>
           {data.recentAccess.length === 0 ? (
             <p className="py-10 text-center font-mono text-[12px] uppercase tracking-[0.15em] text-ink-3">
@@ -219,7 +219,7 @@ export default function EventDetail() {
         <div className="space-y-4">
           <div className="panel relative p-5">
             <Corners />
-            <p className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] text-signal">
+            <p className="mb-3 flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-signal">
               <AlertTriangle size={12} />
               Latest incidents
             </p>
@@ -230,7 +230,7 @@ export default function EventDetail() {
             ) : (
               <div className="space-y-3">
                 {data.recentIncidents.map((i) => (
-                  <div key={i.id} className="border-l-2 border-warn/50 pl-3">
+                  <div key={i.id} className="border-s-2 border-warn/50 ps-3">
                     <p className="text-sm font-medium text-ink-0">{i.title}</p>
                     <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.15em] text-ink-3">
                       {i.priority} · {i.area?.name ?? '—'} · {fmtTime(i.createdAt)}
@@ -242,7 +242,7 @@ export default function EventDetail() {
           </div>
           <div className="panel relative p-5">
             <Corners />
-            <p className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] text-signal">
+            <p className="mb-3 flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-signal">
               <ListTodo size={12} />
               Latest tasks
             </p>
@@ -251,7 +251,7 @@ export default function EventDetail() {
             ) : (
               <div className="space-y-3">
                 {data.recentTasks.map((t) => (
-                  <div key={t.id} className="border-l-2 border-signal/50 pl-3">
+                  <div key={t.id} className="border-s-2 border-signal/50 ps-3">
                     <p className="text-sm font-medium text-ink-0">{t.title}</p>
                     <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.15em] text-ink-3">
                       {t.status} · {t.assignee?.name ?? 'Unassigned'}
@@ -267,7 +267,7 @@ export default function EventDetail() {
       <div className="mb-3 mt-10 flex items-center gap-2">
         <p className="label">Modules</p>
         <span className="h-px flex-1 bg-line-soft" />
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3">13 instruments</span>
+        <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">13 instruments</span>
       </div>
       <div className="grid gap-px border border-line-soft bg-line-soft sm:grid-cols-2 lg:grid-cols-4">
         {moduleCards.map((m) => (
@@ -278,7 +278,7 @@ export default function EventDetail() {
                 <m.icon size={16} />
                 <Corners className="h-2 w-2" />
               </span>
-              <ArrowRight size={15} className="text-ink-3 transition-all group-hover:translate-x-0.5 group-hover:text-signal" />
+              <ArrowRight size={15} className="text-ink-3 transition-all group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5 rtl:rotate-180 group-hover:text-signal" />
             </div>
             <h3 className="mt-4 font-display text-lg font-semibold uppercase tracking-wide text-ink-0 group-hover:text-signal">{m.label}</h3>
             <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.1em] text-ink-3">{m.desc}</p>

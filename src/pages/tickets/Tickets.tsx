@@ -106,8 +106,8 @@ export default function TicketsPage() {
         <div className="panel relative mb-6 p-5">
           <Corners />
           <div className="mb-3 flex items-center justify-between">
-            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-signal">New ticket type</p>
-            <button onClick={() => setShowAdd(false)} className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3 hover:text-ink">
+            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-signal">New ticket type</p>
+            <button onClick={() => setShowAdd(false)} className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3 hover:text-ink">
               Close
             </button>
           </div>
@@ -160,7 +160,7 @@ export default function TicketsPage() {
       <div className="mb-3 flex items-center gap-2">
         <p className="label">Ticket types</p>
         <span className="h-px flex-1 bg-line-soft" />
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3">
+        <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">
           {types.length} configured
         </span>
       </div>
@@ -170,7 +170,7 @@ export default function TicketsPage() {
             <Corners className="opacity-40" />
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="truncate font-display text-sm font-bold uppercase tracking-wide text-ink-0">{t.name}</p>
+                <p className="truncate font-display text-sm font-semibold tracking-wide text-ink-0">{t.name}</p>
                 <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.15em] text-ink-3">
                   {t.description ?? (Number(t.price) > 0 ? `$${Number(t.price).toLocaleString()}` : 'FREE')}
                 </p>
@@ -249,9 +249,9 @@ export default function TicketsPage() {
         <p className="label">Issued tickets</p>
         <span className="h-px flex-1 bg-line-soft" />
         <div className="relative w-full max-w-xs">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" />
+          <Search size={14} className="absolute start-3 top-1/2 -translate-y-1/2 text-ink-3" />
           <input
-            className="input !py-1.5 pl-9 text-xs"
+            className="input !py-1.5 ps-9 text-xs"
             placeholder="Search attendee or credential…"
             value={q}
             onChange={(e) => setQ(e.target.value)}

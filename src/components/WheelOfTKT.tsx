@@ -37,14 +37,14 @@ function ResultPanel({ result }: { result: WheelResult }) {
     <div className="animate-fade-in panel relative mt-6 p-5">
       <Corners />
       <div className="flex items-center justify-between gap-3">
-        <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-ink-3">
+        <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-ink-3">
           {isRetry ? 'Result · try again' : 'Result · claim code'}
         </p>
-        <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-ok">
+        <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.16em] text-ok">
           <Blink className="bg-ok" /> logged
         </span>
       </div>
-      <p className="mt-3 font-display text-2xl font-bold uppercase tracking-wide text-signal">{result.label}</p>
+      <p className="mt-3 font-display text-2xl font-semibold tracking-wide text-signal">{result.label}</p>
       {result.code ? (
         <div className="mt-4 border border-signal/25 bg-signal/5 px-4 py-3 font-mono text-lg tracking-[0.2em] text-ink-0">
           {result.code}
@@ -114,12 +114,12 @@ export default function WheelOfTKT() {
   return (
     <div className="grid items-center gap-14 lg:grid-cols-12 lg:gap-10">
       <div className="lg:col-span-6">
-        <div className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.35em] text-signal">
+        <div className="flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.24em] text-signal">
           <span className="text-ink-3">04</span>
           <span className="h-px w-12 bg-signal/40" />
           <span>Spin the wheel</span>
         </div>
-        <h2 className="mt-4 font-display text-5xl font-bold uppercase leading-[0.92] tracking-tight text-ink-0 sm:text-6xl">
+        <h2 className="mt-4 font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl text-ink-0 sm:text-6xl">
           One free spin.
           <br />
           <span className="text-outline">Every visitor.</span>
@@ -137,12 +137,12 @@ export default function WheelOfTKT() {
           ].map(([v, l]) => (
             <div key={l} className="bg-paper px-4 py-3.5">
               <p className="font-display text-2xl font-bold text-signal tabular-nums">{v}</p>
-              <p className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.2em] text-ink-3">{l}</p>
+              <p className="mt-0.5 text-[9px] font-medium uppercase tracking-[0.14em] text-ink-3">{l}</p>
             </div>
           ))}
         </div>
 
-        <p className="mt-6 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.25em] text-ink-3">
+        <p className="mt-6 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-ink-3">
           <Blink className="bg-signal" />
           {statusQ.isLoading
             ? 'reading your spin ticket…'
@@ -164,8 +164,8 @@ export default function WheelOfTKT() {
         {usedUp && !result && lastUsed && (
           <div className="panel relative mt-6 p-5">
             <Corners />
-            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-ink-3">Last result</p>
-            <p className="mt-2 font-display text-2xl font-bold uppercase tracking-wide text-signal">{lastUsed.label}</p>
+            <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-ink-3">Last result</p>
+            <p className="mt-2 font-display text-2xl font-semibold tracking-wide text-signal">{lastUsed.label}</p>
             {lastUsed.code && (
               <div className="mt-3 border border-signal/25 bg-signal/5 px-4 py-3 font-mono text-lg tracking-[0.2em] text-ink-0">
                 {lastUsed.code}
@@ -199,7 +199,7 @@ export default function WheelOfTKT() {
                     style={{ marginTop: '-41%' }}
                   >
                     <span
-                      className={`block whitespace-nowrap font-display text-[11px] font-bold uppercase tracking-wide sm:text-xs ${
+                      className={`block whitespace-nowrap font-display text-[11px] font-semibold tracking-wide sm:text-xs ${
                         s.jackpot ? 'text-white' : s.dark ? 'text-ink-100' : 'text-ink-950'
                       }`}
                     >
@@ -253,7 +253,7 @@ export default function WheelOfTKT() {
           )}
         </div>
 
-        <p className="mt-6 text-center font-mono text-[10px] uppercase tracking-[0.25em] text-ink-3">
+        <p className="mt-6 text-center text-[10px] font-medium uppercase tracking-[0.18em] text-ink-3">
           One free spin per device · prizes logged server-side
         </p>
       </div>

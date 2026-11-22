@@ -71,9 +71,9 @@ export default function AttendeesPage() {
       <PageHeader title="Attendees" subtitle="Everyone registered for this event." />
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <div className="relative w-full max-w-xs">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+          <Search size={14} className="absolute start-3 top-1/2 -translate-y-1/2 text-ink-400" />
           <input
-            className="input pl-9"
+            className="input ps-9"
             placeholder="Search name, email, phone…"
             value={q}
             onChange={(e) => {
@@ -106,7 +106,7 @@ export default function AttendeesPage() {
         <EmptyState icon={<Users size={22} />} title="No attendees found" body="Add attendees via the API, bulk import, or registration desk." />
       ) : (
         <div className="card overflow-hidden">
-          <table className="w-full text-left text-sm">
+          <table className="w-full text-start text-sm">
             <thead className="border-b border-line bg-ink-850 text-xs uppercase tracking-wide text-ink-400">
               <tr>
                 <th className="px-4 py-3 font-medium">Name</th>
@@ -123,7 +123,7 @@ export default function AttendeesPage() {
                   <td className="px-4 py-3 font-medium text-ink-50">{a.name}</td>
                   <td className="px-4 py-3 text-ink-300">
                     {a.email}
-                    {a.phone ? <span className="ml-2 text-ink-400">{a.phone}</span> : null}
+                    {a.phone ? <span className="ms-2 text-ink-400">{a.phone}</span> : null}
                   </td>
                   <td className="px-4 py-3">
                     <span className={statusClass[a.status] ?? 'badge-neutral'}>{a.status}</span>

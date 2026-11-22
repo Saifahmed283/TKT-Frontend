@@ -26,7 +26,7 @@ export default function BrandLogo({ className, imageClassName, showWordmark = fa
       {showWordmark && (
         <span className={cn('leading-none', lang === 'ar' ? 'font-sans' : 'font-display tracking-[0.08em]')}>
           <span className="block text-[1.1rem] font-bold uppercase text-ink-0">TKT</span>
-          <span className="block font-mono text-[9px] uppercase tracking-[0.24em] text-ink-3">
+          <span className="block text-[9px] font-medium uppercase tracking-[0.18em] text-ink-3">
             {lang === 'ar' ? 'فعاليات · تجارب' : 'Events · Experiences'}
           </span>
         </span>

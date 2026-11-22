@@ -421,7 +421,7 @@ export default function ScannerPage() {
                     <span className="absolute bottom-0 left-0 h-6 w-6 border-b-2 border-l-2 border-signal" />
                     <span className="absolute bottom-0 right-0 h-6 w-6 border-b-2 border-r-2 border-signal" />
                   </div>
-                  <span className="absolute bottom-2 left-1/2 -translate-x-1/2 font-mono text-[9px] uppercase tracking-[0.25em] text-signal">
+                  <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[9px] font-medium uppercase tracking-[0.18em] text-signal">
                     {validate.isPending ? 'Validating…' : 'Scanning for QR'}
                   </span>
                 </div>

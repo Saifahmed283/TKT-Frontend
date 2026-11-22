@@ -44,7 +44,7 @@ export function BootSplash() {
     <div className="flex min-h-screen items-center justify-center bg-paper px-6">
       <div className="animate-fade-in flex flex-col items-center gap-5 text-center">
         <BrandLogo imageClassName="h-14 sm:h-16" />
-        <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.3em] text-ink-3">
+        <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.22em] text-ink-3">
           <span className="inline-block h-1.5 w-1.5 animate-blink rounded-full bg-signal" />
           {t('loading')}
         </div>

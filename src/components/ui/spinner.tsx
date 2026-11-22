@@ -11,7 +11,7 @@ export function FullPageSpinner({ label = 'Loading…' }: { label?: string }) {
         <span className="absolute inset-[15px] animate-blink rounded-full bg-signal/40" />
       </div>
       {label && (
-        <p className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.3em] text-ink-3">
+        <p className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-ink-3">
           <Blink className="bg-signal" />
           {label}
         </p>

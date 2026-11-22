@@ -97,7 +97,7 @@ export default function Shell() {
   <Link to="/app" className="flex items-center gap-2">
     <BrandLogo imageClassName="h-8" />
   </Link>
-  <span className="ml-auto flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.2em] text-ink-3">
+  <span className="ml-auto flex items-center gap-1.5 text-[9px] font-medium uppercase tracking-[0.14em] text-ink-3">
     <Blink className="bg-ok" />
     v2.0
   </span>
@@ -106,7 +106,7 @@ export default function Shell() {
         <div className="border-b border-line-soft px-3 py-2.5">
           <Link
             to="/upcoming"
-            className="group flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-2 transition-colors hover:text-signal"
+            className="group flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.16em] text-ink-2 transition-colors hover:text-signal"
           >
             <Globe size={12} className="text-ink-3 transition-colors group-hover:text-signal" />
             {t('backToSite')}
@@ -114,7 +114,7 @@ export default function Shell() {
         </div>
 
         <div className="flex-1 overflow-y-auto px-3 py-4">
-          <p className="mb-2 flex items-center gap-2 px-2 font-mono text-[10px] uppercase tracking-[0.3em] text-ink-3">
+          <p className="mb-2 flex items-center gap-2 px-2 text-[10px] font-medium uppercase tracking-[0.22em] text-ink-3">
             <span className="text-signal">//</span> {t('workspace')}
           </p>
           <nav className="space-y-0.5">
@@ -142,7 +142,7 @@ export default function Shell() {
 
           {activeEvent && (
             <>
-              <p className="mb-2 mt-6 flex items-center gap-2 px-2 font-mono text-[10px] uppercase tracking-[0.3em] text-ink-3">
+              <p className="mb-2 mt-6 flex items-center gap-2 px-2 text-[10px] font-medium uppercase tracking-[0.22em] text-ink-3">
                 <span className="text-signal">//</span> {t('event')}
                 <span className="truncate text-signal/70">{activeEvent.name?.slice(0, 12)}</span>
               </p>
@@ -199,7 +199,7 @@ export default function Shell() {
               </div>
             )}
           </div>
-          <p className="mt-2 flex items-center gap-2 border-t border-line-soft pt-2.5 px-2 font-mono text-[9px] uppercase tracking-[0.25em] text-ink-3">
+          <p className="mt-2 flex items-center gap-2 border-t border-line-soft pt-2.5 px-2 text-[9px] font-medium uppercase tracking-[0.18em] text-ink-3">
             <Blink className="bg-signal" />
             {t('allSystemsNominal')}
           </p>
@@ -221,7 +221,7 @@ export default function Shell() {
               <span className="border border-line-soft bg-elevated px-1.5 py-0.5">K</span>
             </span>
           </button>
-          <div className="flex items-center gap-4 font-mono text-[10px] uppercase tracking-[0.2em]">
+          <div className="flex items-center gap-4 text-[10px] font-medium uppercase tracking-[0.16em]">
             <Link
               to="/upcoming"
               className="flex items-center gap-1.5 border border-line-soft bg-raised px-2.5 py-1.5 text-ink-2 transition-colors hover:border-signal/40 hover:text-ink"

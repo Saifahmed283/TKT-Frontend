@@ -129,7 +129,7 @@ export function ReservationsPage() {
               </Td>
               <Td className="text-[12px] text-ink-3">{timeAgo(r.issuedAt)}</Td>
               {r.approval === 'PENDING' && (
-                <Td className="text-right">
+                <Td className="text-end">
                   <div className="flex justify-end gap-2">
                     <ConfirmDialog
                       title="Reject reservation?"

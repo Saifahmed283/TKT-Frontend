@@ -87,7 +87,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-2 border-t border-line-soft px-4 py-2 font-mono text-[9px] uppercase tracking-[0.2em] text-ink-3">
+        <div className="flex items-center gap-2 border-t border-line-soft px-4 py-2 text-[9px] font-medium uppercase tracking-[0.14em] text-ink-3">
           <Blink className="bg-signal" />
           Search indexes events & modules
         </div>

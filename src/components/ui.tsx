@@ -25,7 +25,7 @@ export function Spinner({ label }: { label?: string }) {
         <span className="absolute inset-0 animate-spin rounded-full border border-signal/20 border-t-signal" />
         <span className="absolute inset-1.5 animate-blink rounded-full bg-signal/40" />
       </div>
-      {label && <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-ink-3">{label}</p>}
+      {label && <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-ink-3">{label}</p>}
     </div>
   )
 }
@@ -36,7 +36,7 @@ export function EmptyState({ icon, title, body, action }: { icon: ReactNode; tit
       <Corners />
       <div className="grid h-12 w-12 place-items-center border border-signal/30 bg-signal/10 text-signal">{icon}</div>
       <div>
-        <h3 className="font-display text-xl font-semibold uppercase tracking-wide text-ink-0">{title}</h3>
+        <h3 className="font-display text-xl font-semibold tracking-tight text-ink-0">{title}</h3>
         {body && <p className="mx-auto mt-1.5 max-w-sm text-sm leading-relaxed text-ink-3">{body}</p>}
       </div>
       {action}
@@ -79,11 +79,11 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <p className="mb-1 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.3em] text-signal">
+        <p className="mb-1 flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.22em] text-signal">
           <span className="inline-block h-1 w-1 rounded-full bg-signal" />
           TKT · Control center
         </p>
-        <h1 className="font-display text-3xl font-bold uppercase leading-none tracking-tight text-ink-0">{title}</h1>
+        <h1 className="font-display text-3xl font-semibold leading-tight tracking-tight text-ink-0">{title}</h1>
         {subtitle && <p className="mt-1.5 font-mono text-[11px] tracking-[0.05em] text-ink-3">{subtitle}</p>}
       </div>
       {actions && <div className="flex items-center gap-2">{actions}</div>}
@@ -95,13 +95,13 @@ export function StatCard({ label, value, sub, accent }: { label: string; value: 
   return (
     <div className="panel group relative p-5 transition-colors duration-300 hover:border-signal/40">
       <Corners className="opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-      <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-ink-3">{label}</p>
+      <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-ink-3">{label}</p>
       {typeof value === 'number' ? (
-        <p className={`mt-2 font-display text-4xl font-bold leading-none tracking-tight tabular-nums ${accent ? 'text-signal' : 'text-ink-0'}`}>
+        <p className={`mt-2 font-display text-4xl font-semibold leading-none tracking-tight tabular-nums ${accent ? 'text-signal' : 'text-ink-0'}`}>
           <CountUp value={value} />
         </p>
       ) : (
-        <p className={`mt-2 font-display text-4xl font-bold leading-none tracking-tight tabular-nums ${accent ? 'text-signal' : 'text-ink-0'}`}>{value}</p>
+        <p className={`mt-2 font-display text-4xl font-semibold leading-none tracking-tight tabular-nums ${accent ? 'text-signal' : 'text-ink-0'}`}>{value}</p>
       )}
       {sub && <p className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.15em] text-ink-3">{sub}</p>}
     </div>

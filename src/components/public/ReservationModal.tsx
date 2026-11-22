@@ -84,7 +84,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
           <div className={`flex items-start gap-3 rounded-xl border px-4 py-4 ${done.approval === 'APPROVED' ? 'border-ok/25 bg-ok/8' : 'border-signal/25 bg-signal/8'}`}>
             <CheckCircle2 className={`mt-0.5 size-5 shrink-0 ${done.approval === 'APPROVED' ? 'text-ok' : 'text-signal'}`} />
             <div>
-              <p className="font-display text-xl font-semibold uppercase tracking-wide text-ink-0">
+              <p className="font-display text-xl font-semibold tracking-tight text-ink-0">
                 {done.approval === 'APPROVED' ? t('ticketReady') : t('reservationPending')}
               </p>
               <p className="mt-1 text-sm leading-relaxed text-ink-2">
@@ -101,14 +101,14 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
                 <div className="grid h-44 w-44 place-items-center border border-dashed border-signal/30 bg-signal/5 text-center">
                   <div>
                     <Lock className="mx-auto size-7 text-signal" />
-                    <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3">{t('pending')}</p>
+                    <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">{t('pending')}</p>
                   </div>
                 </div>
               )}
             </div>
             <div className="space-y-3">
               <div className="border border-line-soft bg-elevated/30 p-4">
-                <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-ink-3">{t('reservationCode')}</p>
+                <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-ink-3">{t('reservationCode')}</p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <p className="font-mono text-lg font-bold tracking-[0.18em] text-signal sm:text-xl">{done.reservationCode}</p>
                   <button type="button" onClick={() => copyCode(done.reservationCode)} className="btn-ghost !px-3 !py-1.5 text-[11px]">
@@ -118,15 +118,15 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="border border-line-soft bg-elevated/30 p-3">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3">{t('ticketType')}</p>
+                  <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">{t('ticketType')}</p>
                   <p className="mt-1 text-sm text-ink-0">{selected?.name ?? t('ticket')}</p>
                 </div>
                 <div className="border border-line-soft bg-elevated/30 p-3">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3">{t('price')}</p>
+                  <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">{t('price')}</p>
                   <p className="mt-1 text-sm text-ink-0">{money(done.price, lang)}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3">
+              <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">
                 <ShieldCheck size={13} className="text-signal" /> {t('secureBooking')}
               </div>
             </div>

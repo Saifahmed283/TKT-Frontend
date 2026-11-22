@@ -72,7 +72,7 @@ export function LiveActivityFeed({ activities }: { activities: FeedActivity[] })
         <p className="flex items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.25em] text-signal">
           <ScanLine size={12} /> Live scan activity
         </p>
-        <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3">
+        <span className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">
           <Blink className="bg-ok" /> Live
         </span>
       </div>

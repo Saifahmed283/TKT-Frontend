@@ -46,10 +46,10 @@ export default function Dashboard() {
   return (
     <div className="animate-fade-in space-y-6">
       <div className="panel relative flex flex-col gap-4 overflow-hidden p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-signal/10 blur-3xl" />
+        <div className="pointer-events-none absolute -end-16 -top-16 h-40 w-40 rounded-full bg-signal/10 blur-3xl" />
         <Corners />
         <div>
-          <h1 className="font-display text-2xl font-bold uppercase tracking-wide text-ink-0">{t('overview')}</h1>
+          <h1 className="font-display text-2xl font-semibold tracking-wide text-ink-0">{t('overview')}</h1>
           <p className="mt-1 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-ink-3">
             <Blink className="bg-ok" />
             {kpis.events} event{kpis.events === 1 ? '' : 's'} · {t('dashboardSubtitle')}
