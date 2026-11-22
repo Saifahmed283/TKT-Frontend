@@ -10,7 +10,7 @@ import { Dialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { useState, type FormEvent } from 'react'
-import { Megaphone } from 'lucide-react'
+import { Megaphone, Siren, MessageSquare } from 'lucide-react'
 
 type Announcement = {
   id: string
@@ -21,6 +21,8 @@ type Announcement = {
   createdAt: string
   author: { name: string }
 }
+type OpsAlert = { id: string; type: string; message: string; createdAt: string; resolved: boolean }
+type ChatMsg = { id: string; text: string; createdAt: string; teamId?: string | null; userId?: string | null }
 
 export function CommsPage() {
   const { eventId } = useParams()
@@ -29,12 +31,16 @@ export function CommsPage() {
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ title: '', body: '', targetType: 'ALL' })
   const [error, setError] = useState('')
+  const [alertMsg, setAlertMsg] = useState('')
+  const [chatMsg, setChatMsg] = useState('')
 
   const { data, isLoading, error: loadError, refetch } = useQuery({
     queryKey: ['announcements', eventId],
     queryFn: () =>
       api.get<Announcement[]>(`/events/${eventId}/communications/announcements`).catch(() => []),
   })
+  const alerts = useQuery({ queryKey: ['ops-alerts', eventId], queryFn: () => api.get<OpsAlert[]>(`/events/${eventId}/communications/alerts`).catch(() => []), refetchInterval: 15000 })
+  const chat = useQuery({ queryKey: ['team-chat', eventId], queryFn: () => api.get<ChatMsg[]>(`/events/${eventId}/communications/chat`).catch(() => []), refetchInterval: 10000 })
 
   const create = useMutation({
     mutationFn: () =>
@@ -52,6 +58,16 @@ export function CommsPage() {
       qc.invalidateQueries({ queryKey: ['announcements'] })
     },
     onError: (e) => setError(e instanceof ApiError ? e.message : 'Could not send announcement'),
+  })
+  const createAlert = useMutation({
+    mutationFn: () => api.post(`/events/${eventId}/communications/alerts`, { type: 'help', message: alertMsg }),
+    onSuccess: () => { setAlertMsg(''); qc.invalidateQueries({ queryKey: ['ops-alerts'] }); toast.success('Alert sent') },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : 'Could not send alert'),
+  })
+  const sendChat = useMutation({
+    mutationFn: () => api.post(`/events/${eventId}/communications/chat`, { text: chatMsg }),
+    onSuccess: () => { setChatMsg(''); qc.invalidateQueries({ queryKey: ['team-chat'] }) },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : 'Could not send message'),
   })
 
   if (isLoading) return <FullPageSpinner />
@@ -76,8 +92,9 @@ export function CommsPage() {
         }
       />
 
-      <div className="px-6 pt-5">
+      <div className="px-6 pt-5 grid gap-6 xl:grid-cols-[1.4fr_1fr]">
         <div className="space-y-3">
+          <h2 className="text-sm font-semibold">Announcements</h2>
           {data.length === 0 && (
             <div className="rounded-xl border border-dashed border-line py-16 text-center">
               <Megaphone className="mx-auto size-7 text-ink-3" />
@@ -96,6 +113,42 @@ export function CommsPage() {
               <p className="mt-2 text-[13px] leading-relaxed text-ink-2">{a.body}</p>
             </div>
           ))}
+        </div>
+
+        <div className="space-y-6">
+          <div className="rounded-xl border border-line bg-raised/70 p-4 space-y-3">
+            <h2 className="text-sm font-semibold flex items-center gap-2"><Siren className="size-4 text-danger" /> Ops Alerts</h2>
+            <div className="flex gap-2">
+              <Input value={alertMsg} onChange={(e) => setAlertMsg(e.target.value)} placeholder="Help needed at Gate A..." />
+              <Button size="sm" onClick={() => alertMsg.trim() && createAlert.mutate()} disabled={createAlert.isPending}>Send</Button>
+            </div>
+            <div className="space-y-2 max-h-56 overflow-auto">
+              {(alerts.data ?? []).slice(0, 8).map((a) => (
+                <div key={a.id} className="rounded-lg border border-line/60 px-3 py-2">
+                  <div className="flex items-center gap-2 text-[11px] text-ink-3"><Badge tone={a.resolved ? 'ok' : 'warn'}>{a.type}</Badge><span>{timeAgo(a.createdAt)}</span></div>
+                  <p className="text-[12px] text-ink-2 mt-1">{a.message}</p>
+                </div>
+              ))}
+              {(alerts.data ?? []).length === 0 && <p className="text-[12px] text-ink-3">No alerts.</p>}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-line bg-raised/70 p-4 space-y-3">
+            <h2 className="text-sm font-semibold flex items-center gap-2"><MessageSquare className="size-4" /> Team Chat</h2>
+            <div className="flex gap-2">
+              <Input value={chatMsg} onChange={(e) => setChatMsg(e.target.value)} placeholder="Message event staff..." />
+              <Button size="sm" onClick={() => chatMsg.trim() && sendChat.mutate()} disabled={sendChat.isPending}>Send</Button>
+            </div>
+            <div className="space-y-2 max-h-56 overflow-auto">
+              {(chat.data ?? []).slice(0, 10).map((m) => (
+                <div key={m.id} className="rounded-lg border border-line/60 px-3 py-2">
+                  <div className="text-[11px] text-ink-3">{timeAgo(m.createdAt)}</div>
+                  <p className="text-[12px] text-ink-2 mt-1">{m.text}</p>
+                </div>
+              ))}
+              {(chat.data ?? []).length === 0 && <p className="text-[12px] text-ink-3">No messages.</p>}
+            </div>
+          </div>
         </div>
       </div>
 
