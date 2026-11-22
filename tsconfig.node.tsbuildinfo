@@ -1,1 +1,1 @@
-{"root":["./vite.config.ts","./playwright.config.ts"],"version":"5.8.3"}
+{"version":"7.0.2","errors":true,"root":["./vite.config.ts","./playwright.config.ts"],"packageJsons":["./package.json"]}
