@@ -1,27 +1,27 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useLanguage } from '../../lib/i18n'
 
 const SESSION_KEY = 'tkt_intro_seen'
 
-function buildHaloDots() {
-  return Array.from({ length: 36 }, (_, i) => {
-    const angle = ((i * 10 - 90) * Math.PI) / 180
-    return {
-      id: i,
-      cx: 120 + Math.cos(angle) * 104,
-      cy: 120 + Math.sin(angle) * 104,
-      delay: 0.5 + i * 0.022,
-    }
-  })
-}
+// Exact coordinates from TKT-Resources/svg/tkt_dark_surface_gold_emblem_svg.svg
+const HALO_DOTS = [
+  { cx: 120.0, cy: 16.0 }, { cx: 138.06, cy: 17.58 }, { cx: 155.57, cy: 22.27 }, { cx: 172.0, cy: 29.92 },
+  { cx: 186.8, cy: 40.3 }, { cx: 199.49, cy: 53.0 }, { cx: 209.68, cy: 67.8 }, { cx: 217.34, cy: 84.23 },
+  { cx: 222.02, cy: 101.73 }, { cx: 223.6, cy: 119.79 }, { cx: 222.02, cy: 138.06 }, { cx: 217.34, cy: 155.57 },
+  { cx: 209.68, cy: 172.0 }, { cx: 199.49, cy: 186.8 }, { cx: 186.8, cy: 199.49 }, { cx: 172.0, cy: 209.68 },
+  { cx: 155.57, cy: 217.34 }, { cx: 138.06, cy: 222.02 }, { cx: 120.0, cy: 224.0 }, { cx: 101.94, cy: 222.02 },
+  { cx: 84.43, cy: 217.34 }, { cx: 68.0, cy: 209.68 }, { cx: 53.2, cy: 199.49 }, { cx: 40.51, cy: 186.8 },
+  { cx: 30.32, cy: 172.0 }, { cx: 22.66, cy: 155.57 }, { cx: 17.98, cy: 138.06 }, { cx: 16.4, cy: 120.0 },
+  { cx: 17.98, cy: 101.94 }, { cx: 22.66, cy: 84.43 }, { cx: 30.32, cy: 68.0 }, { cx: 40.51, cy: 53.2 },
+  { cx: 53.2, cy: 40.51 }, { cx: 68.0, cy: 30.32 }, { cx: 84.43, cy: 22.66 }, { cx: 101.94, cy: 17.98 },
+].map((d, i) => ({ ...d, id: i, delay: 0.5 + i * 0.022 }))
 
 export default function WebsiteIntro() {
   const reduce = useReducedMotion()
   const { lang } = useLanguage()
   const [show, setShow] = useState(false)
   const [progress, setProgress] = useState(0)
-  const dots = useMemo(buildHaloDots, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -85,7 +85,7 @@ export default function WebsiteIntro() {
             .tkt-intro .seal-ring-outer { stroke-dasharray: 592; stroke-dashoffset: 592; transform-origin: 120px 120px; animation: tktDrawRing 1.35s var(--ease-arch) forwards; }
             .tkt-intro .seal-ring-inner { stroke-dasharray: 528; stroke-dashoffset: -528; transform-origin: 120px 120px; animation: tktDrawRing 1.35s 0.14s var(--ease-arch) forwards; }
             .tkt-intro .mono-stroke { stroke-dasharray: 1; stroke-dashoffset: 1; animation: tktDrawMono 1.05s 0.32s var(--ease-arch) forwards; }
-            .tkt-intro .seal-static { opacity: 0; animation: tktFadeUp 0.01s 1.5s linear forwards; }
+            .tkt-intro .seal-static { opacity: 0; animation: tktFadeIn 0.01s 1.45s linear forwards; }
             .tkt-intro .halo-dot { opacity: 0; transform-box: fill-box; transform-origin: center; animation: tktPopDot 0.4s var(--ease-arch) forwards; }
             .tkt-intro .intro-wordmark { font-family: 'Italiana', serif; font-size: clamp(36px, 5vw, 54px); letter-spacing: 0.36em; padding-left: 0.36em; color: #E8D08B; opacity: 0; transform: translateY(14px); animation: tktFadeUp 0.9s 0.75s var(--ease-arch) forwards; }
             .tkt-intro .intro-hairline { width: 0; height: 1px; background: #C8A25C; margin: 14px 0 16px; opacity: 0; animation: tktLineGrow 0.8s 0.95s var(--ease-arch) forwards; }
@@ -99,6 +99,7 @@ export default function WebsiteIntro() {
             @keyframes tktDrawMono { to { stroke-dashoffset: 0; } }
             @keyframes tktPopDot { from { opacity: 0; transform: scale(0.2); } to { opacity: 1; transform: scale(1); } }
             @keyframes tktFadeUp { to { opacity: 1; transform: translateY(0); } }
+            @keyframes tktFadeIn { to { opacity: 1; } }
             @keyframes tktLineGrow { to { width: 72px; opacity: 1; } }
             @media (prefers-reduced-motion: reduce) {
               .tkt-intro .seal-ring-outer, .tkt-intro .seal-ring-inner, .tkt-intro .mono-stroke, .tkt-intro .halo-dot, .tkt-intro .intro-wordmark, .tkt-intro .intro-hairline, .tkt-intro .intro-descriptor, .tkt-intro .seal-static { animation: none !important; opacity: 1 !important; transform: none !important; stroke-dashoffset: 0 !important; }
@@ -109,21 +110,28 @@ export default function WebsiteIntro() {
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(232,208,139,0.06),transparent_45%,rgba(11,11,12,0.2)_100%)]" />
 
           <div className="intro-stage relative flex flex-col items-center px-6 text-center">
-            <svg className="intro-seal-svg" viewBox="0 0 240 240" aria-hidden="true">
+            <svg className="intro-seal-svg" viewBox="0 0 240 240" aria-hidden="true" role="img" aria-label="TKT Emblem">
               <defs>
-                <linearGradient id="tktGoldGradIntro" x1="15%" y1="15%" x2="85%" y2="85%">
+                {/* Official gradient from TKT-Resources/svg/tkt_dark_surface_gold_emblem_svg.svg */}
+                <linearGradient id="tktGoldGradIntro" gradientUnits="userSpaceOnUse" x1="36" y1="36" x2="204" y2="204">
                   <stop offset="0%" stopColor="#C8A25C" />
                   <stop offset="50%" stopColor="#E8D08B" />
                   <stop offset="100%" stopColor="#C8A25C" />
                 </linearGradient>
               </defs>
+
+              {/* Official double rings */}
               <circle className="seal-ring-outer" cx="120" cy="120" r="94" fill="none" stroke="url(#tktGoldGradIntro)" strokeWidth="2.6" />
               <circle className="seal-ring-inner" cx="120" cy="120" r="84" fill="none" stroke="url(#tktGoldGradIntro)" strokeWidth="1.2" />
-              <g>
-                {dots.map((d) => (
-                  <circle key={d.id} className="halo-dot" cx={d.cx} cy={d.cy} r="2" fill="#E8D08B" style={{ animationDelay: `${d.delay}s` }} />
+
+              {/* Official 36-point celestial halo */}
+              <g fill="url(#tktGoldGradIntro)">
+                {HALO_DOTS.map((d) => (
+                  <circle key={d.id} className="halo-dot" cx={d.cx} cy={d.cy} r="2.0" style={{ animationDelay: `${d.delay}s` }} />
                 ))}
               </g>
+
+              {/* Official T-K-T monogram — animated draw, then static fallback guarantees full render */}
               <g stroke="url(#tktGoldGradIntro)" strokeWidth="9.5" strokeLinecap="round" strokeLinejoin="round" fill="none">
                 <line className="mono-stroke" pathLength={1} x1="120" y1="67" x2="120" y2="173" />
                 <line className="mono-stroke" pathLength={1} x1="82" y1="67" x2="158" y2="67" />
@@ -131,7 +139,7 @@ export default function WebsiteIntro() {
                 <line className="mono-stroke" pathLength={1} x1="82" y1="90" x2="158" y2="150" />
                 <line className="mono-stroke" pathLength={1} x1="82" y1="150" x2="158" y2="90" />
               </g>
-              <g className="seal-static" stroke="url(#tktGoldGradIntro)" strokeWidth="9.5" strokeLinecap="round" strokeLinejoin="round" fill="none">
+              <g className="seal-static" stroke="url(#tktGoldGradIntro)" strokeWidth="9.5" strokeLinecap="round" strokeLinejoin="round" fill="none" aria-hidden="true">
                 <line x1="120" y1="67" x2="120" y2="173" />
                 <line x1="82" y1="67" x2="158" y2="67" />
                 <line x1="82" y1="173" x2="158" y2="173" />
