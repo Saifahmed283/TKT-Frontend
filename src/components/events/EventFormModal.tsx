@@ -15,6 +15,7 @@ export function EventFormModal({ open, onClose }: { open: boolean; onClose: () =
   const [orgId, setOrgId] = useState('')
   const [name, setName] = useState('')
   const [type, setType] = useState('CONFERENCE')
+  const [category, setCategory] = useState('CONFERENCE')
   const [startAt, setStartAt] = useState('')
   const [endAt, setEndAt] = useState('')
   const [venueName, setVenueName] = useState('')
@@ -37,6 +38,7 @@ export function EventFormModal({ open, onClose }: { open: boolean; onClose: () =
           organizationId: orgId,
           name,
           type,
+          category,
           startAt: new Date(startAt).toISOString(),
           ...(endAt ? { endAt: new Date(endAt).toISOString() } : {}),
           ...(venueName ? { venueName } : {}),
@@ -80,7 +82,7 @@ export function EventFormModal({ open, onClose }: { open: boolean; onClose: () =
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label mb-1.5 block">Type</label>
-                <select className="input" value={type} onChange={(e) => setType(e.target.value)}>
+                <select className="input" value={type} onChange={(e) => { setType(e.target.value); setCategory(e.target.value) }}>
                   <option>CONFERENCE</option>
                   <option>CONCERT</option>
                   <option>WEDDING</option>
@@ -93,9 +95,15 @@ export function EventFormModal({ open, onClose }: { open: boolean; onClose: () =
                 </select>
               </div>
               <div>
-                <label className="label mb-1.5 block">Venue</label>
-                <input className="input" value={venueName} onChange={(e) => setVenueName(e.target.value)} placeholder="Main Hall" />
+                <label className="label mb-1.5 block">Category</label>
+                <select className="input" value={category} onChange={(e) => setCategory(e.target.value)}>
+                  <option>CONFERENCE</option><option>EXHIBITION</option><option>CONCERT</option><option>FESTIVAL</option><option>SPORTS</option><option>CORPORATE</option><option>UNIVERSITY</option><option>COMMUNITY</option><option>PRIVATE</option><option>OTHER</option>
+                </select>
               </div>
+            </div>
+            <div>
+              <label className="label mb-1.5 block">Venue</label>
+              <input className="input" value={venueName} onChange={(e) => setVenueName(e.target.value)} placeholder="Main Hall" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

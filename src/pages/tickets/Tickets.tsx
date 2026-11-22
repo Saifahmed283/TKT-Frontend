@@ -13,8 +13,14 @@ type TicketTypeRow = {
   id: string
   name: string
   description: string | null
-  price: number | null
+  category?: string | null
+  price: number | string | null
+  currency?: string | null
   quota: number | null
+  salesStartAt?: string | null
+  salesEndAt?: string | null
+  isPublic?: boolean
+  sortOrder?: number
   active: boolean
   _count: { tickets: number }
 }
@@ -44,11 +50,9 @@ export default function TicketsPage() {
   const sse = useSse(eventId, 'activity')
   const [q, setQ] = useState('')
   const [showAdd, setShowAdd] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [newPrice, setNewPrice] = useState('')
-  const [newQuota, setNewQuota] = useState('')
   const [editId, setEditId] = useState<string | null>(null)
-  const [editQuota, setEditQuota] = useState('')
+  const [form, setForm] = useState({ name: '', description: '', category: '', price: '', currency: 'USD', quota: '', salesStartAt: '', salesEndAt: '', isPublic: true, sortOrder: '0' })
+  const [editForm, setEditForm] = useState({ name: '', description: '', category: '', price: '', currency: 'USD', quota: '', salesStartAt: '', salesEndAt: '', isPublic: true, sortOrder: '0', active: true })
 
   const typesQ = useQuery({
     queryKey: ['ticket-types', eventId, sse],
@@ -63,18 +67,26 @@ export default function TicketsPage() {
       ),
   })
 
+  const toDateInput = (v?: string | null) => (v ? new Date(v).toISOString().slice(0, 16) : '')
+  const payloadFrom = (f: typeof form, includeActive = false, active = true) => ({
+    name: f.name,
+    description: f.description || null,
+    category: f.category || null,
+    price: f.price === '' ? null : Number(f.price),
+    currency: f.currency || 'USD',
+    quota: f.quota === '' ? null : Number(f.quota),
+    salesStartAt: f.salesStartAt ? new Date(f.salesStartAt).toISOString() : null,
+    salesEndAt: f.salesEndAt ? new Date(f.salesEndAt).toISOString() : null,
+    isPublic: f.isPublic,
+    sortOrder: f.sortOrder === '' ? 0 : Number(f.sortOrder),
+    ...(includeActive ? { active } : {}),
+  })
+
   const createType = useMutation({
-    mutationFn: () =>
-      api.post(`/events/${eventId}/tickets/types`, {
-        name: newName,
-        ...(newPrice !== '' ? { price: Number(newPrice) } : {}),
-        ...(newQuota !== '' ? { quota: Number(newQuota) } : {}),
-      }),
+    mutationFn: () => api.post(`/events/${eventId}/tickets/types`, payloadFrom(form)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['ticket-types'] })
-      setNewName('')
-      setNewPrice('')
-      setNewQuota('')
+      setForm({ name: '', description: '', category: '', price: '', currency: 'USD', quota: '', salesStartAt: '', salesEndAt: '', isPublic: true, sortOrder: '0' })
       setShowAdd(false)
     },
   })
@@ -107,142 +119,74 @@ export default function TicketsPage() {
           <Corners />
           <div className="mb-3 flex items-center justify-between">
             <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-signal">New ticket type</p>
-            <button onClick={() => setShowAdd(false)} className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3 hover:text-ink">
-              Close
-            </button>
+            <button onClick={() => setShowAdd(false)} className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3 hover:text-ink">Close</button>
           </div>
-          <div className="grid gap-3 sm:grid-cols-[1fr_140px_140px_auto] sm:items-end">
-            <div>
-              <label className="label mb-1.5 block text-ink-3">Name</label>
-              <input
-                className="input"
-                placeholder="VIP Pass"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="label mb-1.5 block text-ink-3">Price ($)</label>
-              <input
-                className="input"
-                type="number"
-                min={0}
-                placeholder="0 = free"
-                value={newPrice}
-                onChange={(e) => setNewPrice(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="label mb-1.5 block text-ink-3">Quota</label>
-              <input
-                className="input"
-                type="number"
-                min={1}
-                placeholder="unlimited"
-                value={newQuota}
-                onChange={(e) => setNewQuota(e.target.value)}
-              />
-            </div>
-            <button
-              className="btn-primary"
-              disabled={createType.isPending || newName.trim().length < 2}
-              onClick={() => createType.mutate()}
-            >
-              {createType.isPending ? 'Creating…' : 'Create'}
-            </button>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <label className="block"><span className="label mb-1.5 block text-ink-3">Name</span><input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
+            <label className="block"><span className="label mb-1.5 block text-ink-3">Category</span><input className="input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="VIP / General" /></label>
+            <label className="block"><span className="label mb-1.5 block text-ink-3">Price</span><input className="input" type="number" min={0} value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></label>
+            <label className="block"><span className="label mb-1.5 block text-ink-3">Currency</span><input className="input" value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value.toUpperCase() })} /></label>
+            <label className="block"><span className="label mb-1.5 block text-ink-3">Quota</span><input className="input" type="number" min={1} value={form.quota} onChange={(e) => setForm({ ...form, quota: e.target.value })} /></label>
+            <label className="block"><span className="label mb-1.5 block text-ink-3">Sales start</span><input className="input" type="datetime-local" value={form.salesStartAt} onChange={(e) => setForm({ ...form, salesStartAt: e.target.value })} /></label>
+            <label className="block"><span className="label mb-1.5 block text-ink-3">Sales end</span><input className="input" type="datetime-local" value={form.salesEndAt} onChange={(e) => setForm({ ...form, salesEndAt: e.target.value })} /></label>
+            <label className="block"><span className="label mb-1.5 block text-ink-3">Sort</span><input className="input" type="number" min={0} value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: e.target.value })} /></label>
+            <label className="block sm:col-span-2 lg:col-span-3"><span className="label mb-1.5 block text-ink-3">Description</span><input className="input" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
+            <label className="flex items-center gap-2 pt-6 text-xs text-ink-2"><input type="checkbox" checked={form.isPublic} onChange={(e) => setForm({ ...form, isPublic: e.target.checked })} /> Public</label>
           </div>
-          <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.15em] text-ink-3">
-            Quota caps how many public reservations this type may sell before it auto-locks.
-          </p>
+          <div className="mt-4 flex justify-end"><button className="btn-primary" disabled={!form.name.trim() || createType.isPending} onClick={() => createType.mutate()}>{createType.isPending ? 'Creating…' : 'Create ticket type'}</button></div>
         </div>
       )}
 
       <div className="mb-3 flex items-center gap-2">
         <p className="label">Ticket types</p>
         <span className="h-px flex-1 bg-line-soft" />
-        <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">
-          {types.length} configured
-        </span>
+        <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">{types.length} configured</span>
       </div>
-      <div className="grid gap-px border border-line-soft bg-line-soft sm:grid-cols-2 lg:grid-cols-4">
-        {types.map((t) => (
-          <div key={t.id} className="relative bg-raised p-4">
-            <Corners className="opacity-40" />
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="truncate font-display text-sm font-semibold tracking-wide text-ink-0">{t.name}</p>
-                <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.15em] text-ink-3">
-                  {t.description ?? (Number(t.price) > 0 ? `$${Number(t.price).toLocaleString()}` : 'FREE')}
-                </p>
+      <div className="grid gap-3 lg:grid-cols-2">
+        {types.map((t) => {
+          const editing = editId === t.id
+          return (
+            <div key={t.id} className="panel relative p-4">
+              <Corners className="opacity-30" />
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate font-display text-sm font-semibold tracking-wide text-ink-0">{t.name}</p>
+                    {t.category && <span className="border border-line px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-ink-3">{t.category}</span>}
+                  </div>
+                  <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.15em] text-ink-3">{Number(t.price) > 0 ? `${t.currency ?? 'USD'} ${Number(t.price).toLocaleString()}` : 'FREE'} · {t.isPublic === false ? 'Private' : 'Public'}</p>
+                </div>
+                <div>{t.active ? <Badge tone="ok">LIVE</Badge> : <Badge tone="warn">OFF</Badge>}</div>
               </div>
-              {t.active ? <Badge tone="ok">LIVE</Badge> : <Badge tone="warn">OFF</Badge>}
-            </div>
-            <p className="mt-3 font-mono text-[11px] tracking-[0.1em] text-ink-2">
-              {t._count.tickets} sold
-              {t.quota != null && (
-                <span className={t._count.tickets >= t.quota ? 'text-danger' : 'text-ink-3'}>
-                  {' '}
-                  / {t.quota} quota
-                </span>
-              )}
-            </p>
-            <div className="mt-3 flex items-center gap-2 border-t border-line-soft pt-3">
-              {editId === t.id ? (
-                <>
-                  <input
-                    className="input !h-8 w-24 !py-0 text-xs"
-                    type="number"
-                    min={1}
-                    value={editQuota}
-                    onChange={(e) => setEditQuota(e.target.value)}
-                  />
-                  <button
-                    className="btn-ghost !px-2.5 !py-1 text-[10px]"
-                    disabled={patchType.isPending}
-                    onClick={() =>
-                      patchType.mutate({ id: t.id, patch: { quota: Number(editQuota) || null } })
-                    }
-                  >
-                    <Check size={11} /> Save
-                  </button>
-                  <button
-                    className="btn-ghost !px-2 !py-1 text-[10px] text-ink-3"
-                    onClick={() => setEditId(null)}
-                  >
-                    Cancel
-                  </button>
-                </>
+              <p className="mt-3 font-mono text-[11px] tracking-[0.1em] text-ink-2">{t._count.tickets} sold{t.quota != null ? <span className={t._count.tickets >= t.quota ? 'text-danger' : 'text-ink-3'}> / {t.quota} quota</span> : <span className="text-ink-3"> / unlimited</span>}</p>
+              {(t.salesStartAt || t.salesEndAt) && <p className="mt-1 text-[11px] text-ink-3">Sales: {t.salesStartAt ? fmtDateTime(t.salesStartAt) : 'Any'} → {t.salesEndAt ? fmtDateTime(t.salesEndAt) : 'Any'}</p>}
+              {editing ? (
+                <div className="mt-4 grid gap-2 border-t border-line-soft pt-4 sm:grid-cols-2">
+                  <input className="input !h-9 text-xs" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} placeholder="Name" />
+                  <input className="input !h-9 text-xs" value={editForm.category} onChange={(e) => setEditForm({ ...editForm, category: e.target.value })} placeholder="Category" />
+                  <input className="input !h-9 text-xs" type="number" min={0} value={editForm.price} onChange={(e) => setEditForm({ ...editForm, price: e.target.value })} placeholder="Price" />
+                  <input className="input !h-9 text-xs" value={editForm.currency} onChange={(e) => setEditForm({ ...editForm, currency: e.target.value.toUpperCase() })} placeholder="Currency" />
+                  <input className="input !h-9 text-xs" type="number" min={1} value={editForm.quota} onChange={(e) => setEditForm({ ...editForm, quota: e.target.value })} placeholder="Quota" />
+                  <input className="input !h-9 text-xs" type="number" min={0} value={editForm.sortOrder} onChange={(e) => setEditForm({ ...editForm, sortOrder: e.target.value })} placeholder="Sort" />
+                  <input className="input !h-9 text-xs" type="datetime-local" value={editForm.salesStartAt} onChange={(e) => setEditForm({ ...editForm, salesStartAt: e.target.value })} />
+                  <input className="input !h-9 text-xs" type="datetime-local" value={editForm.salesEndAt} onChange={(e) => setEditForm({ ...editForm, salesEndAt: e.target.value })} />
+                  <input className="input !h-9 text-xs sm:col-span-2" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} placeholder="Description" />
+                  <label className="flex items-center gap-2 text-xs text-ink-2"><input type="checkbox" checked={editForm.isPublic} onChange={(e) => setEditForm({ ...editForm, isPublic: e.target.checked })} /> Public</label>
+                  <label className="flex items-center gap-2 text-xs text-ink-2"><input type="checkbox" checked={editForm.active} onChange={(e) => setEditForm({ ...editForm, active: e.target.checked })} /> Active</label>
+                  <div className="flex gap-2 sm:col-span-2">
+                    <button className="btn-primary !py-1.5 text-xs" disabled={patchType.isPending} onClick={() => patchType.mutate({ id: t.id, patch: payloadFrom(editForm, true, editForm.active) })}><Check size={12} /> Save</button>
+                    <button className="btn-ghost !py-1.5 text-xs" onClick={() => setEditId(null)}>Cancel</button>
+                  </div>
+                </div>
               ) : (
-                <>
-                  <button
-                    className="btn-ghost !px-2.5 !py-1 text-[10px]"
-                    onClick={() => {
-                      setEditId(t.id)
-                      setEditQuota(t.quota != null ? String(t.quota) : '')
-                    }}
-                  >
-                    <Pencil size={11} /> Quota
-                  </button>
-                  <button
-                    className="btn-ghost !px-2.5 !py-1 text-[10px]"
-                    disabled={patchType.isPending}
-                    onClick={() => patchType.mutate({ id: t.id, patch: { active: !t.active } })}
-                  >
-                    {t.active ? (
-                      <>
-                        <Lock size={11} /> Deactivate
-                      </>
-                    ) : (
-                      <>
-                        <Check size={11} /> Activate
-                      </>
-                    )}
-                  </button>
-                </>
+                <div className="mt-3 flex items-center gap-2 border-t border-line-soft pt-3">
+                  <button className="btn-ghost !px-2.5 !py-1 text-[10px]" onClick={() => { setEditId(t.id); setEditForm({ name: t.name, description: t.description ?? '', category: t.category ?? '', price: t.price == null ? '' : String(t.price), currency: t.currency ?? 'USD', quota: t.quota == null ? '' : String(t.quota), salesStartAt: toDateInput(t.salesStartAt), salesEndAt: toDateInput(t.salesEndAt), isPublic: t.isPublic !== false, sortOrder: String(t.sortOrder ?? 0), active: t.active }) }}><Pencil size={11} /> Edit</button>
+                  <button className="btn-ghost !px-2.5 !py-1 text-[10px]" disabled={patchType.isPending} onClick={() => patchType.mutate({ id: t.id, patch: { active: !t.active } })}>{t.active ? <><Lock size={11} /> Deactivate</> : <><Check size={11} /> Activate</>}</button>
+                </div>
               )}
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       <div className="mb-3 mt-8 flex items-center gap-2">

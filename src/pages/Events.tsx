@@ -50,6 +50,7 @@ export default function EventsPage() {
                 <h3 className="font-display text-lg font-semibold uppercase tracking-wide text-ink-0 group-hover:text-signal">{e.name}</h3>
                 <StatusBadge status={e.status} />
               </div>
+              <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">{e.category || e.type}</p>
               <p className="mt-2 line-clamp-2 text-sm text-ink-3">
                 {e.description ?? `${e.type} · ${e.venueName ?? 'Venue TBA'}`}
               </p>

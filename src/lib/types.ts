@@ -8,6 +8,7 @@ export type EventSummary = {
   name: string
   description: string | null
   type: EventType
+  category?: string | null
   status: EventStatus
   startAt: string
   endAt: string | null
@@ -113,8 +114,14 @@ export type TicketType = {
   id: string
   name: string
   description: string | null
-  price: string | null
+  category?: string | null
+  price: string | number | null
+  currency?: string | null
   quota: number | null
+  salesStartAt?: string | null
+  salesEndAt?: string | null
+  isPublic?: boolean
+  sortOrder?: number
   active: boolean
   _count: { tickets: number }
 }
@@ -298,7 +305,7 @@ export type User = {
   eventMemberships: {
     id: string
     status: string
-    role: { code: string; name: string; scope: string }
+    role: { code: string; name: string; scope: string; permissions?: string[] }
     team: { id: string; name: string } | null
     areas: { area: { id: string; name: string; type: string } }[]
     event: {

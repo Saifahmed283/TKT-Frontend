@@ -39,7 +39,8 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
-  const [ticketTypeId, setTicketTypeId] = useState(event.ticketTypes.find((x) => !x.soldOut)?.id ?? event.ticketTypes[0]?.id ?? '')
+  const availableTypes = event.ticketTypes.filter((x) => x.isPublic !== false)
+  const [ticketTypeId, setTicketTypeId] = useState(availableTypes.find((x) => !x.soldOut)?.id ?? availableTypes[0]?.id ?? '')
   const [paymentProviderId, setPaymentProviderId] = useState(event.paymentProviders?.[0]?.id ?? '')
   const [paymentReference, setPaymentReference] = useState('')
   const [paymentProofUrl, setPaymentProofUrl] = useState<string | null>(null)
@@ -105,7 +106,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
     reserve.mutate()
   }
 
-  const selected = event.ticketTypes.find((x) => x.id === ticketTypeId)
+  const selected = availableTypes.find((x) => x.id === ticketTypeId)
   const isPaid = Number(selected?.price ?? 0) > 0
 
   const copyCode = async (code: string) => {
@@ -237,11 +238,18 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
           <div>
             <label className="label mb-1.5 block" htmlFor="res-type">{t('ticketType')}</label>
             <select id="res-type" className="input" value={ticketTypeId} onChange={(e) => setTicketTypeId(e.target.value)}>
-              {event.ticketTypes.map((tt) => (
-                <option key={tt.id} value={tt.id} disabled={tt.soldOut}>
-                  {tt.name} — {money(tt.price, lang)}{tt.soldOut ? ` (${t('soldOut')})` : tt.remaining != null ? ` (${tt.remaining} ${t('left')})` : ''}
-                </option>
-              ))}
+              {availableTypes.map((tt) => {
+                const now = Date.now()
+                const notStarted = tt.salesStartAt ? now < new Date(tt.salesStartAt).getTime() : false
+                const ended = tt.salesEndAt ? now > new Date(tt.salesEndAt).getTime() : false
+                const disabled = tt.soldOut || notStarted || ended
+                const suffix = tt.soldOut ? ` (${t('soldOut')})` : notStarted ? ' (Not started)' : ended ? ' (Ended)' : tt.remaining != null ? ` (${tt.remaining} ${t('left')})` : ''
+                return (
+                  <option key={tt.id} value={tt.id} disabled={disabled}>
+                    {tt.name}{tt.category ? ` · ${tt.category}` : ''} — {money(tt.price, lang)}{suffix}
+                  </option>
+                )
+              })}
             </select>
           </div>
           {isPaid && (

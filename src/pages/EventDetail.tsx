@@ -1,25 +1,30 @@
 ﻿import { useState, useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowRight, Users, Ticket, QrCode, Shield, ListTodo, AlertTriangle, Megaphone, BarChart3, Play, Archive, UserCog, Check, X, Radar, ClipboardCheck, Layers, Globe, Lock, Unlock, CalendarClock } from 'lucide-react'
+import { ArrowRight, Users, Ticket, QrCode, Shield, ListTodo, AlertTriangle, Megaphone, Play, Archive, UserCog, Check, X, Radar, ClipboardCheck, Layers, Globe, Lock, Unlock, CalendarClock, CreditCard, KeyRound, Smartphone, Plug, BriefcaseBusiness, FileText, MapPinned } from 'lucide-react'
 import { api } from '../lib/api'
 import type { Overview } from '../lib/types'
 import { ErrorBanner, PageHeader, Spinner, StatCard, StatusBadge, fmtDateTime, fmtTime, Corners, Blink } from '../components/ui'
 
 const moduleCards = [
   { to: 'attendees', icon: Users, label: 'Attendees', desc: 'People, check-in status, demographics' },
-  { to: 'tickets', icon: Ticket, label: 'Tickets', desc: 'Types, sales, validation' },
   { to: 'reservations', icon: ClipboardCheck, label: 'Reservations', desc: 'Public registrations & approvals' },
+  { to: 'tickets', icon: Ticket, label: 'Tickets', desc: 'Types, sales, validation' },
+  { to: 'payments', icon: CreditCard, label: 'Payments', desc: 'Payment review and finance status' },
   { to: 'credentials', icon: QrCode, label: 'Credentials', desc: 'Signed access codes, revocation' },
+  { to: 'access-codes', icon: KeyRound, label: 'Access codes', desc: 'VIP/guest codes and redemption' },
   { to: 'access', icon: Shield, label: 'Access log', desc: 'Every scan decision, live' },
+  { to: 'devices', icon: Smartphone, label: 'Devices', desc: 'Scanner devices, heartbeat, sync' },
   { to: 'tasks', icon: ListTodo, label: 'Tasks', desc: 'Assign work across teams' },
   { to: 'incidents', icon: AlertTriangle, label: 'Incidents', desc: 'Track and resolve issues' },
-  { to: 'comms', icon: Megaphone, label: 'Comms', desc: 'Announcements to staff' },
+  { to: 'comms', icon: Megaphone, label: 'Comms', desc: 'Announcements, alerts, team chat' },
   { to: 'staff', icon: UserCog, label: 'Staff', desc: 'Members, roles and area scopes' },
+  { to: 'workforce', icon: BriefcaseBusiness, label: 'Workforce', desc: 'Recruitment, conversion, ID ops' },
   { to: 'teams', icon: Layers, label: 'Teams', desc: 'Organize staff into squads' },
-  { to: 'areas', icon: Shield, label: 'Areas', desc: 'Zones, gates and scanner scopes' },
-  { to: 'audit', icon: BarChart3, label: 'Audit', desc: 'Immutable activity ledger' },
-  { to: 'reports', icon: BarChart3, label: 'Reports', desc: 'Attendance & access analytics' },
+  { to: 'areas', icon: MapPinned, label: 'Areas', desc: 'Zones, gates and scanner scopes' },
+  { to: 'integrations', icon: Plug, label: 'Integrations', desc: 'Webhooks, insurance, maps' },
+  { to: 'audit', icon: FileText, label: 'Audit', desc: 'Immutable activity ledger' },
+  { to: 'reports', icon: Radar, label: 'Reports', desc: 'Attendance & access analytics' },
 ]
 
 export default function EventDetail() {
@@ -79,7 +84,7 @@ export default function EventDetail() {
     <div className="animate-fade-in">
       <PageHeader
         title={event.name}
-        subtitle={`${event.type} · ${fmtDateTime(event.startAt)} · ${event.timezone}${event.venueName ? ` · ${event.venueName}` : ''}`}
+        subtitle={`${(event as any).category || event.type} · ${fmtDateTime(event.startAt)} · ${event.timezone}${event.venueName ? ` · ${event.venueName}` : ''}`}
         actions={
           <>
             <StatusBadge status={event.status} />
@@ -267,7 +272,7 @@ export default function EventDetail() {
       <div className="mb-3 mt-10 flex items-center gap-2">
         <p className="label">Modules</p>
         <span className="h-px flex-1 bg-line-soft" />
-        <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">13 instruments</span>
+        <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">{moduleCards.length} modules</span>
       </div>
       <div className="grid gap-px border border-line-soft bg-line-soft sm:grid-cols-2 lg:grid-cols-4">
         {moduleCards.map((m) => (

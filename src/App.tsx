@@ -34,6 +34,8 @@ import { TasksPage } from './pages/app/events/TasksPage'
 import { TeamsPage } from './pages/app/events/TeamsPage'
 import { Guide } from './pages/app/Guide'
 import { OrganizationsPage } from './pages/app/organizations/OrganizationsPage'
+import { OrganizationDetailPage } from './pages/app/organizations/OrganizationDetailPage'
+import { RequirePermission } from './components/auth/RequirePermission'
 import ScannerPage from './pages/scanner/Scanner'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -92,25 +94,26 @@ export default function App() {
         <Route index element={<Dashboard />} />
         <Route path="events" element={<EventsPage />} />
         <Route path="events/:eventId" element={<EventDetail />} />
-        <Route path="events/:eventId/teams" element={<TeamsPage />} />
-        <Route path="events/:eventId/areas" element={<AreasPage />} />
-        <Route path="events/:eventId/staff" element={<StaffPage />} />
-        <Route path="events/:eventId/workforce" element={<WorkforcePage />} />
-        <Route path="events/:eventId/integrations" element={<IntegrationsPage />} />
-        <Route path="events/:eventId/attendees" element={<AttendeesPage />} />
-        <Route path="events/:eventId/tickets" element={<TicketsPage />} />
-        <Route path="events/:eventId/reservations" element={<ReservationsPage />} />
-        <Route path="events/:eventId/payments" element={<PaymentsPage />} />
-        <Route path="events/:eventId/access-codes" element={<AccessCodesPage />} />
-        <Route path="events/:eventId/credentials" element={<CredentialsPage />} />
-        <Route path="events/:eventId/access" element={<AccessLogsPage />} />
-        <Route path="events/:eventId/devices" element={<DevicesPage />} />
-        <Route path="events/:eventId/tasks" element={<TasksPage />} />
-        <Route path="events/:eventId/incidents" element={<IncidentsPage />} />
-        <Route path="events/:eventId/comms" element={<CommsPage />} />
-        <Route path="events/:eventId/audit" element={<AuditPage />} />
-        <Route path="events/:eventId/reports" element={<ReportsPage />} />
+        <Route path="events/:eventId/teams" element={<RequirePermission permission="team.view"><TeamsPage /></RequirePermission>} />
+        <Route path="events/:eventId/areas" element={<RequirePermission permission="area.view"><AreasPage /></RequirePermission>} />
+        <Route path="events/:eventId/staff" element={<RequirePermission permission="event.members.view"><StaffPage /></RequirePermission>} />
+        <Route path="events/:eventId/workforce" element={<RequirePermission permission="workforce.view"><WorkforcePage /></RequirePermission>} />
+        <Route path="events/:eventId/integrations" element={<RequirePermission permission="integration.view"><IntegrationsPage /></RequirePermission>} />
+        <Route path="events/:eventId/attendees" element={<RequirePermission permission="attendee.view"><AttendeesPage /></RequirePermission>} />
+        <Route path="events/:eventId/tickets" element={<RequirePermission permission="ticket.view"><TicketsPage /></RequirePermission>} />
+        <Route path="events/:eventId/reservations" element={<RequirePermission permission="ticket.view"><ReservationsPage /></RequirePermission>} />
+        <Route path="events/:eventId/payments" element={<RequirePermission permission="payment.view"><PaymentsPage /></RequirePermission>} />
+        <Route path="events/:eventId/access-codes" element={<RequirePermission permission="access_code.view"><AccessCodesPage /></RequirePermission>} />
+        <Route path="events/:eventId/credentials" element={<RequirePermission permission="credential.view"><CredentialsPage /></RequirePermission>} />
+        <Route path="events/:eventId/access" element={<RequirePermission permission="access.logs.view"><AccessLogsPage /></RequirePermission>} />
+        <Route path="events/:eventId/devices" element={<RequirePermission permission="device.view"><DevicesPage /></RequirePermission>} />
+        <Route path="events/:eventId/tasks" element={<RequirePermission permission="task.view"><TasksPage /></RequirePermission>} />
+        <Route path="events/:eventId/incidents" element={<RequirePermission permission="incident.view"><IncidentsPage /></RequirePermission>} />
+        <Route path="events/:eventId/comms" element={<RequirePermission permission="message.send"><CommsPage /></RequirePermission>} />
+        <Route path="events/:eventId/audit" element={<RequirePermission permission="audit.view"><AuditPage /></RequirePermission>} />
+        <Route path="events/:eventId/reports" element={<RequirePermission permission="report.view"><ReportsPage /></RequirePermission>} />
         <Route path="organizations" element={<OrganizationsPage />} />
+        <Route path="organizations/:orgId" element={<OrganizationDetailPage />} />
         <Route path="guide" element={<Guide />} />
         <Route path="scanner" element={<ScannerPage />} />
       </Route>

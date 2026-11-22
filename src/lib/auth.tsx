@@ -76,15 +76,25 @@ export function useAuth(): AuthState {
   return ctx
 }
 
-/** UI-level permission gate. The server remains the source of truth;
- *  this only hides actions for users without any event role or platform admin. */
+/** UI-level permission gate. Server remains source of truth. */
 export function usePermissions() {
   const { user } = useAuth()
-  return useCallback(
-    (_permission: string) => {
-      if (user?.platformRole === 'super_admin') return true
-      return (user?.eventMemberships?.length ?? 0) > 0 || (user?.orgMemberships?.length ?? 0) > 0
+  const has = useCallback(
+    (permission: string, eventId?: string) => {
+      if (!user) return false
+      if (user.platformRole === 'super_admin') return true
+      if (eventId) {
+        const m = user.eventMemberships?.find((em) => em.event.id === eventId)
+        if (m?.role?.permissions?.includes(permission)) return true
+        const orgId = m?.event?.org?.id
+        const org = user.orgMemberships?.find((o) => o.org.id === orgId && o.status === 'ACTIVE')
+        if (org && (org.role === 'OWNER' || org.role === 'ADMIN')) return true
+        return false
+      }
+      if (user.eventMemberships?.some((m) => m.role?.permissions?.includes(permission))) return true
+      return user.orgMemberships?.some((o) => o.status === 'ACTIVE' && (o.role === 'OWNER' || o.role === 'ADMIN'))
     },
     [user],
   )
+  return { has, isSuperAdmin: user?.platformRole === 'super_admin' }
 }

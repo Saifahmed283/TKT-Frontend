@@ -1,13 +1,15 @@
 ﻿import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, CalendarDays, Users, QrCode, BarChart3, CornerDownLeft } from 'lucide-react'
+import { Search, CalendarDays, Users, QrCode, BarChart3, CornerDownLeft, Building2, BookOpen } from 'lucide-react'
 import { useAuth } from '../../lib/auth'
 import { Corners, Blink } from '../instruments'
 
 const items = [
   { to: '/app', label: 'Overview', icon: BarChart3, hint: 'Dashboard' },
   { to: '/app/events', label: 'Events', icon: CalendarDays, hint: 'All events' },
+  { to: '/app/organizations', label: 'Organizations', icon: Building2, hint: 'Orgs and roles' },
   { to: '/app/scanner', label: 'Scanner', icon: QrCode, hint: 'Gate scanning' },
+  { to: '/app/guide', label: 'Guide', icon: BookOpen, hint: 'Operations guide' },
 ]
 
 export function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -39,10 +41,12 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   )
 
   const filtered = useMemo(() => {
-    const all = [...items, ...eventItems, ...eventItems.map((i) => ({ ...i, to: i.to + '/attendees', label: i.label + ' → Attendees', icon: Users }))]
+    const moduleHints = ['tickets', 'reservations', 'payments', 'staff', 'workforce', 'access', 'devices', 'integrations', 'reports', 'audit']
+    const eventModules = eventItems.flatMap((i) => moduleHints.map((m) => ({ ...i, to: `${i.to}/${m}`, label: `${i.label} → ${m[0].toUpperCase()}${m.slice(1)}`, icon: Users, hint: 'Event module' })))
+    const all = [...items, ...eventItems, ...eventModules]
     const q = query.trim().toLowerCase()
-    if (!q) return all
-    return all.filter((i) => i.label.toLowerCase().includes(q) || i.hint.toLowerCase().includes(q))
+    if (!q) return all.slice(0, 40)
+    return all.filter((i) => i.label.toLowerCase().includes(q) || i.hint.toLowerCase().includes(q)).slice(0, 40)
   }, [query, eventItems])
 
   if (!open) return null

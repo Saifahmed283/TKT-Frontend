@@ -4,11 +4,17 @@ import { api } from './api'
 export interface PublicTicketType {
   id: string
   name: string
+  description?: string | null
+  category?: string | null
   price: string
+  currency?: string
   quota: number | null
   sold: number
   remaining: number | null
   soldOut: boolean
+  salesStartAt?: string | null
+  salesEndAt?: string | null
+  isPublic?: boolean
 }
 
 export type ReservationAvailability = 'upcoming' | 'open' | 'sold_out' | 'locked' | 'closed'

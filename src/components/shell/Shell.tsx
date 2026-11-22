@@ -2,10 +2,11 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, CalendarDays, Users, Ticket, QrCode, ScanLine, ListTodo,
-  AlertTriangle, Megaphone, Shield, BarChart3, LogOut, Radio, ChevronDown,
+  AlertTriangle, Megaphone, Shield, LogOut, Radio, ChevronDown,
   UserCog, Building2, BookOpen, Search, ClipboardCheck, Sun, Moon, Languages, Globe, Plug,
+  CreditCard, KeyRound, Smartphone, BriefcaseBusiness, FileText, Radar, MapPinned, Layers,
 } from 'lucide-react'
-import { useAuth } from '../../lib/auth'
+import { useAuth, usePermissions } from '../../lib/auth'
 import { CommandPalette } from './CommandPalette'
 import { Corners, Blink } from '../instruments'
 import { useLanguage } from '../../lib/i18n'
@@ -20,25 +21,50 @@ const nav = [
   { to: '/app/guide', end: false, icon: BookOpen, label: 'guide' },
 ]
 
-const eventNav = [
-  { to: 'attendees', icon: Users, label: 'attendees' },
-  { to: 'tickets', icon: Ticket, label: 'tickets' },
-  { to: 'reservations', icon: ClipboardCheck, label: 'reservations' },
-  { to: 'payments', icon: BarChart3, label: 'payments' },
-  { to: 'access-codes', icon: Ticket, label: 'accessCodes' },
-  { to: 'credentials', icon: QrCode, label: 'credentials' },
-  { to: 'access', icon: Shield, label: 'accessLog' },
-  { to: 'devices', icon: Radio, label: 'devices' },
-  { to: 'tasks', icon: ListTodo, label: 'tasks' },
-  { to: 'incidents', icon: AlertTriangle, label: 'incidents' },
-  { to: 'comms', icon: Megaphone, label: 'comms' },
-  { to: 'staff', icon: UserCog, label: 'staff' },
-  { to: 'workforce', icon: Users, label: 'workforce' },
-  { to: 'integrations', icon: Plug, label: 'integrations' },
-  { to: 'teams', icon: Users, label: 'teams' },
-  { to: 'areas', icon: Shield, label: 'areas' },
-  { to: 'audit', icon: BarChart3, label: 'audit' },
-  { to: 'reports', icon: BarChart3, label: 'reports' },
+const eventNavGroups = [
+  {
+    label: 'operations',
+    items: [
+      { to: 'tasks', icon: ListTodo, label: 'tasks', perm: 'task.view' },
+      { to: 'incidents', icon: AlertTriangle, label: 'incidents', perm: 'incident.view' },
+      { to: 'comms', icon: Megaphone, label: 'comms', perm: 'message.send' },
+      { to: 'teams', icon: Layers, label: 'teams', perm: 'team.view' },
+      { to: 'areas', icon: MapPinned, label: 'areas', perm: 'area.view' },
+    ],
+  },
+  {
+    label: 'people',
+    items: [
+      { to: 'attendees', icon: Users, label: 'attendees', perm: 'attendee.view' },
+      { to: 'reservations', icon: ClipboardCheck, label: 'reservations', perm: 'ticket.view' },
+      { to: 'staff', icon: UserCog, label: 'staff', perm: 'event.members.view' },
+      { to: 'workforce', icon: BriefcaseBusiness, label: 'workforce', perm: 'workforce.view' },
+    ],
+  },
+  {
+    label: 'accessControl',
+    items: [
+      { to: 'credentials', icon: QrCode, label: 'credentials', perm: 'credential.view' },
+      { to: 'access-codes', icon: KeyRound, label: 'accessCodes', perm: 'access_code.view' },
+      { to: 'access', icon: Shield, label: 'accessLog', perm: 'access.logs.view' },
+      { to: 'devices', icon: Smartphone, label: 'devices', perm: 'device.view' },
+    ],
+  },
+  {
+    label: 'revenue',
+    items: [
+      { to: 'tickets', icon: Ticket, label: 'tickets', perm: 'ticket.view' },
+      { to: 'payments', icon: CreditCard, label: 'payments', perm: 'payment.view' },
+    ],
+  },
+  {
+    label: 'admin',
+    items: [
+      { to: 'integrations', icon: Plug, label: 'integrations', perm: 'integration.view' },
+      { to: 'audit', icon: FileText, label: 'audit', perm: 'audit.view' },
+      { to: 'reports', icon: Radar, label: 'reports', perm: 'report.view' },
+    ],
+  },
 ]
 
 function initials(name: string) {
@@ -66,6 +92,7 @@ function Clock() {
 
 export default function Shell() {
   const { user, logout } = useAuth()
+  const { has } = usePermissions()
   const navigate = useNavigate()
   const { t, lang, toggle: toggleLang } = useLanguage()
   const { theme, toggle: toggleTheme } = useTheme()
@@ -151,27 +178,38 @@ export default function Shell() {
                 <span className="text-signal">//</span> {t('event')}
                 <span className="truncate text-signal/70">{activeEvent.name?.slice(0, 12)}</span>
               </p>
-              <nav className="space-y-0.5">
-                {eventNav.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={`/app/events/${activeEvent.id}/${item.to}`}
-                    className={({ isActive }) =>
-                      `group relative flex items-center gap-3 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.08em] transition-colors ${
-                        isActive ? 'bg-signal-soft text-signal' : 'text-ink-2 hover:bg-raised hover:text-ink'
-                      }`
-                    }
-                  >
-                    {({ isActive }) => (
-                      <>
-                        {isActive && <span className="absolute left-0 top-1/2 h-3 w-px -translate-y-1/2 bg-signal rtl:left-auto rtl:right-0" />}
-                        <item.icon size={14} className={isActive ? 'text-signal' : 'text-ink-3 group-hover:text-ink'} />
-                        {t(item.label)}
-                      </>
-                    )}
-                  </NavLink>
-                ))}
-              </nav>
+              <div className="space-y-4">
+                {eventNavGroups.map((group) => {
+                  const items = group.items.filter((item) => has(item.perm, activeEvent.id))
+                  if (items.length === 0) return null
+                  return (
+                    <div key={group.label}>
+                      <p className="mb-1 px-2 font-mono text-[9px] uppercase tracking-[0.2em] text-ink-3/80">{t(group.label)}</p>
+                      <nav className="space-y-0.5">
+                        {items.map((item) => (
+                          <NavLink
+                            key={item.to}
+                            to={`/app/events/${activeEvent.id}/${item.to}`}
+                            className={({ isActive }) =>
+                              `group relative flex items-center gap-3 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.08em] transition-colors ${
+                                isActive ? 'bg-signal-soft text-signal' : 'text-ink-2 hover:bg-raised hover:text-ink'
+                              }`
+                            }
+                          >
+                            {({ isActive }) => (
+                              <>
+                                {isActive && <span className="absolute left-0 top-1/2 h-3 w-px -translate-y-1/2 bg-signal rtl:left-auto rtl:right-0" />}
+                                <item.icon size={14} className={isActive ? 'text-signal' : 'text-ink-3 group-hover:text-ink'} />
+                                {t(item.label)}
+                              </>
+                            )}
+                          </NavLink>
+                        ))}
+                      </nav>
+                    </div>
+                  )
+                })}
+              </div>
             </>
           )}
         </div>

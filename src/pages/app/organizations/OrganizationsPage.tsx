@@ -10,7 +10,7 @@ type Org = {
   id: string
   name: string
   createdAt: string
-  myRole: { name: string } | null
+  myRole: { name: string } | string | null
   _count: { members: number; events: number }
   events: { id: string; name: string; status: string }[]
 }
@@ -42,8 +42,8 @@ export function OrganizationsPage() {
           <div key={o.id} className="rounded-xl border border-line bg-raised/70 p-5">
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="text-[15px] font-semibold">{o.name}</h3>
-                {o.myRole && <Badge tone="live" className="mt-1.5">{o.myRole.name}</Badge>}
+                <Link to={`/app/organizations/${o.id}`} className="text-[15px] font-semibold hover:text-signal transition-colors">{o.name}</Link>
+                {o.myRole && <Badge tone="live" className="mt-1.5">{typeof o.myRole === 'string' ? o.myRole : o.myRole.name}</Badge>}
               </div>
               <span className="text-[11px] text-ink-3">{o._count.members} members</span>
             </div>
