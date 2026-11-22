@@ -1,0 +1,301 @@
+@import '@fontsource/geist-sans/400.css';
+@import '@fontsource/geist-sans/500.css';
+@import '@fontsource/geist-sans/600.css';
+@import '@fontsource/geist-sans/700.css';
+@import '@fontsource/barlow-condensed/500.css';
+@import '@fontsource/barlow-condensed/600.css';
+@import '@fontsource/barlow-condensed/700.css';
+@import '@fontsource/barlow-condensed/800.css';
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: "Jura", "Geist Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+  --font-display: "Italiana", "Barlow Condensed", "Arial Narrow", ui-sans-serif, serif;
+
+  /* ——— v1 tokens (legacy pages) ——— */
+  --color-ink-950: #0a0a0b;
+  --color-ink-900: #101013;
+  --color-ink-850: #141419;
+  --color-ink-800: #1a1a21;
+  --color-ink-700: #24242d;
+  --color-ink-600: #32323d;
+  --color-ink-400: #6b6b76;
+  --color-ink-300: #8f8f99;
+  --color-ink-200: #c1c1c9;
+  --color-ink-100: #e4e4e8;
+  --color-ink-50: #f4f4f6;
+
+  --color-signal-400: #ffb547;
+  --color-signal-500: #ff9e1b;
+  --color-signal-600: #f07f00;
+  --color-signal-300: #ffcb80;
+
+  --color-ok-400: #34d399;
+  --color-warn-400: #fbbf24;
+  --color-err-400: #fb7185;
+  --color-info-400: #60a5fa;
+
+  --color-paper: #0e0e11;
+  --color-line: rgba(255, 255, 255, 0.08);
+
+  /* ——— v2 tokens (TKT control center) ——— */
+  --color-canvas: #0b0b0c;
+  --color-raised: #141416;
+  --color-elevated: #1b1b1f;
+  --color-line-soft: #2a2722;
+  --color-ink: #faf8f4;
+  --color-ink-2: #ddd6c7;
+  --color-ink-3: #afa895;
+  --color-signal: #e8d08b;
+  --color-signal-soft: rgba(232, 208, 139, 0.1);
+  --color-signal-dim: #c8a25c;
+  --color-ok: #7fd69a;
+  --color-warn: #e8b86d;
+  --color-danger: #ff7b7b;
+  --color-info: #8ab4ff;
+
+  --color-ink-0: #fffdf8;
+
+  --shadow-float: 0 24px 60px -20px rgba(0, 0, 0, 0.72);
+  --shadow-panel: 0 12px 40px -16px rgba(0, 0, 0, 0.58);
+  --shadow-glow: 0 0 36px -10px rgba(232, 208, 139, 0.38);
+
+  --animate-fade-in: fade-in 0.4s ease both;
+  --animate-slide-up: slide-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-pulse-dot: pulse-dot 1.6s ease-in-out infinite;
+  --animate-scan-line: scan-line 2.8s ease-in-out infinite;
+  --animate-marquee: marquee 32s linear infinite;
+  --animate-feed: feed-up 16s linear infinite;
+  --animate-spin-slow: radar-spin 5.5s linear infinite;
+  --animate-blink: blink 1.3s steps(2, start) infinite;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+  @keyframes scan-line {
+    0%, 100% { top: 10%; }
+    50% { top: 86%; }
+  }
+  @keyframes marquee {
+    to { transform: translateX(-50%); }
+  }
+  @keyframes feed-up {
+    to { transform: translateY(-50%); }
+  }
+  @keyframes radar-spin {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-canvas text-ink font-sans antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  a, button, input, select, textarea {
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  ::selection {
+    background: var(--color-signal);
+    color: var(--color-canvas);
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-ink-600) transparent;
+  }
+
+  /* ——— Light theme ——— */
+  :root[data-theme='light'] {
+    color-scheme: light;
+    --color-canvas: #f7f4ee;
+    --color-raised: #fffdfa;
+    --color-elevated: #f0ebe1;
+    --color-line-soft: #d9cebc;
+    --color-ink: #1a1917;
+    --color-ink-2: #4e483d;
+    --color-ink-3: #6f6758;
+    --color-signal: #a9772b;
+    --color-signal-soft: rgba(169, 119, 43, 0.1);
+    --color-signal-dim: #87601f;
+    --color-ok: #1e8550;
+    --color-warn: #b45309;
+    --color-danger: #c24141;
+    --color-info: #2f63c7;
+    --color-ink-0: #12110f;
+
+    --color-ink-950: #1d1b18;
+    --color-ink-900: #fffdfa;
+    --color-ink-850: #f5f0e6;
+    --color-ink-800: #ebe4d6;
+    --color-ink-700: #d8ccb8;
+    --color-ink-600: #b8ab95;
+    --color-ink-400: #726a5d;
+    --color-ink-300: #8a8070;
+    --color-ink-200: #4f483d;
+    --color-ink-100: #2f2a23;
+    --color-ink-50: #1a1917;
+    --color-signal-400: #bf8b35;
+    --color-signal-500: #a9772b;
+    --color-signal-600: #87601f;
+    --color-signal-300: #ddb96f;
+    --color-ok-400: #1e8550;
+    --color-warn-400: #b45309;
+    --color-err-400: #c24141;
+    --color-info-400: #2f63c7;
+    --color-paper: #f7f4ee;
+    --color-line: rgba(26, 25, 23, 0.12);
+
+    --shadow-float: 0 24px 60px -24px rgba(45, 35, 20, 0.16);
+    --shadow-panel: 0 12px 32px -18px rgba(45, 35, 20, 0.12);
+    --shadow-glow: 0 0 0 1px rgba(169, 119, 43, 0.12), 0 12px 30px -14px rgba(169, 119, 43, 0.25);
+  }
+
+  :root[data-theme='light'] body {
+    background-image: radial-gradient(circle at top, rgba(255, 253, 250, 0.9), transparent 55%);
+  }
+
+  :root[data-theme='light'] .bg-blueprint {
+    background-image:
+      linear-gradient(rgba(45, 35, 20, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(45, 35, 20, 0.045) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+
+  :root[data-theme='light'] .text-outline {
+    -webkit-text-stroke-color: color-mix(in srgb, var(--color-signal) 55%, transparent);
+  }
+
+  :root[data-theme='light'] .panel,
+  :root[data-theme='light'] .card {
+    box-shadow: var(--shadow-panel);
+  }
+
+  :root[data-theme='light'] .btn-ghost {
+    background: rgba(255, 253, 250, 0.7);
+  }
+
+  /* ——— RTL ——— */
+  :root[dir='rtl'] body,
+  :root[dir='rtl'] button,
+  :root[dir='rtl'] input,
+  :root[dir='rtl'] select,
+  :root[dir='rtl'] textarea {
+    font-family: 'Cairo', 'Segoe UI', Tahoma, 'Noto Kufi Arabic', 'Noto Naskh Arabic', system-ui, sans-serif;
+  }
+  :root[dir='rtl'] .font-display {
+    font-family: 'Cairo', 'Segoe UI', Tahoma, system-ui, sans-serif;
+    letter-spacing: 0;
+  }
+  :root[dir='rtl'] .tracking-tight,
+  :root[dir='rtl'] .tracking-wide,
+  :root[dir='rtl'] .tracking-wider,
+  :root[dir='rtl'] .tracking-widest {
+    letter-spacing: 0;
+  }
+}
+
+@layer components {
+  .card {
+    @apply relative border border-line-soft bg-raised;
+  }
+  .card-hover {
+    @apply transition-all duration-200 hover:border-signal/40 hover:bg-elevated;
+  }
+  table tbody tr {
+    transition: background-color 0.15s;
+  }
+  table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+  }
+  :root[data-theme='light'] table tbody tr:hover {
+    background: rgba(45, 35, 20, 0.035);
+  }
+  .btn-primary {
+    @apply btn bg-signal text-canvas hover:bg-signal-400 active:scale-[0.98];
+  }
+  .btn-primary:hover {
+    box-shadow: var(--shadow-glow);
+  }
+  .btn-ghost {
+    @apply btn border border-line bg-transparent text-ink-2 hover:bg-elevated hover:text-ink-0;
+  }
+  .btn-danger {
+    @apply btn border border-err-400/30 text-err-400 hover:bg-err-400/10;
+  }
+  .input {
+    @apply w-full rounded-lg border border-line-soft bg-elevated px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-3 focus:border-signal/50 focus:ring-2 focus:ring-signal/15;
+  }
+  .label {
+    @apply font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-3;
+  }
+  .badge-ok {
+    @apply badge border-ok-400/25 bg-ok-400/10 text-ok-400;
+  }
+  .badge-warn {
+    @apply badge border-warn-400/25 bg-warn-400/10 text-warn-400;
+  }
+  .badge-err {
+    @apply badge border-err-400/25 bg-err-400/10 text-err-400;
+  }
+  .badge-signal {
+    @apply badge border-signal-500/25 bg-signal-500/10 text-signal-400;
+  }
+  .badge-neutral {
+    @apply badge border-line bg-elevated text-ink-2;
+  }
+  .kbd {
+    @apply rounded-md border border-line bg-elevated px-1.5 py-0.5 font-mono text-[10px] text-ink-2;
+  }
+  .panel {
+    @apply relative border border-line-soft bg-raised;
+  }
+  .hazard {
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--color-signal) 0 10px,
+      transparent 10px 20px
+    );
+  }
+}
+
+@utility text-outline {
+  -webkit-text-stroke: 1.5px color-mix(in srgb, var(--color-signal) 80%, transparent);
+  color: transparent;
+}
+
+@utility text-outline-ink {
+  -webkit-text-stroke: 1px color-mix(in srgb, var(--color-ink-2) 65%, transparent);
+  color: transparent;
+}
+
+@utility bg-blueprint {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.032) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.032) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 font-mono text-xs font-semibold uppercase tracking-[0.12em] transition-all duration-150 select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed;
+}
+
+@utility badge {
+  @apply inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-0.5 text-xs font-medium;
+}
