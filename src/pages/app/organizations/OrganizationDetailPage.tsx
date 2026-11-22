@@ -135,6 +135,16 @@ export function OrganizationDetailPage() {
           <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={() => setMemberOpen(false)}>Cancel</Button><Button type="submit" loading={addMember.isPending}>Add member</Button></div>
         </form>
       </Dialog>
+
+      <Dialog open={roleOpen} onClose={() => setRoleOpen(false)} title="Create custom role">
+        <form onSubmit={(e: FormEvent) => { e.preventDefault(); createRole.mutate() }} className="space-y-4">
+          <Field label="Role name"><Input value={roleForm.name} onChange={(e) => setRoleForm({ ...roleForm, name: e.target.value })} required /></Field>
+          <Field label="Description"><Input value={roleForm.description} onChange={(e) => setRoleForm({ ...roleForm, description: e.target.value })} /></Field>
+          <Field label="Scope"><Select value={roleForm.scope} onChange={(e) => setRoleForm({ ...roleForm, scope: e.target.value })}><option value="EVENT">EVENT</option><option value="AREA">AREA</option><option value="ORGANIZATION">ORGANIZATION</option></Select></Field>
+          <Field label="Permissions (comma or space separated)"><Input value={roleForm.permissionsText} onChange={(e) => setRoleForm({ ...roleForm, permissionsText: e.target.value })} placeholder="event.view ticket.view" /></Field>
+          <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={() => setRoleOpen(false)}>Cancel</Button><Button type="submit" loading={createRole.isPending}>Create role</Button></div>
+        </form>
+      </Dialog>
     </div>
   )
 }
