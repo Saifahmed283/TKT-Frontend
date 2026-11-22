@@ -40,6 +40,9 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [ticketTypeId, setTicketTypeId] = useState(event.ticketTypes.find((x) => !x.soldOut)?.id ?? event.ticketTypes[0]?.id ?? '')
+  const [paymentProviderId, setPaymentProviderId] = useState(event.paymentProviders?.[0]?.id ?? '')
+  const [paymentReference, setPaymentReference] = useState('')
+  const [paymentProofUrl, setPaymentProofUrl] = useState<string | null>(null)
   const [done, setDone] = useState<ReservationResult | null>(null)
   const [checkingCode, setCheckingCode] = useState('')
   const [copied, setCopied] = useState(false)
@@ -71,6 +74,10 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
         email: email.trim(),
         phone: phone.trim() || undefined,
         ticketTypeId,
+        paymentProviderId: isPaid && paymentProviderId ? paymentProviderId : undefined,
+        paymentReference: isPaid && paymentReference.trim() ? paymentReference.trim() : undefined,
+        paymentProofUrl: isPaid && paymentProofUrl ? paymentProofUrl : undefined,
+        paymentAmount: isPaid && selected ? Number(selected.price) : undefined,
       }),
     onSuccess: (data) => {
       setDone(data)
@@ -99,6 +106,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
   }
 
   const selected = event.ticketTypes.find((x) => x.id === ticketTypeId)
+  const isPaid = Number(selected?.price ?? 0) > 0
 
   const copyCode = async (code: string) => {
     try {
@@ -236,6 +244,39 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
               ))}
             </select>
           </div>
+          {isPaid && (
+            <div className="space-y-3 border border-line-soft bg-elevated/20 p-4">
+              <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-signal">Payment details</p>
+              {(event.paymentProviders?.length ?? 0) > 0 ? (
+                <select className="input" value={paymentProviderId} onChange={(e) => setPaymentProviderId(e.target.value)}>
+                  <option value="">Select payment method</option>
+                  {event.paymentProviders!.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              ) : (
+                <p className="text-[12px] text-ink-3">No payment methods configured yet. You can still submit reference/proof for review.</p>
+              )}
+              {paymentProviderId && event.paymentProviders?.find((p) => p.id === paymentProviderId)?.instructions && (
+                <p className="text-[12px] text-ink-2">{event.paymentProviders.find((p) => p.id === paymentProviderId)?.instructions}</p>
+              )}
+              <input className="input" placeholder="Payment reference / transaction ID" value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} />
+              <label className="block text-[11px] text-ink-3">
+                Payment proof image (optional)
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="mt-1 block w-full text-[12px]"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) { setPaymentProofUrl(null); return }
+                    const reader = new FileReader()
+                    reader.onload = () => setPaymentProofUrl(typeof reader.result === 'string' ? reader.result : null)
+                    reader.readAsDataURL(file)
+                  }}
+                />
+              </label>
+              {paymentProofUrl && <img src={paymentProofUrl} alt="Payment proof preview" className="max-h-40 rounded border border-line-soft object-contain" />}
+            </div>
+          )}
           <div className="flex items-center justify-between gap-3 border border-line-soft bg-elevated/20 px-4 py-3 text-sm">
             <span className="flex items-center gap-2 text-ink-3"><Ticket size={14} className="text-signal" /> {selected?.name ?? t('ticket')}</span>
             <span className="font-mono text-signal">{selected ? money(selected.price, lang) : '—'}</span>

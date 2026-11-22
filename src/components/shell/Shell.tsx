@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, CalendarDays, Users, Ticket, QrCode, ScanLine, ListTodo,
   AlertTriangle, Megaphone, Shield, BarChart3, LogOut, Radio, ChevronDown,
-  UserCog, Building2, BookOpen, Search, ClipboardCheck, Sun, Moon, Languages, Globe,
+  UserCog, Building2, BookOpen, Search, ClipboardCheck, Sun, Moon, Languages, Globe, Plug,
 } from 'lucide-react'
 import { useAuth } from '../../lib/auth'
 import { CommandPalette } from './CommandPalette'
@@ -24,12 +24,17 @@ const eventNav = [
   { to: 'attendees', icon: Users, label: 'attendees' },
   { to: 'tickets', icon: Ticket, label: 'tickets' },
   { to: 'reservations', icon: ClipboardCheck, label: 'reservations' },
+  { to: 'payments', icon: BarChart3, label: 'payments' },
+  { to: 'access-codes', icon: Ticket, label: 'accessCodes' },
   { to: 'credentials', icon: QrCode, label: 'credentials' },
   { to: 'access', icon: Shield, label: 'accessLog' },
+  { to: 'devices', icon: Radio, label: 'devices' },
   { to: 'tasks', icon: ListTodo, label: 'tasks' },
   { to: 'incidents', icon: AlertTriangle, label: 'incidents' },
   { to: 'comms', icon: Megaphone, label: 'comms' },
   { to: 'staff', icon: UserCog, label: 'staff' },
+  { to: 'workforce', icon: Users, label: 'workforce' },
+  { to: 'integrations', icon: Plug, label: 'integrations' },
   { to: 'teams', icon: Users, label: 'teams' },
   { to: 'areas', icon: Shield, label: 'areas' },
   { to: 'audit', icon: BarChart3, label: 'audit' },

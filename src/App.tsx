@@ -22,6 +22,11 @@ import { AuditPage } from './pages/app/events/AuditPage'
 import { CommsPage } from './pages/app/events/CommsPage'
 import { CredentialsPage } from './pages/app/events/CredentialsPage'
 import { IncidentsPage } from './pages/app/events/IncidentsPage'
+import { PaymentsPage } from './pages/app/events/PaymentsPage'
+import { AccessCodesPage } from './pages/app/events/AccessCodesPage'
+import { DevicesPage } from './pages/app/events/DevicesPage'
+import { WorkforcePage } from './pages/app/events/WorkforcePage'
+import { IntegrationsPage } from './pages/app/events/IntegrationsPage'
 import { ReportsPage } from './pages/app/events/ReportsPage'
 import { ReservationsPage } from './pages/app/events/ReservationsPage'
 import { StaffPage } from './pages/app/events/StaffPage'
@@ -90,11 +95,16 @@ export default function App() {
         <Route path="events/:eventId/teams" element={<TeamsPage />} />
         <Route path="events/:eventId/areas" element={<AreasPage />} />
         <Route path="events/:eventId/staff" element={<StaffPage />} />
+        <Route path="events/:eventId/workforce" element={<WorkforcePage />} />
+        <Route path="events/:eventId/integrations" element={<IntegrationsPage />} />
         <Route path="events/:eventId/attendees" element={<AttendeesPage />} />
         <Route path="events/:eventId/tickets" element={<TicketsPage />} />
         <Route path="events/:eventId/reservations" element={<ReservationsPage />} />
+        <Route path="events/:eventId/payments" element={<PaymentsPage />} />
+        <Route path="events/:eventId/access-codes" element={<AccessCodesPage />} />
         <Route path="events/:eventId/credentials" element={<CredentialsPage />} />
         <Route path="events/:eventId/access" element={<AccessLogsPage />} />
+        <Route path="events/:eventId/devices" element={<DevicesPage />} />
         <Route path="events/:eventId/tasks" element={<TasksPage />} />
         <Route path="events/:eventId/incidents" element={<IncidentsPage />} />
         <Route path="events/:eventId/comms" element={<CommsPage />} />

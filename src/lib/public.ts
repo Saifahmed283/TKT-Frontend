@@ -13,6 +13,17 @@ export interface PublicTicketType {
 
 export type ReservationAvailability = 'upcoming' | 'open' | 'sold_out' | 'locked' | 'closed'
 
+export interface PublicPaymentProvider {
+  id: string
+  name: string
+  accountName?: string | null
+  accountNumber?: string | null
+  paymentPhone?: string | null
+  paymentLink?: string | null
+  instructions?: string | null
+  imageUrl?: string | null
+}
+
 export interface PublicEvent {
   id: string
   name: string
@@ -32,6 +43,7 @@ export interface PublicEvent {
     availability: ReservationAvailability
   }
   ticketTypes: PublicTicketType[]
+  paymentProviders?: PublicPaymentProvider[]
   attendeeCount: number
   ticketCount: number
   scanCount: number
@@ -53,6 +65,9 @@ export interface ReservationStatus {
   reservationCode: string
   approval: ReservationApproval
   paymentStatus?: 'NOT_REQUIRED' | 'PENDING' | 'CONFIRMED' | 'FAILED' | 'REFUNDED'
+  paymentProvider?: { id: string; name: string } | null
+  paymentReference?: string | null
+  paymentReviewNote?: string | null
   deliveryStatus?: string | null
   ticketStatus: string
   price: string

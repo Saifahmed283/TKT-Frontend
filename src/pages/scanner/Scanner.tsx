@@ -132,7 +132,13 @@ export default function ScannerPage() {
 
       const res = await api<Device>(`/events/${eventId}/access/device/register`, {
         method: 'POST',
-        body: JSON.stringify({ deviceName: 'Gate Scanner', publicKey: pem }),
+        body: JSON.stringify({
+          deviceName: `Gate Scanner ${new Date().toLocaleDateString()}`,
+          publicKey: pem,
+          deviceType: /Mobi|Android/i.test(navigator.userAgent) ? 'MOBILE' : /iPad|Tablet/i.test(navigator.userAgent) ? 'TABLET' : 'DESKTOP',
+          fingerprint: navigator.userAgent.slice(0, 120),
+          appVersion: 'web-0.1.0',
+        }),
       })
       localStorage.setItem(KEY_STORAGE, JSON.stringify(res))
       const storedKey = await crypto.subtle.exportKey('jwk', kp.privateKey)
@@ -248,6 +254,25 @@ export default function ScannerPage() {
     if (online && queue.length > 0 && device) syncQueue.mutate()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, queue.length, device])
+
+  useEffect(() => {
+    if (!eventId || !device) return
+    let stopped = false
+    const send = async () => {
+      if (stopped) return
+      try {
+        await api(`/events/${eventId}/access/device/heartbeat`, {
+          method: 'POST',
+          body: JSON.stringify({ deviceId: device.deviceId, networkStatus: navigator.onLine ? 'ONLINE' : 'OFFLINE', appVersion: 'web-0.1.0' }),
+        })
+      } catch {
+        /* best effort */
+      }
+    }
+    send()
+    const t = window.setInterval(send, 30000)
+    return () => { stopped = true; window.clearInterval(t) }
+  }, [eventId, device])
 
   useEffect(() => {
     let stream: MediaStream | null = null
