@@ -88,7 +88,7 @@ export function AuditPage() {
                 <span className="font-mono text-[12px] text-signal">{r.action}</span>
               </Td>
               <Td>
-                <span className="rounded border border-line bg-elevated px-1.5 py-0.5 text-[10px] text-ink-2">
+                <span className="rounded-none border border-line bg-elevated px-1.5 py-0.5 text-[10px] text-ink-2">
                   {r.resourceType}
                 </span>
               </Td>
@@ -97,8 +97,8 @@ export function AuditPage() {
                 <span
                   className={
                     r.result === 'SUCCESS'
-                      ? 'rounded border border-ok/30 bg-ok/10 px-1.5 py-0.5 text-[10px] text-ok'
-                      : 'rounded border border-danger/30 bg-danger/10 px-1.5 py-0.5 text-[10px] text-danger'
+                      ? 'rounded-none border border-ok/30 bg-ok/10 px-1.5 py-0.5 text-[10px] text-ok'
+                      : 'rounded-none border border-danger/30 bg-danger/10 px-1.5 py-0.5 text-[10px] text-danger'
                   }
                 >
                   {r.result}

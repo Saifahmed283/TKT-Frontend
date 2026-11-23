@@ -6,6 +6,8 @@ const SIGNAL = '#ffb020'
 const MUTED = '#8f8f99'
 const WHITE = '#ffffff'
 
+export type CardSeat = { label: string; busName?: string | null; passengerName?: string | null }
+
 export type CardIdentity = {
   eventName: string
   eventDate: string
@@ -15,6 +17,7 @@ export type CardIdentity = {
   price?: string
   shortCode?: string | null
   code: string
+  seats?: CardSeat[]
 }
 
 async function qrImage(code: string): Promise<string> {
@@ -67,6 +70,12 @@ export async function downloadTicketPdf(c: CardIdentity) {
   doc.setFontSize(9)
   doc.setTextColor(MUTED)
   doc.text(`${c.ticketType}${c.price ? `  ·  ${money(c.price)}` : ''}`, 10, 79)
+  if (c.seats?.length) {
+    const seatText = c.seats.map(s => `${s.busName ? s.busName + ' ' : ''}${s.label}${s.passengerName && s.passengerName !== c.attendeeName ? ` (${s.passengerName})` : ''}`).join(', ')
+    doc.setFontSize(7)
+    doc.setTextColor('#b45309')
+    doc.text(doc.splitTextToSize(`SEATS: ${seatText}`, 78), 10, 84)
+  }
 
   doc.setFontSize(7)
   doc.setTextColor(MUTED)
@@ -114,6 +123,12 @@ export async function downloadIdCardPdf(c: CardIdentity) {
   doc.setFontSize(7)
   doc.setTextColor(SIGNAL)
   doc.text(c.ticketType.toUpperCase(), 6.5, 34)
+  if (c.seats?.length) {
+    doc.setFontSize(4.8)
+    doc.setTextColor('#fcd34d')
+    const seatText = c.seats.map(s => s.label).join(', ')
+    doc.text(doc.splitTextToSize(`SEAT ${seatText}`, 38), 6.5, 38)
+  }
 
   doc.setFontSize(5)
   doc.setTextColor('#a1a1aa')

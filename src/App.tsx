@@ -10,6 +10,8 @@ import UpcomingEvents from './pages/UpcomingEvents'
 import PastWorks from './pages/PastWorks'
 import Contact from './pages/Contact'
 import About from './pages/About'
+import PublicBusTickets from './pages/PublicBusTickets'
+import ReservationStatusPage from './pages/ReservationStatus'
 import Shell from './components/shell/Shell'
 import Dashboard from './pages/Dashboard'
 import EventsPage from './pages/Events'
@@ -27,6 +29,7 @@ import { AccessCodesPage } from './pages/app/events/AccessCodesPage'
 import { DevicesPage } from './pages/app/events/DevicesPage'
 import { WorkforcePage } from './pages/app/events/WorkforcePage'
 import { BusesPage } from './pages/app/events/BusesPage'
+import { EventSettingsPage } from './pages/app/events/EventSettings'
 import { IntegrationsPage } from './pages/app/events/IntegrationsPage'
 import { ReportsPage } from './pages/app/events/ReportsPage'
 import { ReservationsPage } from './pages/app/events/ReservationsPage'
@@ -85,6 +88,8 @@ export default function App() {
       <Route path="/contact" element={<Contact />} />
       <Route path="/about" element={<About />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/events/:eventId/bus-tickets" element={<PublicBusTickets />} />
+      <Route path="/reservation/:code" element={<ReservationStatusPage />} />
       <Route
         path="/app"
         element={
@@ -115,6 +120,7 @@ export default function App() {
         <Route path="events/:eventId/comms" element={<RequirePermission permission="message.send"><CommsPage /></RequirePermission>} />
         <Route path="events/:eventId/audit" element={<RequirePermission permission="audit.view"><AuditPage /></RequirePermission>} />
         <Route path="events/:eventId/reports" element={<RequirePermission permission="report.view"><ReportsPage /></RequirePermission>} />
+        <Route path="events/:eventId/settings" element={<RequirePermission permission="event.settings"><EventSettingsPage /></RequirePermission>} />
         <Route path="organizations" element={<OrganizationsPage />} />
         <Route path="organizations/:orgId" element={<OrganizationDetailPage />} />
         <Route path="guide" element={<Guide />} />

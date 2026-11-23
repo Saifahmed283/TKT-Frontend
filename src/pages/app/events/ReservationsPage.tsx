@@ -27,6 +27,7 @@ type ReservationRow = {
   issuedAt: string
   approvedAt?: string | null
   rejectedReason?: string | null
+  seats?: { id: string; label: string; busId: string; passengerName?: string | null; busName?: string | null }[]
   attendee: { id: string; name: string; email: string | null; phone: string | null; status: string }
   ticketType: { id: string; name: string; price: string | null }
   credential: { id: string; code: string; status: string } | null
@@ -166,8 +167,9 @@ export function ReservationsPage() {
               <Td>
                 <p className="text-[13px]">{r.ticketType.name}</p>
                 <p className="font-mono text-[10px] text-ink-3">
-                  {Number(r.price) > 0 ? `EGP ` : 'FREE'}
+                  {Number(r.price) > 0 ? `EGP ${Number(r.price).toLocaleString()}` : 'FREE'}
                 </p>
+                {r.seats && r.seats.length > 0 && <p className="mt-1 font-mono text-[10px] text-signal">{r.seats.map(s => `${s.busName ? s.busName + ' ' : ''}${s.label}`).join(', ')}</p>}
               </Td>
               <Td>
                 {r.approval === 'APPROVED' ? (

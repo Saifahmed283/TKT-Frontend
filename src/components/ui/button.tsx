@@ -7,11 +7,11 @@ type Size = 'sm' | 'md' | 'lg'
 
 const variants: Record<Variant, string> = {
   default:
-    'bg-signal text-black font-semibold hover:bg-signal/90 active:scale-[0.98] shadow-glow',
+    'bg-signal text-black font-semibold hover:bg-signal/90 active:bg-signal active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.25)] shadow-glow',
   outline:
-    'border border-line-soft bg-raised text-ink-2 hover:border-signal/40 hover:text-ink',
-  ghost: 'text-ink-3 hover:bg-raised hover:text-ink-2',
-  danger: 'border border-danger/30 bg-danger/10 text-danger hover:bg-danger/15',
+    'border border-line-soft bg-raised text-ink-2 hover:border-signal/40 hover:text-ink active:bg-elevated active:border-signal/50',
+  ghost: 'text-ink-3 hover:bg-raised hover:text-ink-2 active:bg-elevated',
+  danger: 'border border-danger/30 bg-danger/10 text-danger hover:bg-danger/15 active:bg-danger/20 active:border-danger/40',
 }
 
 const sizes: Record<Size, string> = {

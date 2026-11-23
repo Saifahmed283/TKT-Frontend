@@ -46,8 +46,8 @@ export function Guide() {
         <div className="rounded-none border border-line bg-elevated p-5">
           <h3 className="text-[14px] font-semibold">Keyboard</h3>
           <p className="mt-2 text-[13px] leading-relaxed text-ink-2">
-            <kbd className="rounded border border-line bg-raised px-1.5 py-0.5 font-mono text-[11px]">Ctrl/⌘</kbd> +{' '}
-            <kbd className="rounded border border-line bg-raised px-1.5 py-0.5 font-mono text-[11px]">K</kbd> opens the command
+            <kbd className="rounded-none border border-line bg-raised px-1.5 py-0.5 font-mono text-[11px]">Ctrl/⌘</kbd> +{' '}
+            <kbd className="rounded-none border border-line bg-raised px-1.5 py-0.5 font-mono text-[11px]">K</kbd> opens the command
             palette — search across events, attendees, staff, tasks and incidents.
           </p>
         </div>

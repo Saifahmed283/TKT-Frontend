@@ -88,14 +88,14 @@ export function TeamsPage() {
                     {t._count.tasks} tasks
                   </span>
                   <ConfirmDialog title="Delete team?" body={`Delete ${t.name}? This removes team assignments.`} confirmLabel="Delete" onConfirm={() => remove.mutate(t.id)}>
-                    <button className="rounded p-1.5 text-danger hover:bg-danger/10" aria-label="Delete team"><Trash2 className="size-4" /></button>
+                    <button className="rounded-none p-1.5 text-danger hover:bg-danger/10" aria-label="Delete team"><Trash2 className="size-4" /></button>
                   </ConfirmDialog>
                 </div>
               </div>
               {t.description && <p className="mt-1.5 text-[13px] text-ink-3 line-clamp-2">{t.description}</p>}
               <div className="mt-4 flex flex-wrap gap-1.5">
                 {t.areas.map((a) => (
-                  <span key={a.area.id} className="rounded border border-line bg-elevated px-1.5 py-0.5 text-[10px] text-ink-2">
+                  <span key={a.area.id} className="rounded-none border border-line bg-elevated px-1.5 py-0.5 text-[10px] text-ink-2">
                     {a.area.name}
                   </span>
                 ))}

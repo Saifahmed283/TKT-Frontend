@@ -183,7 +183,7 @@ export function StaffPage() {
                 <Td>
                   <div className="flex flex-wrap gap-1">
                     {s.areas.map((a) => (
-                      <span key={a.area.id} className="rounded border border-line bg-elevated px-1.5 py-0.5 text-[10px] text-ink-2">
+                      <span key={a.area.id} className="rounded-none border border-line bg-elevated px-1.5 py-0.5 text-[10px] text-ink-2">
                         {a.area.name}
                       </span>
                     ))}
@@ -201,7 +201,7 @@ export function StaffPage() {
                       />
                       <span className="font-mono text-[11px] text-ink-2">{statusLabel[p.status]}</span>
                       {onShift && (
-                        <span className="rounded border border-ok/25 bg-ok/10 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-ok">
+                        <span className="rounded-none border border-ok/25 bg-ok/10 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-ok">
                           {fmtShift(p.onShiftSeconds)}
                         </span>
                       )}
@@ -218,7 +218,7 @@ export function StaffPage() {
                       confirmLabel="Remove"
                       onConfirm={() => remove.mutate(s.id)}
                     >
-                      <button className="rounded p-1.5 text-danger hover:bg-danger/10" aria-label="Remove">
+                      <button className="rounded-none p-1.5 text-danger hover:bg-danger/10" aria-label="Remove">
                         <Trash2 className="size-4" />
                       </button>
                     </ConfirmDialog>

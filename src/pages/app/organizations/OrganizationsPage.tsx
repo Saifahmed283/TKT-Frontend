@@ -87,7 +87,7 @@ export function OrganizationsPage() {
                 <span className="text-[11px] text-ink-3">{o._count.members} members · {o._count.folders ?? 0} folders</span>
                 {(typeof o.myRole === 'string' ? o.myRole : o.myRole?.name) === 'OWNER' && (
                   <ConfirmDialog title="Delete organization?" body={`Delete "${o.name}" and all its events/data? This cannot be undone.`} confirmLabel="Delete" onConfirm={() => remove.mutate(o.id)}>
-                    <button className="rounded p-1.5 text-danger hover:bg-danger/10" aria-label="Delete organization"><Trash2 className="size-4" /></button>
+                    <button className="rounded-none p-1.5 text-danger hover:bg-danger/10" aria-label="Delete organization"><Trash2 className="size-4" /></button>
                   </ConfirmDialog>
                 )}
               </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { ArrowUpRight, Calendar, Lock, MapPin, Ticket, Users } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { ArrowUpRight, Bus, Calendar, Lock, MapPin, Ticket, Users } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import PublicNav from '../components/public/PublicNav'
 import PublicFooter from '../components/public/PublicFooter'
@@ -95,7 +96,7 @@ function Reveal({ children, delay = 0, className = '' }: { children: React.React
   )
 }
 
-export function EventCard({ e, i, onReserve }: { e: PublicEvent; i: number; onReserve: (e: PublicEvent) => void }) {
+export function EventCard({ e, i, onReserve, onBusTickets }: { e: PublicEvent; i: number; onReserve: (e: PublicEvent) => void; onBusTickets?: (e: PublicEvent) => void }) {
   const { t, lang } = useLanguage()
   const avail = e.registration.availability
   const canReserve = avail === 'open'
@@ -197,23 +198,55 @@ export function EventCard({ e, i, onReserve }: { e: PublicEvent; i: number; onRe
         {/* Action column */}
         <div className="flex flex-col justify-between gap-4 border-t border-line-soft/70 p-5 sm:p-6 lg:border-s-0 lg:border-t-0 lg:border-s lg:border-line-soft/70">
           <div className="space-y-3">
-            {canReserve ? (
-              <button onClick={() => onReserve(e)} className="btn-primary group/btn w-full !py-3.5">
-                {t('reserve')}
-                <ArrowUpRight size={14} className="transition-transform duration-200 group-hover/btn:-translate-y-0.5 group-hover/btn:translate-x-0.5 rtl:-scale-x-100" />
-              </button>
+            {(e.buses?.length ?? 0) > 0 ? (
+              <>
+                {canReserve && (
+                  <button onClick={() => onReserve(e)} className="btn-primary group/btn w-full !py-3.5">
+                    {t('reserve')}
+                    <ArrowUpRight size={14} className="transition-transform duration-200 group-hover/btn:-translate-y-0.5 group-hover/btn:translate-x-0.5 rtl:-scale-x-100" />
+                  </button>
+                )}
+                {canReserve && onBusTickets && (
+                  <button onClick={() => onBusTickets(e)} className="btn-ghost group/btn w-full !py-3.5 border border-signal/30 text-signal hover:bg-signal/5">
+                    <Bus size={14} className="transition-transform duration-200 group-hover/btn:-translate-y-0.5 group-hover/btn:translate-x-0.5 rtl:-scale-x-100" />
+                    {t('busTickets') ?? 'Bus tickets'}
+                  </button>
+                )}
+                {!canReserve && (
+                  <button disabled className="btn-ghost w-full !py-3.5 !cursor-default !opacity-60">
+                    {avail === 'upcoming' ? t('openingSoon') : avail === 'sold_out' ? t('soldOut') : t('locked')}
+                  </button>
+                )}
+                {opensSoon && (
+                  <div className="border border-signal/15 bg-signal/[0.04] px-3 py-3 text-center">
+                    <p className="mb-2 text-[9px] font-medium uppercase tracking-[0.16em] text-ink-3">{t('openingSoon')}</p>
+                    <div className="flex justify-center">
+                      <LiveCountdown startAt={opensSoon} compact />
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
-              <button disabled className="btn-ghost w-full !py-3.5 !cursor-default !opacity-60">
-                {avail === 'upcoming' ? t('openingSoon') : avail === 'sold_out' ? t('soldOut') : t('locked')}
-              </button>
-            )}
-            {opensSoon && (
-              <div className="border border-signal/15 bg-signal/[0.04] px-3 py-3 text-center">
-                <p className="mb-2 text-[9px] font-medium uppercase tracking-[0.16em] text-ink-3">{t('openingSoon')}</p>
-                <div className="flex justify-center">
-                  <LiveCountdown startAt={opensSoon} compact />
-                </div>
-              </div>
+              <>
+                {canReserve ? (
+                  <button onClick={() => onReserve(e)} className="btn-primary group/btn w-full !py-3.5">
+                    {t('reserve')}
+                    <ArrowUpRight size={14} className="transition-transform duration-200 group-hover/btn:-translate-y-0.5 group-hover/btn:translate-x-0.5 rtl:-scale-x-100" />
+                  </button>
+                ) : (
+                  <button disabled className="btn-ghost w-full !py-3.5 !cursor-default !opacity-60">
+                    {avail === 'upcoming' ? t('openingSoon') : avail === 'sold_out' ? t('soldOut') : t('locked')}
+                  </button>
+                )}
+                {opensSoon && (
+                  <div className="border border-signal/15 bg-signal/[0.04] px-3 py-3 text-center">
+                    <p className="mb-2 text-[9px] font-medium uppercase tracking-[0.16em] text-ink-3">{t('openingSoon')}</p>
+                    <div className="flex justify-center">
+                      <LiveCountdown startAt={opensSoon} compact />
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
           <p className="text-center text-[9px] font-medium uppercase tracking-[0.16em] text-ink-3 lg:text-start">
@@ -229,6 +262,7 @@ export function EventCard({ e, i, onReserve }: { e: PublicEvent; i: number; onRe
 
 export default function UpcomingEvents() {
   const [reserving, setReserving] = useState<PublicEvent | null>(null)
+  const navigate = useNavigate()
   const { t } = useLanguage()
   const { data: events, isLoading, error } = usePublicEvents('upcoming')
 
@@ -290,7 +324,15 @@ export default function UpcomingEvents() {
                   <p className="relative mx-auto mt-4 max-w-md text-sm leading-relaxed text-ink-3">{t('noUpcomingBody')}</p>
                 </div>
               ) : (
-                events.map((e, i) => <EventCard key={e.id} e={e} i={i} onReserve={setReserving} />)
+                events.map((e, i) => (
+                  <EventCard
+                    key={e.id}
+                    e={e}
+                    i={i}
+                    onReserve={setReserving}
+                    onBusTickets={e.buses?.length ? (e) => navigate(`/events/${e.id}/bus-tickets`) : undefined}
+                  />
+                ))
               )}
             </div>
           )}

@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import QRCode from 'qrcode'
 import { CheckCircle2, Clock3, Copy, Lock, QrCode, ShieldCheck, Ticket } from 'lucide-react'
@@ -6,6 +6,8 @@ import { Modal, ErrorBanner } from '../ui'
 import { api, ApiError } from '../../lib/api'
 import { useLanguage } from '../../lib/i18n'
 import { useReservationStatus, type PublicEvent, type ReservationResult } from '../../lib/public'
+import { FileUploadField } from '../ui/file-upload'
+import { ExternalLink } from 'lucide-react'
 
 function money(price: string, lang: string, currency = 'EGP') {
   const n = Number(price)
@@ -359,26 +361,18 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
               ) : (
                 <p className="text-[12px] text-ink-3">No payment methods configured yet. You can still submit reference/proof for review.</p>
               )}
-              {paymentProviderId && event.paymentProviders?.find((p) => p.id === paymentProviderId)?.instructions && (
-                <p className="text-[12px] text-ink-2">{event.paymentProviders.find((p) => p.id === paymentProviderId)?.instructions}</p>
-              )}
+              {(() => { const p = event.paymentProviders?.find((x) => x.id === paymentProviderId); return p ? (
+                <div className="space-y-1 border border-line-soft bg-panel/40 p-3 text-[12px] text-ink-2">
+                  {p.accountName && <div><span className="text-ink-3">Account:</span> {p.accountName}</div>}
+                  {p.accountNumber && <div><span className="text-ink-3">Number:</span> {p.accountNumber}</div>}
+                  {p.paymentPhone && <div><span className="text-ink-3">Phone:</span> {p.paymentPhone}</div>}
+                  {p.instructions && <p className="whitespace-pre-line">{p.instructions}</p>}
+                  {p.paymentLink && <a href={p.paymentLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-signal hover:underline"><ExternalLink size={12} /> Open payment link</a>}
+                  {p.imageUrl && <img src={p.imageUrl} alt={p.name} className="mt-2 max-h-36 border border-line-soft object-contain" />}
+                </div>
+              ) : null })()}
               <input className="input" placeholder="Payment reference / transaction ID" value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} />
-              <label className="block text-[11px] text-ink-3">
-                Payment proof image (optional)
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="mt-1 block w-full text-[12px]"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (!file) { setPaymentProofUrl(null); return }
-                    const reader = new FileReader()
-                    reader.onload = () => setPaymentProofUrl(typeof reader.result === 'string' ? reader.result : null)
-                    reader.readAsDataURL(file)
-                  }}
-                />
-              </label>
-              {paymentProofUrl && <img src={paymentProofUrl} alt="Payment proof preview" className="max-h-40 rounded border border-line-soft object-contain" />}
+              <FileUploadField label="Payment proof" value={paymentProofUrl ?? ''} onChange={(v) => setPaymentProofUrl(v || null)} accept="image/*,application/pdf" hint="Optional" />
             </div>
           )}
           <div className="space-y-2 border border-line-soft bg-elevated/20 px-4 py-3 text-sm">

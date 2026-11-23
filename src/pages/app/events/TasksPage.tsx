@@ -142,7 +142,7 @@ export function TasksPage() {
                     <div className="flex items-center gap-1">
                       <PriorityIcon p={t.priority} />
                       <ConfirmDialog title="Delete task?" body={`Delete "${t.title}"?`} confirmLabel="Delete" onConfirm={() => remove.mutate(t.id)}>
-                        <button className="rounded p-1 text-ink-3 opacity-0 transition-opacity hover:bg-danger/10 hover:text-danger group-hover:opacity-100" aria-label="Delete task"><Trash2 className="size-3.5" /></button>
+                        <button className="rounded-none p-1 text-ink-3 opacity-0 transition-opacity hover:bg-danger/10 hover:text-danger group-hover:opacity-100" aria-label="Delete task"><Trash2 className="size-3.5" /></button>
                       </ConfirmDialog>
                     </div>
                   </div>
@@ -151,7 +151,7 @@ export function TasksPage() {
                   )}
                   <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-ink-3">
                     {t.assignee && (
-                      <span className="rounded border border-line bg-canvas px-1.5 py-0.5">{t.assignee.name}</span>
+                      <span className="rounded-none border border-line bg-canvas px-1.5 py-0.5">{t.assignee.name}</span>
                     )}
                     {t.team && <span>{t.team.name}</span>}
                     {t.dueAt && (

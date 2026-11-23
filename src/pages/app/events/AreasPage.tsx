@@ -105,14 +105,14 @@ export function AreasPage() {
                   {a._count.accessLogs} scans
                 </span>
                 {a.capacity && <span>cap {a.capacity}</span>}
-                <span className="rounded border border-line bg-elevated px-1.5 py-0.5 text-[10px] uppercase tracking-wide">
+                <span className="rounded-none border border-line bg-elevated px-1.5 py-0.5 text-[10px] uppercase tracking-wide">
                   {a.accessPolicy}
                 </span>
               </div>
               {a.teamAssignments.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1">
                   {a.teamAssignments.map((t) => (
-                    <span key={t.team.id} className="rounded border border-signal/25 bg-signal-soft px-1.5 py-0.5 text-[10px] text-signal">
+                    <span key={t.team.id} className="rounded-none border border-signal/25 bg-signal-soft px-1.5 py-0.5 text-[10px] text-signal">
                       {t.team.name}
                     </span>
                   ))}
@@ -122,7 +122,7 @@ export function AreasPage() {
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-3">Assigned staff</p>
                 <div className="mt-2 flex flex-wrap gap-1">
                   {a.assignments.map((s) => (
-                    <span key={s.member.id} className="rounded border border-line bg-elevated px-1.5 py-0.5 text-[10px] text-ink-2">
+                    <span key={s.member.id} className="rounded-none border border-line bg-elevated px-1.5 py-0.5 text-[10px] text-ink-2">
                       {s.member.user.name}
                     </span>
                   ))}
@@ -136,7 +136,7 @@ export function AreasPage() {
                     {a.active ? 'Deactivate area' : 'Reactivate area'}
                   </button>
                   <ConfirmDialog title="Delete area?" body={`Delete ${a.name}? Access logs and assignments may block deletion depending on backend constraints.`} confirmLabel="Delete" onConfirm={() => remove.mutate(a.id)}>
-                    <button className="rounded p-1.5 text-danger hover:bg-danger/10" aria-label="Delete area"><Trash2 className="size-4" /></button>
+                    <button className="rounded-none p-1.5 text-danger hover:bg-danger/10" aria-label="Delete area"><Trash2 className="size-4" /></button>
                   </ConfirmDialog>
                 </div>
               </div>

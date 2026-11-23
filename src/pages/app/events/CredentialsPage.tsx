@@ -30,6 +30,7 @@ type Credential = {
     deliveryChannel?: string | null
     lastDeliveryAt?: string | null
     ticketType?: { name?: string | null } | null
+    busSeats?: { id: string; label: string; passengerName?: string | null; bus?: { name?: string | null } | null }[]
   } | null
 }
 
@@ -80,7 +81,9 @@ export function CredentialsPage() {
     venue: event.data?.venueName ?? null,
     attendeeName: c.attendee?.name ?? 'Attendee',
     ticketType: ticketTypeName(c),
+    shortCode: c.shortCode ?? null,
     code: c.code,
+    seats: (c.ticket?.busSeats ?? []).map(s => ({ label: s.label, busName: s.bus?.name ?? null, passengerName: s.passengerName ?? null })),
   })
 
   const attendees = useQuery({
@@ -166,7 +169,7 @@ export function CredentialsPage() {
               </Td>
               <Td className="text-[13px]">{c.attendee?.name ?? 'Unknown attendee'}</Td>
               <Td>
-                <span className="rounded border border-line bg-elevated px-1.5 py-0.5 text-[10px] text-ink-2">
+                <span className="rounded-none border border-line bg-elevated px-1.5 py-0.5 text-[10px] text-ink-2">
                   {ticketTypeName(c)}
                 </span>
               </Td>
@@ -183,51 +186,19 @@ export function CredentialsPage() {
               <Td className="text-[12px] text-ink-3">{c.lastUsedAt ? c.lastUsedAt.split('T')[0] : '—'}</Td>
               <Td>
                 <div className="flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                  <button
-                    className="rounded p-1.5 text-ink-2 hover:bg-raised"
-                    onClick={() => setShowQr(c.id)}
-                    aria-label="Show QR"
-                  >
-                    <QrCode className="size-4" />
-                  </button>
-                  {c.ticket?.id && (
-                    <button className="rounded p-1.5 text-ink-2 hover:bg-raised" onClick={() => { setResendTarget(c); setResendEmail(c.attendee?.email ?? '') }} aria-label="Send ticket">
-                      <Send className="size-4" />
-                    </button>
-                  )}
-                  <button
-                    className="rounded p-1.5 text-ink-2 hover:bg-raised"
-                    onClick={() => setHistoryId(c.id)}
-                    aria-label="Delivery history"
-                  >
-                    <span className="font-mono text-[10px]">LOG</span>
-                  </button>
-                  <button
-                    className="rounded p-1.5 text-ink-2 hover:bg-raised"
-                    onClick={() => void downloadTicketPdf(pdfIdentity(c))}
-                    aria-label="Download ticket PDF"
-                  >
-                    <Download className="size-4" />
-                  </button>
-                  <button
-                    className="rounded p-1.5 text-ink-2 hover:bg-raised"
-                    onClick={() => void downloadIdCardPdf(pdfIdentity(c))}
-                    aria-label="Download ID card PDF"
-                  >
-                    <CreditCard className="size-4" />
-                  </button>
+                  <button className="rounded-none p-1.5 text-ink-2 hover:bg-raised" onClick={() => setShowQr(c.id)} aria-label="Show QR"><QrCode className="size-4" /></button>
+                  {c.ticket?.id && <button className="rounded-none p-1.5 text-ink-2 hover:bg-raised" onClick={() => { setResendTarget(c); setResendEmail(c.attendee?.email ?? '') }} aria-label="Send ticket"><Send className="size-4" /></button>}
+                  <button className="rounded-none p-1.5 text-ink-2 hover:bg-raised" onClick={() => setHistoryId(c.id)} aria-label="Delivery history"><span className="font-mono text-[10px]">LOG</span></button>
+                  <button className="rounded-none p-1.5 text-ink-2 hover:bg-raised" onClick={() => void downloadTicketPdf(pdfIdentity(c))} aria-label="Download ticket PDF"><Download className="size-4" /></button>
+                  <button className="rounded-none p-1.5 text-ink-2 hover:bg-raised" onClick={() => void downloadIdCardPdf(pdfIdentity(c))} aria-label="Download ID card PDF"><CreditCard className="size-4" /></button>
                   {c.status === 'ACTIVE' && (
                     <ConfirmDialog title="Revoke credential?" body={`Revoke credential for ${c.attendee?.name ?? 'this attendee'}? This disables access.`} confirmLabel="Revoke" onConfirm={() => revoke.mutate(c.id)}>
-                      <button className="rounded p-1.5 text-danger hover:bg-danger/10" aria-label="Revoke">
-                        <Ban className="size-4" />
-                      </button>
+                      <button className="rounded-none p-1.5 text-danger hover:bg-danger/10" aria-label="Revoke"><Ban className="size-4" /></button>
                     </ConfirmDialog>
                   )}
                   {c.status !== 'ACTIVE' && (
                     <ConfirmDialog title="Delete credential?" body="Delete this credential permanently? Only allowed when there are no access logs." confirmLabel="Delete" onConfirm={() => remove.mutate(c.id)}>
-                      <button className="rounded p-1.5 text-danger hover:bg-danger/10" aria-label="Delete">
-                        <Trash2 className="size-4" />
-                      </button>
+                      <button className="rounded-none p-1.5 text-danger hover:bg-danger/10" aria-label="Delete"><Trash2 className="size-4" /></button>
                     </ConfirmDialog>
                   )}
                 </div>

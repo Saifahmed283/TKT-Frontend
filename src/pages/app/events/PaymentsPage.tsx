@@ -18,6 +18,7 @@ import { useState, type FormEvent } from 'react'
 type Provider = {
   id: string; name: string; accountName?: string | null; accountNumber?: string | null; paymentPhone?: string | null;
   paymentLink?: string | null; instructions?: string | null; imageUrl?: string | null; isActive: boolean
+  metadata?: { fetchUrlTemplate?: string; fetchAuthHeader?: string; fetchAuthValue?: string } | null
 }
 type PendingPayment = {
   id: string; reservationCode?: string | null; paymentReference?: string | null; paymentProofUrl?: string | null; paymentProvider?: string | null;
@@ -48,7 +49,8 @@ export function PaymentsPage() {
   const [providerOpen, setProviderOpen] = useState(false)
   const [deleteProviderId, setDeleteProviderId] = useState<string | null>(null)
   const [refLookup, setRefLookup] = useState('')
-  const [form, setForm] = useState({ name: '', accountName: '', accountNumber: '', paymentPhone: '', paymentLink: '', instructions: '', imageUrl: '' })
+  const [form, setForm] = useState({ name: '', accountName: '', accountNumber: '', paymentPhone: '', paymentLink: '', instructions: '', imageUrl: '', fetchUrlTemplate: '', fetchAuthHeader: '', fetchAuthValue: '' })
+  const [fetchResult, setFetchResult] = useState<{ message: string; localMatchCount: number; external: any; providerName?: string } | null>(null)
 
   const providersQ = useQuery({ queryKey: ['events', eventId, 'payments', 'providers'], queryFn: () => api.get<Provider[]>(`/events/${eventId}/payments/providers`), enabled: !!eventId })
   const pendingQ = useQuery({ queryKey: ['events', eventId, 'payments', 'pending'], queryFn: () => api.get<PendingPayment[]>(`/events/${eventId}/payments/pending`), enabled: !!eventId })
@@ -60,7 +62,7 @@ export function PaymentsPage() {
 
   const createProvider = useMutation({
     mutationFn: () => api.post(`/events/${eventId}/payments/providers`, form),
-    onSuccess: () => { toast.success('Payment provider added'); setProviderOpen(false); setForm({ name: '', accountName: '', accountNumber: '', paymentPhone: '', paymentLink: '', instructions: '', imageUrl: '' }); refresh() },
+    onSuccess: () => { toast.success('Payment provider added'); setProviderOpen(false); setForm({ name: '', accountName: '', accountNumber: '', paymentPhone: '', paymentLink: '', instructions: '', imageUrl: '', fetchUrlTemplate: '', fetchAuthHeader: '', fetchAuthValue: '' }); refresh() },
     onError: (e: any) => toast.error(e?.message ?? 'Failed to add provider'),
   })
   const deleteProvider = useMutation({
@@ -75,9 +77,17 @@ export function PaymentsPage() {
   })
 
   const fetchRef = useMutation({
-    mutationFn: (reference: string) => api.post<{ message: string; localMatchCount: number; external: any }>(`/events/${eventId}/payments/reference/${encodeURIComponent(reference)}/fetch`, {}),
-    onSuccess: (d) => { toast.success(d.message || 'Reference checked'); refresh(); void refQ.refetch() },
-    onError: (e: any) => toast.error(e?.message ?? 'Reference fetch failed'),
+    mutationFn: (reference: string) => api.post<{ message: string; localMatchCount: number; external: any; providerName?: string }>(`/events/${eventId}/payments/reference/${encodeURIComponent(reference)}/fetch`, {}),
+    onSuccess: (d) => {
+      setFetchResult(d)
+      toast.success(d.message || 'Reference checked')
+      refresh()
+      void refQ.refetch()
+    },
+    onError: (e: any) => {
+      setFetchResult(null)
+      toast.error(e?.message ?? 'Reference fetch failed')
+    },
   })
 
   const exportPayments = async () => {
@@ -132,7 +142,30 @@ export function PaymentsPage() {
             <div className="flex items-center gap-2"><Search size={14} className="text-ink-3" /><Input value={refLookup} onChange={e => setRefLookup(e.target.value)} placeholder="Search payment reference..." className="w-72" />
               <Button size="sm" variant="ghost" disabled={refLookup.trim().length < 3 || fetchRef.isPending} loading={fetchRef.isPending} onClick={() => fetchRef.mutate(refLookup.trim())}>Fetch by reference</Button></div>
           </div>
-          {fetchRef.data && <div className="mb-3 rounded-none border border-line-soft bg-raised/50 p-3 text-[12px] text-ink-2"><span className="font-semibold text-ink">Fetch result:</span> {fetchRef.data.message}</div>}
+          {fetchResult && (
+            <div className="mb-4 rounded-none border border-signal/20 bg-signal/5 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <p className="font-semibold text-ink">Fetch result</p>
+                  <p className="mt-1 text-sm text-ink-2">{fetchResult.message}</p>
+                  {fetchResult.external && fetchResult.external.attempted && (
+                    <div className="mt-3 p-3 rounded-none border border-amber/30 bg-amber/5">
+                      <p className="font-mono text-[11px] text-amber">External provider fetch attempted</p>
+                      <p className="mt-1 text-[12px] text-ink-2">
+                        Status: {fetchResult.external.ok ? 'Success' : 'Failed'} {fetchResult.external.status ? `(HTTP ${fetchResult.external.status})` : ''}
+                        {fetchResult.external.error && <span className="text-danger"> · {fetchResult.external.error}</span>}
+                      </p>
+                      {fetchResult.external.url && <p className="mt-1 text-[10px] font-mono text-ink-3">URL: {fetchResult.external.url}</p>}
+                    </div>
+                  )}
+                  {fetchResult.providerName && (
+                    <p className="mt-2 text-[11px] font-mono text-signal">Provider: {fetchResult.providerName}</p>
+                  )}
+                </div>
+                <Button size="sm" variant="ghost" onClick={() => setFetchResult(null)}>Dismiss</Button>
+              </div>
+            </div>
+          )}
           {refLookup.trim().length >= 3 && (
             <Table headers={['Reference', 'Reservation', 'Attendee', 'Proof', 'Status']}>
               {(refQ.data ?? []).map(r => {
@@ -181,7 +214,7 @@ export function PaymentsPage() {
         </Panel>
       </div>
 
-      <Dialog open={providerOpen} onClose={() => setProviderOpen(false)} title="Add payment provider">
+      <Dialog open={providerOpen} onClose={() => setProviderOpen(false)} title="Add payment provider" wide>
         <form onSubmit={(e: FormEvent) => { e.preventDefault(); createProvider.mutate() }} className="space-y-4">
           <Field label="Provider name"><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required /></Field>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -194,6 +227,15 @@ export function PaymentsPage() {
           </div>
           <Field label="Instructions"><Input value={form.instructions} onChange={e => setForm({ ...form, instructions: e.target.value })} /></Field>
           <FileUploadField label="Provider image / QR" value={form.imageUrl} onChange={(url) => setForm({ ...form, imageUrl: url })} accept="image/*,.pdf" />
+          <div className="border-t border-line-soft pt-4">
+            <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.15em] text-signal">External fetch adapter (optional)</p>
+            <p className="mb-3 text-[11px] text-ink-3">Configure to enable automatic payment proof fetching from provider APIs. Uses &#123;reference&#125; and &#123;eventId&#125; placeholders.</p>
+            <Field label="Fetch URL template"><Input value={form.fetchUrlTemplate} onChange={e => setForm({ ...form, fetchUrlTemplate: e.target.value })} placeholder="https://api.provider.com/v1/payments/&#123;reference&#125;?event=&#123;eventId&#125;" /></Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Auth header name"><Input value={form.fetchAuthHeader} onChange={e => setForm({ ...form, fetchAuthHeader: e.target.value })} placeholder="Authorization" /></Field>
+              <Field label="Auth header value"><Input value={form.fetchAuthValue} onChange={e => setForm({ ...form, fetchAuthValue: e.target.value })} placeholder="Bearer xxx" type="password" /></Field>
+            </div>
+          </div>
           <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={() => setProviderOpen(false)}>Cancel</Button><Button type="submit" loading={createProvider.isPending}>Add provider</Button></div>
         </form>
       </Dialog>
@@ -202,10 +244,3 @@ export function PaymentsPage() {
     </div>
   )
 }
-
-
-
-
-
-
-
