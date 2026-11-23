@@ -128,6 +128,7 @@ export function ReservationsPage() {
           <div className="flex items-center gap-2">
             <Button size="sm" variant="ghost" onClick={() => { const s = (eventQ.data?.settings?.ticketEmail ?? {}) as any; setEmailTpl({ subject: s.subject ?? '', preheader: s.preheader ?? '', title: s.title ?? '', body: s.body ?? '', footer: s.footer ?? '' }); setEmailTplOpen(true) }}>Email template</Button>
             <Button size="sm" variant="ghost" onClick={() => void downloadAuthFile(`/events/${eventId}/reservations/export.xlsx?status=${filter}`, `reservations-${eventId}.xlsx`).catch(() => toast.error('Export failed'))}><Download size={14} /> Excel</Button>
+            <Button size="sm" variant="ghost" onClick={() => void downloadAuthFile(`/events/${eventId}/reservations/deliveries/export.xlsx`, `deliveries-${eventId}.xlsx`).catch(() => toast.error('Export failed'))}><Download size={14} /> Delivery log</Button>
             <Button size="sm" variant="ghost" onClick={() => exportPdf(`reservations-${eventId}`, 'Reservations', ['Code', 'Name', 'Email', 'Ticket', 'Amount', 'Approval', 'Payment', 'Issued'], (data.rows ?? []).map(r => [r.reservationCode ?? r.id.slice(0, 8), r.attendee.name, r.attendee.email ?? '', r.ticketType.name, r.price, r.approval, r.paymentStatus ?? '', timeAgo(r.issuedAt)]))}><Download size={14} /> PDF</Button>
           <div className="flex gap-1 rounded-lg border border-line bg-raised p-1">
             {(['PENDING', 'APPROVED', 'REJECTED', 'ALL'] as Filter[]).map((f) => (

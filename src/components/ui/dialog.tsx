@@ -1,6 +1,6 @@
-import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useState, type ReactNode } from 'react'
-import { X } from 'lucide-react'
+﻿import { AnimatePresence, motion } from 'motion/react'
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { AlertTriangle, Info, Trash2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from './button'
 import { Corners } from '../instruments'
@@ -49,7 +49,7 @@ export function Dialog({
             role="dialog"
             aria-modal="true"
             className={cn(
-              'relative w-full overflow-hidden rounded-xl border border-line bg-elevated shadow-float',
+              'relative w-full overflow-hidden border border-line bg-elevated shadow-float',
               wide ? 'max-w-2xl' : 'max-w-md',
               className,
             )}
@@ -63,7 +63,7 @@ export function Dialog({
               <button
                 onClick={onClose}
                 aria-label="Close dialog"
-                className="rounded-md p-1.5 text-ink-3 transition-colors hover:bg-raised hover:text-ink"
+                className="p-1.5 text-ink-3 transition-colors hover:bg-raised hover:text-ink"
               >
                 <X className="size-4" />
               </button>
@@ -77,40 +77,114 @@ export function Dialog({
   )
 }
 
+type DialogTone = 'danger' | 'default' | 'warning' | 'success'
+type ConfirmOptions = {
+  title: string
+  body: ReactNode
+  confirmLabel?: string
+  cancelLabel?: string
+  tone?: DialogTone
+  icon?: ReactNode
+}
+type AlertOptions = Omit<ConfirmOptions, 'cancelLabel' | 'confirmLabel'> & { confirmLabel?: string }
+type PromptOptions = ConfirmOptions & { placeholder?: string; defaultValue?: string; inputLabel?: string }
+
+type DialogState =
+  | ({ kind: 'confirm' } & ConfirmOptions & { resolve: (v: boolean) => void })
+  | ({ kind: 'alert' } & AlertOptions & { resolve: () => void })
+  | ({ kind: 'prompt' } & PromptOptions & { resolve: (v: string | null) => void; value: string })
+
+const DialogContext = createContext<{
+  confirm: (opts: ConfirmOptions) => Promise<boolean>
+  alert: (opts: AlertOptions) => Promise<void>
+  prompt: (opts: PromptOptions) => Promise<string | null>
+} | null>(null)
+
+export function useConfirm() {
+  const ctx = useContext(DialogContext)
+  if (!ctx) throw new Error('useConfirm must be used within <ConfirmProvider>')
+  return ctx.confirm
+}
+export function useDialog() {
+  const ctx = useContext(DialogContext)
+  if (!ctx) throw new Error('useDialog must be used within <ConfirmProvider>')
+  return ctx
+}
+
+export function ConfirmProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<DialogState | null>(null)
+
+  const confirm = useCallback((opts: ConfirmOptions) => new Promise<boolean>((resolve) => {
+    setState({ kind: 'confirm', ...opts, resolve })
+  }), [])
+  const alert = useCallback((opts: AlertOptions) => new Promise<void>((resolve) => {
+    setState({ kind: 'alert', ...opts, resolve })
+  }), [])
+  const prompt = useCallback((opts: PromptOptions) => new Promise<string | null>((resolve) => {
+    setState({ kind: 'prompt', ...opts, value: opts.defaultValue ?? '', resolve })
+  }), [])
+
+  const close = (value: boolean | string | null) => {
+    if (!state) return
+    if (state.kind === 'confirm') state.resolve(Boolean(value))
+    if (state.kind === 'alert') state.resolve()
+    if (state.kind === 'prompt') state.resolve(typeof value === 'string' ? value : null)
+    setState(null)
+  }
+
+  const tone = state?.tone ?? (state?.kind === 'alert' ? 'default' : 'danger')
+  const Icon = tone === 'danger' ? Trash2 : tone === 'warning' ? AlertTriangle : tone === 'success' ? Info : Info
+  const confirmVariant = tone === 'danger' ? 'danger' : 'default'
+
+  return (
+    <DialogContext.Provider value={{ confirm, alert, prompt }}>
+      {children}
+      <Dialog open={!!state} onClose={() => close(state?.kind === 'prompt' ? null : false)} title={state?.title ?? 'Confirm'}>
+        <div className="flex gap-3">
+          <div className={cn('mt-0.5 grid size-10 shrink-0 place-items-center border',
+            tone === 'danger' && 'border-danger/30 bg-danger/10 text-danger',
+            tone === 'warning' && 'border-signal/30 bg-signal/10 text-signal',
+            tone === 'success' && 'border-ok/30 bg-ok/10 text-ok',
+            tone === 'default' && 'border-info/30 bg-info/10 text-info')}>
+            {state?.icon ?? <Icon className="size-5" />}
+          </div>
+          <div className="min-w-0 flex-1 space-y-3">
+            <div className="text-[13px] leading-relaxed text-ink-2">{state?.body}</div>
+            {state?.kind === 'prompt' && (
+              <label className="block">
+                {state.inputLabel && <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-3">{state.inputLabel}</span>}
+                <input autoFocus className="input w-full" value={state.value} placeholder={state.placeholder} onChange={e => setState(s => s?.kind === 'prompt' ? { ...s, value: e.target.value } : s)} />
+              </label>
+            )}
+          </div>
+        </div>
+        <div className="mt-6 flex justify-end gap-2">
+          {state?.kind !== 'alert' && <Button variant="ghost" onClick={() => close(state?.kind === 'prompt' ? null : false)}>{state?.cancelLabel ?? 'Cancel'}</Button>}
+          <Button variant={confirmVariant} onClick={() => close(state?.kind === 'prompt' ? (state.value) : true)}>{state?.confirmLabel ?? (state?.kind === 'alert' ? 'OK' : 'Confirm')}</Button>
+        </div>
+      </Dialog>
+    </DialogContext.Provider>
+  )
+}
+
+/** Declarative wrapper around the imperative confirm system. */
 export function ConfirmDialog({
   title,
   body,
   confirmLabel = 'Confirm',
   onConfirm,
   children,
+  tone = 'danger',
 }: {
   title: string
-  body: string
+  body: ReactNode
   confirmLabel?: string
-  onConfirm: () => void
+  onConfirm: () => void | Promise<void>
   children: ReactNode
+  tone?: DialogTone
 }) {
-  const [open, setOpen] = useState(false)
+  const confirm = useConfirm()
   return (
-    <>
-      <span onClick={() => setOpen(true)}>{children}</span>
-      <Dialog open={open} onClose={() => setOpen(false)} title={title}>
-        <p className="text-[13px] leading-relaxed text-ink-2">{body}</p>
-        <div className="mt-5 flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
-          <Button
-            variant="danger"
-            onClick={() => {
-              setOpen(false)
-              onConfirm()
-            }}
-          >
-            {confirmLabel}
-          </Button>
-        </div>
-      </Dialog>
-    </>
+    <span onClick={async () => { if (await confirm({ title, body, confirmLabel, tone })) await onConfirm() }}>{children}</span>
   )
 }

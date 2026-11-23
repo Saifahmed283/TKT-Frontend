@@ -74,6 +74,12 @@ export function PaymentsPage() {
     onError: (e: any) => toast.error(e?.message ?? 'Review failed'),
   })
 
+  const fetchRef = useMutation({
+    mutationFn: (reference: string) => api.post<{ message: string; localMatchCount: number; external: any }>(`/events/${eventId}/payments/reference/${encodeURIComponent(reference)}/fetch`, {}),
+    onSuccess: (d) => { toast.success(d.message || 'Reference checked'); refresh(); void refQ.refetch() },
+    onError: (e: any) => toast.error(e?.message ?? 'Reference fetch failed'),
+  })
+
   const exportPayments = async () => {
     try { await downloadBlob(`/events/${eventId}/payments/export.xlsx`, `payments-${eventId}.xlsx`); toast.success('Export ready') }
     catch (e: any) { toast.error(e?.message ?? 'Export failed') }
@@ -123,8 +129,10 @@ export function PaymentsPage() {
         <Panel>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <div className="text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-3">Payment reference lookup</div>
-            <div className="flex items-center gap-2"><Search size={14} className="text-ink-3" /><Input value={refLookup} onChange={e => setRefLookup(e.target.value)} placeholder="Search payment reference..." className="w-72" /></div>
+            <div className="flex items-center gap-2"><Search size={14} className="text-ink-3" /><Input value={refLookup} onChange={e => setRefLookup(e.target.value)} placeholder="Search payment reference..." className="w-72" />
+              <Button size="sm" variant="ghost" disabled={refLookup.trim().length < 3 || fetchRef.isPending} loading={fetchRef.isPending} onClick={() => fetchRef.mutate(refLookup.trim())}>Fetch by reference</Button></div>
           </div>
+          {fetchRef.data && <div className="mb-3 rounded-xl border border-line-soft bg-raised/50 p-3 text-[12px] text-ink-2"><span className="font-semibold text-ink">Fetch result:</span> {fetchRef.data.message}</div>}
           {refLookup.trim().length >= 3 && (
             <Table headers={['Reference', 'Reservation', 'Attendee', 'Proof', 'Status']}>
               {(refQ.data ?? []).map(r => {

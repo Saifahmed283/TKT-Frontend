@@ -1,8 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+﻿import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 import { useState, type FormEvent } from 'react'
-import { BusFront, Plus, Trash2, Armchair, Users } from 'lucide-react'
+import { BusFront, Plus, Trash2, Armchair, Users, Download } from 'lucide-react'
 import { api, ApiError } from '@/lib/api'
+import { downloadAuthFile } from '@/lib/export'
 import { useToast } from '@/components/ui/toast'
 import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
@@ -12,12 +13,13 @@ import { Badge } from '@/components/ui/badge'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { Panel } from '@/components/motion/primitives'
 
-type Seat = { id: string; label: string; row: number; col: number; state: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE'; holderName?: string | null; groupId?: string | null; ticketId?: string | null }
-type Bus = { id: string; name: string; isActive: boolean; layout: { rows: number; cols: number; aisleAfterCol?: number }; seats?: Seat[]; _count?: { seats: number } }
+type Seat = { id: string; label: string; row: number; col: number; state: 'AVAILABLE' | 'HELD' | 'RESERVED' | 'UNAVAILABLE'; holderName?: string | null; passengerName?: string | null; groupId?: string | null; ticketId?: string | null }
+type Bus = { id: string; name: string; isActive: boolean; seatPrice?: string | number; currency?: string; layout: { rows: number; cols: number; aisleAfterCol?: number }; seats?: Seat[]; _count?: { seats: number } }
 
 function seatClass(state: Seat['state'], selected: boolean) {
   if (selected) return 'border-signal bg-signal text-black'
   if (state === 'AVAILABLE') return 'border-ok/40 bg-ok/15 text-ok hover:bg-ok/25'
+  if (state === 'HELD') return 'border-amber/40 bg-amber/15 text-amber'
   if (state === 'RESERVED') return 'border-danger/40 bg-danger/15 text-danger'
   return 'border-line bg-ink-3/20 text-ink-3 cursor-not-allowed'
 }
@@ -30,14 +32,14 @@ export function BusesPage() {
   const [activeBusId, setActiveBusId] = useState<string | null>(null)
   const [selected, setSelected] = useState<string[]>([])
   const [holderName, setHolderName] = useState('')
-  const [form, setForm] = useState({ name: '', rows: 10, cols: 4, aisleAfterCol: 2 })
+  const [form, setForm] = useState({ name: '', rows: 10, cols: 4, aisleAfterCol: 2, seatPrice: 0, currency: 'EGP' })
 
   const busesQ = useQuery({ queryKey: ['events', eventId, 'buses'], queryFn: () => api.get<Bus[]>(`/events/${eventId}/buses`), enabled: !!eventId })
   const seatsQ = useQuery({ queryKey: ['events', eventId, 'buses', activeBusId, 'seats'], queryFn: () => api.get<Bus & { seats: Seat[] }>(`/events/${eventId}/buses/${activeBusId}/seats`), enabled: !!eventId && !!activeBusId })
 
   const refresh = () => { void qc.invalidateQueries({ queryKey: ['events', eventId, 'buses'] }) }
   const createBus = useMutation({
-    mutationFn: () => api.post(`/events/${eventId}/buses`, { name: form.name, layout: { rows: form.rows, cols: form.cols, aisleAfterCol: form.aisleAfterCol } }),
+    mutationFn: () => api.post(`/events/${eventId}/buses`, { name: form.name, seatPrice: form.seatPrice, currency: form.currency, layout: { rows: form.rows, cols: form.cols, aisleAfterCol: form.aisleAfterCol } }),
     onSuccess: (b: any) => { toast.success('Bus created'); setCreateOpen(false); setActiveBusId(b.id); refresh() },
     onError: (e) => toast.error(e instanceof ApiError ? e.message : 'Failed to create bus'),
   })
@@ -104,6 +106,7 @@ export function BusesPage() {
                 <div className="flex items-center gap-2"><Armchair size={16} className="text-signal" /><span className="font-display text-lg font-semibold">{bus?.name}</span></div>
                 <div className="flex items-center gap-3 text-[11px] text-ink-3">
                   <span className="inline-flex items-center gap-1"><span className="size-3 rounded-sm bg-ok/40" /> Available</span>
+                  <span className="inline-flex items-center gap-1"><span className="size-3 rounded-sm bg-amber/40" /> Held</span>
                   <span className="inline-flex items-center gap-1"><span className="size-3 rounded-sm bg-danger/40" /> Reserved</span>
                   <span className="inline-flex items-center gap-1"><span className="size-3 rounded-sm bg-ink-3/40" /> Unavailable</span>
                 </div>
@@ -140,15 +143,16 @@ export function BusesPage() {
                 <Field label="Holder / group name"><Input value={holderName} onChange={e => setHolderName(e.target.value)} placeholder="Name shown on seat" /></Field>
                 <Button disabled={selected.length === 0 || holderName.trim().length < 2} loading={reserve.isPending} onClick={() => reserve.mutate()}><Users size={15} /> Reserve {selected.length || ''} seat(s)</Button>
                 <Button variant="ghost" disabled={selected.length === 0} loading={release.isPending} onClick={() => release.mutate(selected)}>Release selected</Button>
+                <Button variant="ghost" onClick={() => void downloadAuthFile(`/events/${eventId}/buses/${activeBusId}/manifest.xlsx`, `bus-manifest.xlsx`).catch(() => toast.error('Export failed'))}><Download size={14} /> Seat manifest</Button>
                 <Badge tone="default">{selected.length} selected</Badge>
               </div>
               <p className="text-[11px] text-ink-3">Tip: right-click a seat to mark unavailable/available. Reserved seats show holder name on hover.</p>
 
-              {seats.some(s => s.state === 'RESERVED') && (
+              {seats.some(s => s.state === 'RESERVED' || s.state === 'HELD') && (
                 <div className="rounded-xl border border-line p-3">
-                  <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-3">Reserved seats</div>
+                  <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-3">Reserved / held seats</div>
                   <div className="flex flex-wrap gap-2">
-                    {seats.filter(s => s.state === 'RESERVED').map(s => <Badge key={s.id} tone="danger">{s.label} · {s.holderName ?? '—'}</Badge>)}
+                    {seats.filter(s => s.state === 'RESERVED' || s.state === 'HELD').map(s => <Badge key={s.id} tone={s.state === 'HELD' ? 'warn' : 'danger'}>{s.label} · {s.passengerName || s.holderName || s.state}</Badge>)}
                   </div>
                 </div>
               )}
@@ -165,9 +169,14 @@ export function BusesPage() {
             <Field label="Cols"><Input type="number" min={1} max={8} value={form.cols} onChange={e => setForm({ ...form, cols: Number(e.target.value) })} /></Field>
             <Field label="Aisle after col"><Input type="number" min={0} max={8} value={form.aisleAfterCol} onChange={e => setForm({ ...form, aisleAfterCol: Number(e.target.value) })} /></Field>
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Seat price"><Input type="number" min={0} step="0.01" value={form.seatPrice} onChange={e => setForm({ ...form, seatPrice: Number(e.target.value) })} /></Field>
+            <Field label="Currency"><Input value={form.currency} onChange={e => setForm({ ...form, currency: e.target.value })} /></Field>
+          </div>
           <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={() => setCreateOpen(false)}>Cancel</Button><Button type="submit" loading={createBus.isPending}>Create bus</Button></div>
         </form>
       </Dialog>
     </div>
   )
 }
+

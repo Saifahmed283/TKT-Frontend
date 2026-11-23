@@ -6,6 +6,7 @@ import { api } from '../../lib/api'
 import type { AccessDecision, Area } from '../../lib/types'
 import { ErrorBanner, PageHeader } from '../../components/ui'
 import { useAuth } from '../../lib/auth'
+import { useConfirm } from '@/components/ui/dialog'
 
 type BarcodeDetectorLike = {
   detect: (source: CanvasImageSource) => Promise<Array<{ rawValue?: string }>>
@@ -43,6 +44,7 @@ async function signPayload(privateKey: CryptoKey, payload: string): Promise<stri
 
 export default function ScannerPage() {
   const { user } = useAuth()
+  const confirm = useConfirm()
   const qc = useQueryClient()
   const [device, setDevice] = useState<Device | null>(null)
   const [regError, setRegError] = useState<string | null>(null)
@@ -507,7 +509,7 @@ export default function ScannerPage() {
                 <button
                   className="btn-danger px-2 py-1"
                   onClick={() => {
-                    if (confirm('Clear all queued offline entries?')) setQueue([])
+                    void (async () => { if (await confirm({ title: 'Clear offline queue', body: 'Clear all queued offline scan entries from this device?', confirmLabel: 'Clear queue', tone: 'warning' })) setQueue([]) })()
                   }}
                 >
                   <Trash2 size={12} />

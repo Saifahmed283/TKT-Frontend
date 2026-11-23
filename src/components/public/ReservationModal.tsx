@@ -1,7 +1,7 @@
-import { useEffect, useState, type FormEvent } from 'react'
+﻿import { useEffect, useState, type FormEvent } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import QRCode from 'qrcode'
-import { CheckCircle2, Copy, Lock, QrCode, ShieldCheck, Ticket } from 'lucide-react'
+import { CheckCircle2, Clock3, Copy, Lock, QrCode, ShieldCheck, Ticket } from 'lucide-react'
 import { Modal, ErrorBanner } from '../ui'
 import { api, ApiError } from '../../lib/api'
 import { useLanguage } from '../../lib/i18n'
@@ -51,6 +51,11 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
   const buses = (event.buses ?? []).filter(b => (b.seats?.length ?? 0) > 0)
   const [busId, setBusId] = useState(buses[0]?.id ?? '')
   const [selectedSeatIds, setSelectedSeatIds] = useState<string[]>([])
+  const [holdToken] = useState(() => `hold_${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`)
+  const [holdExpiresAt, setHoldExpiresAt] = useState<string | null>(null)
+  const [holdError, setHoldError] = useState<string | null>(null)
+  const [holding, setHolding] = useState(false)
+  const [seatPassengers, setSeatPassengers] = useState<Record<string, { name: string; email: string; phone: string }>>({})
   const qrUrl = useQrDataUrl(done?.approval === 'APPROVED' && done.qr ? done.qr : null)
   const pending = done?.approval === 'PENDING'
   const status = useReservationStatus(event.id, pending && checkingCode ? checkingCode : null)
@@ -71,6 +76,24 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
     }
   }, [done, status.data])
 
+  useEffect(() => {
+    if (!busId || selectedSeatIds.length === 0) { setHoldExpiresAt(null); setHoldError(null); return }
+    let alive = true
+    setHolding(true)
+    setHoldError(null)
+    const t = setTimeout(async () => {
+      try {
+        const res = await api.post<{ holdToken: string; holdExpiresAt: string }>(`/public/events/${event.id}/buses/${busId}/hold`, { seatIds: selectedSeatIds, sessionId: holdToken, holdMinutes: 10 })
+        if (alive) setHoldExpiresAt(res.holdExpiresAt)
+      } catch (e: any) {
+        if (alive) { setHoldError(e?.message ?? 'Could not hold selected seats. Please reselect.'); setHoldExpiresAt(null) }
+      } finally {
+        if (alive) setHolding(false)
+      }
+    }, 350)
+    return () => { alive = false; clearTimeout(t) }
+  }, [busId, selectedSeatIds, holdToken, event.id])
+
   const reserve = useMutation({
     mutationFn: () =>
       api.post<ReservationResult>(`/public/events/${event.id}/reservations`, {
@@ -81,9 +104,11 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
         paymentProviderId: isPaid && paymentProviderId ? paymentProviderId : undefined,
         paymentReference: isPaid && paymentReference.trim() ? paymentReference.trim() : undefined,
         paymentProofUrl: isPaid && paymentProofUrl ? paymentProofUrl : undefined,
-        paymentAmount: isPaid && selected ? Number(selected.price) : undefined,
+        paymentAmount: isPaid ? totalPrice : undefined,
         busId: busId || undefined,
         seatIds: selectedSeatIds.length ? selectedSeatIds : undefined,
+        holdToken: selectedSeatIds.length ? holdToken : undefined,
+        seatPassengers: selectedSeatIds.length ? selectedSeatIds.map(id => ({ seatId: id, name: seatPassengers[id]?.name?.trim() || name.trim(), email: seatPassengers[id]?.email?.trim() || email.trim(), phone: seatPassengers[id]?.phone?.trim() || phone.trim() || undefined })) : undefined,
       }),
     onSuccess: (data) => {
       setDone(data)
@@ -112,7 +137,12 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
   }
 
   const selected = availableTypes.find((x) => x.id === ticketTypeId)
-  const isPaid = Number(selected?.price ?? 0) > 0
+  const selectedBus = buses.find(b => b.id === busId) ?? buses[0]
+  const seatUnitPrice = Number(selectedBus?.seatPrice ?? 0)
+  const seatTotal = selectedSeatIds.length * (Number.isFinite(seatUnitPrice) ? seatUnitPrice : 0)
+  const ticketPrice = Number(selected?.price ?? 0)
+  const totalPrice = (Number.isFinite(ticketPrice) ? ticketPrice : 0) + seatTotal
+  const isPaid = totalPrice > 0
 
   const copyCode = async (code: string) => {
     try {
@@ -265,7 +295,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
           </div>
           {buses.length > 0 && (
             <div className="space-y-3 border border-line-soft bg-elevated/20 p-4">
-              <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-signal">Bus seats (optional)</p>
+              <div className="flex items-center justify-between gap-2"><p className="text-[10px] font-medium uppercase tracking-[0.16em] text-signal">Bus seats (optional)</p>{(() => { const b = buses.find(x => x.id === busId) ?? buses[0]; const price = Number(b?.seatPrice ?? 0); return price > 0 ? <span className="text-[11px] text-ink-2">{b?.currency ?? 'EGP'} {price.toLocaleString()} / seat</span> : null })()}</div>
               {buses.length > 1 && (
                 <select className="input" value={busId} onChange={(e) => { setBusId(e.target.value); setSelectedSeatIds([]) }}>
                   {buses.map(b => <option key={b.id} value={b.id}>{b.name} ({b.availableSeats} available)</option>)}
@@ -278,7 +308,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
                 const aisleAfter = bus.layout.aisleAfterCol ?? 0
                 return (
                   <div>
-                    <div className="mb-2 flex items-center gap-3 text-[10px] text-ink-3"><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-sm bg-ok/40" />Available</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-sm bg-danger/40" />Reserved</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-sm bg-ink-3/40" />Unavailable</span></div>
+                    <div className="mb-2 flex items-center gap-3 text-[10px] text-ink-3"><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-sm bg-ok/40" />Available</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-sm bg-amber/40" />Held</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-sm bg-danger/40" />Reserved</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-sm bg-ink-3/40" />Unavailable</span></div>
                     <div className="overflow-x-auto"><div className="grid w-fit gap-1.5" style={{ gridTemplateColumns: `repeat(${cols + (aisleAfter > 0 && aisleAfter < cols ? 1 : 0)}, minmax(0,1fr))` }}>
                       {Array.from({ length: bus.layout.rows }).flatMap((_, r) => {
                         const row = r + 1; const cells: any[] = []
@@ -287,15 +317,32 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
                           if (!seat) { cells.push(<div key={`${row}-${c}`} />) }
                           else {
                             const selectedSeat = selectedSeatIds.includes(seat.id)
-                            const cls = selectedSeat ? 'border-signal bg-signal text-black' : seat.state === 'AVAILABLE' ? 'border-ok/40 bg-ok/15 text-ok hover:bg-ok/25' : seat.state === 'RESERVED' ? 'border-danger/40 bg-danger/15 text-danger cursor-not-allowed' : 'border-line bg-ink-3/20 text-ink-3 cursor-not-allowed'
-                            cells.push(<button key={seat.id} type="button" disabled={seat.state !== 'AVAILABLE' && !selectedSeat} onClick={() => setSelectedSeatIds(prev => prev.includes(seat.id) ? prev.filter(x => x !== seat.id) : [...prev, seat.id])} className={`grid h-8 w-8 place-items-center rounded-md border text-[10px] font-semibold transition-colors ${cls}`} title={seat.holderName ? `${seat.label} · ${seat.holderName}` : seat.label}>{seat.label}</button>)
+                            const cls = selectedSeat ? 'border-signal bg-signal text-black' : seat.state === 'AVAILABLE' ? 'border-ok/40 bg-ok/15 text-ok hover:bg-ok/25' : seat.state === 'HELD' ? 'border-amber/40 bg-amber/15 text-amber cursor-not-allowed' : seat.state === 'RESERVED' ? 'border-danger/40 bg-danger/15 text-danger cursor-not-allowed' : 'border-line bg-ink-3/20 text-ink-3 cursor-not-allowed'
+                            cells.push(<button key={seat.id} type="button" disabled={!(seat.state === 'AVAILABLE' || selectedSeat)} onClick={() => setSelectedSeatIds(prev => prev.includes(seat.id) ? prev.filter(x => x !== seat.id) : [...prev, seat.id])} className={`grid h-8 w-8 place-items-center rounded-md border text-[10px] font-semibold transition-colors ${cls}`} title={seat.holderName ? `${seat.label} · ${seat.holderName}` : seat.label}>{seat.label}</button>)
                           }
                           if (aisleAfter === c && c < cols) cells.push(<div key={`a-${row}-${c}`} className="w-3" />)
                         }
                         return cells
                       })}
                     </div></div>
-                    {selectedSeatIds.length > 0 && <p className="mt-2 text-[11px] text-ink-2">Selected seats: {bus.seats.filter(s => selectedSeatIds.includes(s.id)).map(s => s.label).join(', ')}</p>}
+                    {selectedSeatIds.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <div className="flex flex-wrap items-center gap-2 text-[11px] text-ink-2">
+                          <span>Selected seats: {bus.seats.filter(s => selectedSeatIds.includes(s.id)).map(s => s.label).join(', ')}</span>
+                          {holding && <span className="inline-flex items-center gap-1 text-signal"><Clock3 size={12} /> Holding...</span>}
+                          {holdExpiresAt && !holding && <span className="inline-flex items-center gap-1 text-ok"><Clock3 size={12} /> Held until {new Date(holdExpiresAt).toLocaleTimeString()}</span>}
+                          {holdError && <span className="text-danger">{holdError}</span>}
+                        </div>
+                        {bus.seats.filter(s => selectedSeatIds.includes(s.id)).map(s => (
+                          <div key={s.id} className="grid gap-2 rounded-lg border border-line-soft bg-panel/40 p-2 sm:grid-cols-3">
+                            <div className="text-[11px] font-semibold text-signal sm:col-span-3">Seat {s.label} passenger</div>
+                            <input className="input !py-1.5 text-[12px]" placeholder="Passenger name" value={seatPassengers[s.id]?.name ?? name} onChange={e => setSeatPassengers(prev => ({ ...prev, [s.id]: { name: e.target.value, email: prev[s.id]?.email ?? email, phone: prev[s.id]?.phone ?? phone } }))} />
+                            <input className="input !py-1.5 text-[12px]" placeholder="Email" value={seatPassengers[s.id]?.email ?? email} onChange={e => setSeatPassengers(prev => ({ ...prev, [s.id]: { name: prev[s.id]?.name ?? name, email: e.target.value, phone: prev[s.id]?.phone ?? phone } }))} />
+                            <input className="input !py-1.5 text-[12px]" placeholder="Phone" value={seatPassengers[s.id]?.phone ?? phone} onChange={e => setSeatPassengers(prev => ({ ...prev, [s.id]: { name: prev[s.id]?.name ?? name, email: prev[s.id]?.email ?? email, phone: e.target.value } }))} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )
               })()}
@@ -334,11 +381,12 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
               {paymentProofUrl && <img src={paymentProofUrl} alt="Payment proof preview" className="max-h-40 rounded border border-line-soft object-contain" />}
             </div>
           )}
-          <div className="flex items-center justify-between gap-3 border border-line-soft bg-elevated/20 px-4 py-3 text-sm">
-            <span className="flex items-center gap-2 text-ink-3"><Ticket size={14} className="text-signal" /> {selected?.name ?? t('ticket')}</span>
-            <span className="font-mono text-signal">{selected ? money(selected.price, lang) : '—'}</span>
+          <div className="space-y-2 border border-line-soft bg-elevated/20 px-4 py-3 text-sm">
+            <div className="flex items-center justify-between gap-3"><span className="flex items-center gap-2 text-ink-3"><Ticket size={14} className="text-signal" /> {selected?.name ?? t('ticket')}</span><span className="font-mono text-ink-1">{selected ? money(selected.price, lang) : '—'}</span></div>
+            {seatTotal > 0 && <div className="flex items-center justify-between gap-3 text-ink-3"><span>Bus seats ({selectedSeatIds.length})</span><span className="font-mono">{selectedBus?.currency ?? 'EGP'} {seatTotal.toLocaleString()}</span></div>}
+            <div className="flex items-center justify-between gap-3 border-t border-line-soft pt-2 font-medium text-ink-0"><span>Total</span><span className="font-mono text-signal">{selectedBus?.currency ?? 'EGP'} {totalPrice.toLocaleString()}</span></div>
           </div>
-          <button type="submit" disabled={reserve.isPending || !ticketTypeId || !!selected?.soldOut} className="btn-primary w-full !py-3">
+          <button type="submit" disabled={reserve.isPending || !ticketTypeId || !!selected?.soldOut || (selectedSeatIds.length > 0 && (!!holdError || holding || !holdExpiresAt))} className="btn-primary w-full !py-3">
             {reserve.isPending ? t('submitting') : t('confirmReservation')}
           </button>
           <p className="text-center font-mono text-[10px] uppercase tracking-[0.18em] text-ink-3">{t('secureBookingBody')}</p>
@@ -347,3 +395,4 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
     </Modal>
   )
 }
+

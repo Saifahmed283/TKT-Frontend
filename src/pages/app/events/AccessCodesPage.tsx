@@ -9,7 +9,7 @@ import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Field, Input, Select } from '@/components/ui/input'
 import { Table, Td, EmptyState } from '@/components/ui/table'
-import { Dialog } from '@/components/ui/dialog'
+import { ConfirmDialog, Dialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 
@@ -103,7 +103,7 @@ export function AccessCodesPage() {
                 <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100">
                   <Button variant="ghost" size="sm" onClick={() => { setEditing(c); setForm({ code: c.code, type: c.type, fullName: c.fullName ?? '', email: c.email ?? '', phone: c.phone ?? '', attendeeCategory: c.attendeeCategory ?? '', ticketTypeId: c.ticketTypeId ?? '', notes: c.notes ?? '', maxRedemptions: String(c.maxRedemptions), expiresAt: c.expiresAt ? c.expiresAt.slice(0, 16) : '' }); setOpen(true) }} icon={<Pencil className="size-3.5" />} />
                   {c.status !== 'REVOKED' && <Button variant="ghost" size="sm" onClick={() => revoke.mutate(c.id)} icon={<Ban className="size-3.5" />} />}
-                  {c.redemptionCount === 0 && <Button variant="ghost" size="sm" className="text-danger" onClick={() => { if (confirm('Delete access code?')) remove.mutate(c.id) }} icon={<Trash2 className="size-3.5" />} />}
+                  {c.redemptionCount === 0 && <ConfirmDialog title="Delete access code" body={`Delete access code "${c.code}"? This cannot be undone.`} confirmLabel="Delete code" onConfirm={() => remove.mutate(c.id)}><Button variant="ghost" size="sm" className="text-danger" icon={<Trash2 className="size-3.5" />} /></ConfirmDialog>}
                 </div>
               </Td>
             </tr>

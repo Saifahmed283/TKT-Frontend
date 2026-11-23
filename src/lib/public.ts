@@ -30,8 +30,8 @@ export interface PublicPaymentProvider {
   imageUrl?: string | null
 }
 
-export interface PublicSeat { id: string; label: string; row: number; col: number; state: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE'; holderName?: string | null }
-export interface PublicBus { id: string; name: string; layout: { rows: number; cols: number; aisleAfterCol?: number }; totalSeats: number; availableSeats: number; seats: PublicSeat[] }
+export interface PublicSeat { id: string; label: string; row: number; col: number; state: 'AVAILABLE' | 'HELD' | 'RESERVED' | 'UNAVAILABLE'; holderName?: string | null; passengerName?: string | null }
+export interface PublicBus { id: string; name: string; seatPrice?: string; currency?: string; layout: { rows: number; cols: number; aisleAfterCol?: number }; totalSeats: number; availableSeats: number; seats: PublicSeat[] }
 
 export interface PublicEvent {
   id: string

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Search, Plus, Lock, Check, Pencil, Trash2 } from 'lucide-react'
@@ -52,8 +52,8 @@ export default function TicketsPage() {
   const [q, setQ] = useState('')
   const [showAdd, setShowAdd] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
-  const [form, setForm] = useState({ name: '', description: '', category: '', price: '', currency: 'USD', quota: '', salesStartAt: '', salesEndAt: '', isPublic: true, sortOrder: '0' })
-  const [editForm, setEditForm] = useState({ name: '', description: '', category: '', price: '', currency: 'USD', quota: '', salesStartAt: '', salesEndAt: '', isPublic: true, sortOrder: '0', active: true })
+  const [form, setForm] = useState({ name: '', description: '', category: '', price: '', currency: 'EGP', quota: '', salesStartAt: '', salesEndAt: '', isPublic: true, sortOrder: '0' })
+  const [editForm, setEditForm] = useState({ name: '', description: '', category: '', price: '', currency: 'EGP', quota: '', salesStartAt: '', salesEndAt: '', isPublic: true, sortOrder: '0', active: true })
 
   const typesQ = useQuery({
     queryKey: ['ticket-types', eventId, sse],
@@ -74,7 +74,7 @@ export default function TicketsPage() {
     description: f.description || null,
     category: f.category || null,
     price: f.price === '' ? null : Number(f.price),
-    currency: f.currency || 'USD',
+    currency: f.currency || 'EGP',
     quota: f.quota === '' ? null : Number(f.quota),
     salesStartAt: f.salesStartAt ? new Date(f.salesStartAt).toISOString() : null,
     salesEndAt: f.salesEndAt ? new Date(f.salesEndAt).toISOString() : null,
@@ -87,7 +87,7 @@ export default function TicketsPage() {
     mutationFn: () => api.post(`/events/${eventId}/tickets/types`, payloadFrom(form)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['ticket-types'] })
-      setForm({ name: '', description: '', category: '', price: '', currency: 'USD', quota: '', salesStartAt: '', salesEndAt: '', isPublic: true, sortOrder: '0' })
+      setForm({ name: '', description: '', category: '', price: '', currency: 'EGP', quota: '', salesStartAt: '', salesEndAt: '', isPublic: true, sortOrder: '0' })
       setShowAdd(false)
     },
   })
@@ -168,7 +168,7 @@ export default function TicketsPage() {
                     <p className="truncate font-display text-sm font-semibold tracking-wide text-ink-0">{t.name}</p>
                     {t.category && <span className="border border-line px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-ink-3">{t.category}</span>}
                   </div>
-                  <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.15em] text-ink-3">{Number(t.price) > 0 ? `${t.currency ?? 'USD'} ${Number(t.price).toLocaleString()}` : 'FREE'} · {t.isPublic === false ? 'Private' : 'Public'}</p>
+                  <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.15em] text-ink-3">{Number(t.price) > 0 ? `${t.currency ?? 'EGP'} ${Number(t.price).toLocaleString()}` : 'FREE'} · {t.isPublic === false ? 'Private' : 'Public'}</p>
                 </div>
                 <div>{t.active ? <Badge tone="ok">LIVE</Badge> : <Badge tone="warn">OFF</Badge>}</div>
               </div>
@@ -194,7 +194,7 @@ export default function TicketsPage() {
                 </div>
               ) : (
                 <div className="mt-3 flex items-center gap-2 border-t border-line-soft pt-3">
-                  <button className="btn-ghost !px-2.5 !py-1 text-[10px]" onClick={() => { setEditId(t.id); setEditForm({ name: t.name, description: t.description ?? '', category: t.category ?? '', price: t.price == null ? '' : String(t.price), currency: t.currency ?? 'USD', quota: t.quota == null ? '' : String(t.quota), salesStartAt: toDateInput(t.salesStartAt), salesEndAt: toDateInput(t.salesEndAt), isPublic: t.isPublic !== false, sortOrder: String(t.sortOrder ?? 0), active: t.active }) }}><Pencil size={11} /> Edit</button>
+                  <button className="btn-ghost !px-2.5 !py-1 text-[10px]" onClick={() => { setEditId(t.id); setEditForm({ name: t.name, description: t.description ?? '', category: t.category ?? '', price: t.price == null ? '' : String(t.price), currency: t.currency ?? 'EGP', quota: t.quota == null ? '' : String(t.quota), salesStartAt: toDateInput(t.salesStartAt), salesEndAt: toDateInput(t.salesEndAt), isPublic: t.isPublic !== false, sortOrder: String(t.sortOrder ?? 0), active: t.active }) }}><Pencil size={11} /> Edit</button>
                   <button className="btn-ghost !px-2.5 !py-1 text-[10px]" disabled={patchType.isPending} onClick={() => patchType.mutate({ id: t.id, patch: { active: !t.active } })}>{t.active ? <><Lock size={11} /> Deactivate</> : <><Check size={11} /> Activate</>}</button>
                   {t._count.tickets === 0 && (
                     <ConfirmDialog title="Delete ticket type?" body={`Delete "${t.name}"? This cannot be undone.`} confirmLabel="Delete" onConfirm={() => deleteType.mutate(t.id)}>
@@ -269,3 +269,5 @@ export default function TicketsPage() {
     </div>
   )
 }
+
+

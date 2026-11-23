@@ -5,6 +5,7 @@ import { ArrowRight, Users, Ticket, QrCode, Shield, ListTodo, AlertTriangle, Meg
 import { api } from '../lib/api'
 import type { Overview } from '../lib/types'
 import { ErrorBanner, PageHeader, Spinner, StatCard, StatusBadge, fmtDateTime, fmtTime, Corners, Blink } from '../components/ui'
+import { useConfirm } from '@/components/ui/dialog'
 
 const moduleCards = [
   { to: 'attendees', icon: Users, label: 'Attendees', desc: 'People, check-in status, demographics' },
@@ -27,10 +28,30 @@ const moduleCards = [
   { to: 'reports', icon: Radar, label: 'Reports', desc: 'Attendance & access analytics' },
 ]
 
+const STATUS_FLOW: Record<string, string[]> = {
+  DRAFT: ['PLANNING', 'READY', 'ARCHIVED'],
+  PLANNING: ['READY', 'DRAFT', 'ARCHIVED'],
+  READY: ['PUBLISHED', 'PLANNING', 'DRAFT', 'ARCHIVED'],
+  PUBLISHED: ['LIVE', 'COMPLETED', 'READY', 'ARCHIVED'],
+  LIVE: ['COMPLETED', 'ARCHIVED'],
+  COMPLETED: ['ARCHIVED'],
+  ARCHIVED: [],
+}
+
+const STATUS_ACTIONS: Record<string, { label: string; icon: typeof Play; primary?: boolean }> = {
+  PLANNING: { label: 'Move to planning', icon: ClipboardCheck },
+  READY: { label: 'Mark ready', icon: Check },
+  PUBLISHED: { label: 'Publish', icon: Globe, primary: true },
+  LIVE: { label: 'Go live', icon: Play, primary: true },
+  COMPLETED: { label: 'Complete', icon: Check },
+  ARCHIVED: { label: 'Archive', icon: Archive },
+}
+
 export default function EventDetail() {
   const { eventId = '' } = useParams()
   const qc = useQueryClient()
   const navigate = useNavigate()
+  const confirm = useConfirm()
   const [winStart, setWinStart] = useState('')
   const [winEnd, setWinEnd] = useState('')
 
@@ -97,19 +118,26 @@ export default function EventDetail() {
         actions={
           <>
             <StatusBadge status={event.status} />
-            {event.status !== 'LIVE' && event.status !== 'ARCHIVED' && (
-              <button className="btn-primary" onClick={() => setStatus.mutate('LIVE')} disabled={setStatus.isPending}>
-                <Play size={14} /> Go live
-              </button>
-            )}
-            {event.status !== 'ARCHIVED' && (
-              <button className="btn-ghost" onClick={() => setStatus.mutate('ARCHIVED')} disabled={setStatus.isPending}>
-                <Archive size={14} /> Archive
-              </button>
-            )}
+            {(STATUS_FLOW[event.status] ?? []).map((status) => {
+              const action = STATUS_ACTIONS[status]
+              if (!action) return null
+              const Icon = action.icon
+              return (
+                <button
+                  key={status}
+                  className={action.primary ? 'btn-primary' : 'btn-ghost'}
+                  onClick={() => setStatus.mutate(status)}
+                  disabled={setStatus.isPending}
+                >
+                  <Icon size={14} /> {action.label}
+                </button>
+              )
+            })}
             <button
               className="btn-ghost text-danger hover:text-danger"
-              onClick={() => { if (confirm(`Delete event "${event.name}" permanently? This cannot be undone.`)) deleteEvent.mutate() }}
+              onClick={async () => {
+                if (await confirm({ title: 'Delete event', body: `Delete "${event.name}" permanently? This removes the event and its data. This cannot be undone.`, confirmLabel: 'Delete event', tone: 'danger' })) deleteEvent.mutate()
+              }}
               disabled={deleteEvent.isPending}
             >
               <Trash2 size={14} /> Delete

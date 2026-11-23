@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { useMemo, useState, type FormEvent } from 'react'
 import { Shield, Users, Plus, Trash2, Pencil, Search, CheckSquare, Square } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { api, ApiError } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { PageHeader } from '@/components/layout/page-header'
@@ -98,6 +99,7 @@ export function OrganizationDetailPage() {
   const { orgId = '' } = useParams()
   const qc = useQueryClient()
   const toast = useToast()
+  const navigate = useNavigate()
   const [memberOpen, setMemberOpen] = useState(false)
   const [roleOpen, setRoleOpen] = useState(false)
   const [editRole, setEditRole] = useState<Role | null>(null)
@@ -105,6 +107,7 @@ export function OrganizationDetailPage() {
   const [memberForm, setMemberForm] = useState({ email: '', name: '', role: 'MEMBER' })
   const [memberErr, setMemberErr] = useState('')
   const [roleErr, setRoleErr] = useState('')
+  const [deleteOrgOpen, setDeleteOrgOpen] = useState(false)
 
   const orgQ = useQuery({ queryKey: ['org', orgId], queryFn: () => api.get<Org>(`/organizations/${orgId}`), enabled: !!orgId })
   const membersQ = useQuery({ queryKey: ['org', orgId, 'members'], queryFn: () => api.get<Member[]>(`/organizations/${orgId}/members`), enabled: !!orgId })
@@ -133,6 +136,12 @@ export function OrganizationDetailPage() {
     onError: (e) => { toast.error(e instanceof ApiError ? e.message : 'Failed'); setDeleteRoleId(null) },
   })
 
+  const deleteOrg = useMutation({
+    mutationFn: () => api.delete(`/organizations/${orgId}`),
+    onSuccess: () => { toast.success('Organization deleted'); qc.invalidateQueries({ queryKey: ['organizations'] }); navigate('/app/organizations') },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : 'Failed to delete organization'),
+  })
+
   if (orgQ.isLoading) return <FullPageSpinner />
   if (orgQ.error || !orgQ.data) return <InlineError message={orgQ.error instanceof Error ? orgQ.error.message : "Failed to load organization"} />
   const org = orgQ.data
@@ -142,7 +151,7 @@ export function OrganizationDetailPage() {
   return (
     <div>
       <PageHeader title={org.name} subtitle={org.description ?? org.slug}
-        actions={canManage ? <><Button variant="ghost" onClick={() => { setEditRole(null); setRoleErr(''); setRoleOpen(true) }}><Plus size={15} /> New role</Button><Button onClick={() => setMemberOpen(true)}><Plus size={15} /> Add member</Button></> : undefined} />
+        actions={canManage ? <div className="flex items-center gap-2"><Button variant="ghost" onClick={() => { setEditRole(null); setRoleErr(''); setRoleOpen(true) }}><Plus size={15} /> New role</Button><Button onClick={() => setMemberOpen(true)}><Plus size={15} /> Add member</Button><Button variant="ghost" className="!text-danger" icon={<Trash2 className="size-4" />} onClick={() => setDeleteOrgOpen(true)}>Delete org</Button></div> : undefined} />
 
       <div className="space-y-6 p-6">
         <div className="grid gap-4 sm:grid-cols-3">
@@ -210,7 +219,19 @@ export function OrganizationDetailPage() {
       </Dialog>
 
       {roleOpen && <RoleEditor key={editRole?.id ?? 'new'} open={roleOpen} onClose={() => { setRoleOpen(false); setEditRole(null) }} initial={editRole} catalog={catalog} onSave={(d) => { setRoleErr(''); saveRole.mutate(d) }} saving={saveRole.isPending} error={roleErr} />}
-      {deleteRoleId && <Dialog open={!!deleteRoleId} onClose={() => setDeleteRoleId(null)} title="Delete custom role"><p className="text-sm text-ink-2">This role will be removed. It must not be assigned to staff.</p><div className="mt-4 flex justify-end gap-2"><Button variant="ghost" onClick={() => setDeleteRoleId(null)}>Cancel</Button><Button variant="ghost" className="text-danger" loading={deleteRole.isPending} onClick={() => { if (deleteRoleId) deleteRole.mutate(deleteRoleId) }}>Delete</Button></div></Dialog>}
+      {deleteRoleId && <Dialog open={!!deleteRoleId} onClose={() => setDeleteRoleId(null)} title="Delete custom role"><p className="text-sm text-ink-2">This role will be removed. It must not be assigned to staff.</p><div className="mt-4 flex justify-end gap-2"><Button variant="ghost" onClick={() => setDeleteRoleId(null)}>Cancel</Button><Button variant="danger" loading={deleteRole.isPending} onClick={() => { if (deleteRoleId) deleteRole.mutate(deleteRoleId) }}>Delete</Button></div></Dialog>}
+      <Dialog open={deleteOrgOpen} onClose={() => setDeleteOrgOpen(false)} title="Delete organization">
+        <div className="space-y-4">
+          <div className="rounded-xl border border-danger/30 bg-danger/10 p-4 text-[13px] text-ink-2">
+            <p className="font-semibold text-danger">Permanent action</p>
+            <p className="mt-1">Delete <span className="font-semibold text-ink">{org.name}</span> and all its events, tickets, credentials, buses, payments, and staff data. This cannot be undone.</p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setDeleteOrgOpen(false)}>Cancel</Button>
+            <Button variant="danger" loading={deleteOrg.isPending} onClick={() => deleteOrg.mutate()}>Delete organization</Button>
+          </div>
+        </div>
+      </Dialog>
     </div>
   )
 }
