@@ -165,7 +165,7 @@ export function ReservationsPage() {
                 <p className="font-mono text-[10px] text-ink-3">{r.attendee.email}</p>
               </Td>
               <Td>
-                <p className="text-[13px]">{r.ticketType.name}</p>
+                <p className="text-[13px]">{r.ticketType.name}{(r.ticketType as any).tier ? <span className="ml-1 font-mono text-[10px] text-ink-3">{(r.ticketType as any).tier}</span> : null}</p>
                 <p className="font-mono text-[10px] text-ink-3">
                   {Number(r.price) > 0 ? `EGP ${Number(r.price).toLocaleString()}` : 'FREE'}
                 </p>

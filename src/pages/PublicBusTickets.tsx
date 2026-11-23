@@ -368,7 +368,7 @@ export default function PublicBusTickets() {
                                 setSeatPassengers({})
                               }
                             }}>
-                              {ticketTypes.map(tt => <option key={tt.id} value={tt.id}>{tt.name} — {fmtMoney(tt.price ?? 0, tt.currency ?? 'EGP')}</option>)}
+                              {ticketTypes.map(tt => <option key={tt.id} value={tt.id}>{tt.name}{tt.tier ? ` · ${tt.tier}` : ''} — {fmtMoney(tt.price ?? 0, tt.currency ?? 'EGP')}</option>)}
                             </select>
                           ) : (
                             <div className="input bg-elevated/50">{selectedTicketType?.name ?? '—'} · {fmtMoney(ticketPrice, selectedTicketType?.currency ?? 'EGP')}</div>

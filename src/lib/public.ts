@@ -6,6 +6,7 @@ export interface PublicTicketType {
   name: string
   description?: string | null
   category?: string | null
+  tier?: string | null
   price: string
   currency?: string
   quota: number | null

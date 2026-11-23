@@ -314,6 +314,13 @@ function CredentialQrDialog({
               <p className="mt-0.5 text-[11px] text-ink-3">
                 {(data.ticket?.ticketType?.name ?? data.ticket?.typeName ?? 'Ticket')} · {data.status}
               </p>
+
+              {(data.ticket?.busSeats?.length ?? 0) > 0 && (
+                <div className="border border-line-soft bg-elevated/20 px-3 py-2 text-[12px] text-ink-2">
+                  <span className="text-ink-3">Seats: </span>
+                  {(data.ticket?.busSeats ?? []).map((s: any) => (s.bus?.name ? s.bus.name + ' ' : '') + s.label + (s.passengerName ? ` (${s.passengerName})` : '')).join(', ')}
+                </div>
+              )}
             </div>
             <Button variant="outline" onClick={() => download(data.code, data.shortCode ?? data.code.slice(0, 16))} icon={<Download className="size-4" />}>
               Download payload

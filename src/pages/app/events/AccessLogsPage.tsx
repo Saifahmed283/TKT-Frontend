@@ -21,7 +21,7 @@ type AccessLog = {
   area: { id: string; name: string } | null
   operator: { id: string; name: string } | null
   attendee: { id: string; name: string } | null
-  credential: { id: string; code: string } | null
+  credential: { id: string; code: string; ticket?: { ticketType?: { name: string } | null; busSeats?: { id: string; label: string; passengerName?: string | null; bus?: { name: string } | null }[] } | null } | null
 }
 
 export function AccessLogsPage() {
@@ -87,7 +87,7 @@ export function AccessLogsPage() {
           {data.rows.length === 0 && <EmptyState colSpan={7} title="No scans recorded" />}
           {data.rows.map((l) => (
             <tr key={l.id}>
-              <Td className="text-[13px]">{l.attendee?.name ?? 'Unknown'}</Td>
+              <Td className="text-[13px]"><div>{l.attendee?.name ?? 'Unknown'}</div>{(l.credential?.ticket?.busSeats?.length ?? 0) > 0 && <div className="mt-0.5 font-mono text-[10px] text-signal">{(l.credential?.ticket?.busSeats ?? []).map(s => `${s.bus?.name ? s.bus.name + ' ' : ''}${s.label}`).join(', ')}</div>}</Td>
               <Td>
                 <span className="font-mono text-[11px] text-ink-2">{l.credential?.code.slice(0, 14) ?? '—'}</span>
               </Td>

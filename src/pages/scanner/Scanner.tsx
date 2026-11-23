@@ -490,6 +490,8 @@ export default function ScannerPage() {
               {big ? <CheckCircle2 size={44} className="mx-auto text-ok-400" /> : <XCircle size={44} className="mx-auto text-err-400" />}
               <p className={`mt-3 font-mono text-2xl font-bold ${big ? 'text-ok-400' : 'text-err-400'}`}>{decision.result}</p>
               {decision.attendee && <p className="mt-1 text-sm text-ink-200">{decision.attendee.name}</p>}
+              {decision.ticketType && <p className="mt-1 text-xs text-ink-300">{decision.ticketType}</p>}
+              {decision.seats && decision.seats.length > 0 && <p className="mt-1 text-xs text-signal">{decision.seats.map(s => `${s.busName ? s.busName + ' ' : ''}${s.label}${s.passengerName ? ` (${s.passengerName})` : ''}`).join(', ')}</p>}
               {decision.reason && <p className="mt-1 text-sm text-ink-400">{decision.reason}</p>}
               <button className="btn-ghost mt-4 py-1.5 text-xs" onClick={() => setDecision(null)}>
                 <RotateCcw size={12} /> Clear

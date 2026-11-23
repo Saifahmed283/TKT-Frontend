@@ -13,6 +13,7 @@ interface AttendeeRow {
   email: string
   phone: string | null
   category: string | null
+  attendeeType?: string | null
   status: string
   notes: string | null
   createdAt: string

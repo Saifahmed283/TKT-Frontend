@@ -129,7 +129,7 @@ export default function BusSeatMap3D({
         <span className="inline-flex items-center gap-1.5"><span className="size-3 border border-amber/50 bg-amber/20" /> Held</span>
         <span className="inline-flex items-center gap-1.5"><span className="size-3 border border-danger/50 bg-danger/20" /> Reserved</span>
         <span className="inline-flex items-center gap-1.5"><span className="size-3 border border-line bg-ink-3/20" /> Unavailable</span>
-        <span className="ml-auto font-mono text-[10px]">Drag to rotate · Scroll to zoom</span>
+        <span className="ml-auto font-mono text-[10px]">Drag to rotate · Scroll to zoom · 2D map for keyboard selection</span>
       </div>
     </div>
   )

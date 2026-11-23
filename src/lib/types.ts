@@ -115,6 +115,7 @@ export type TicketType = {
   name: string
   description: string | null
   category?: string | null
+  tier?: 'STANDARD' | 'VIP' | 'PREMIUM' | 'EARLY_BIRD' | 'STUDENT' | 'COMPLIMENTARY' | 'STAFF' | 'SPEAKER' | 'SPONSOR' | 'OTHER' | null
   price: string | number | null
   currency?: string | null
   quota: number | null
@@ -160,6 +161,7 @@ export type AccessDecision = {
   credentialId: string | null
   attendee: { id: string; name: string; category: string | null } | null
   ticketType: string | null
+  seats?: { id: string; label: string; passengerName?: string | null; busName?: string | null }[]
   area: { id: string; name: string } | null
   at: string | null
 }
