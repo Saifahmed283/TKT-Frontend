@@ -22,6 +22,7 @@ const dict = {
   tickets: { en: 'Tickets', ar: 'التذاكر' },
   reservations: { en: 'Reservations', ar: 'الحجوزات' },
   payments: { en: 'Payments', ar: 'المدفوعات' },
+  buses: { en: 'Bus seats', ar: 'مقاعد الحافلة' },
   accessCodes: { en: 'Access codes', ar: 'رموز الدخول' },
   credentials: { en: 'Credentials', ar: 'الاعتمادات' },
   accessLog: { en: 'Access log', ar: 'سجل الدخول' },

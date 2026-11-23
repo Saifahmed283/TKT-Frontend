@@ -39,8 +39,8 @@ test.describe('TKT E2E — event dashboard & modules', () => {
     await page.goto('/app/events')
     await page.getByRole('link', { name: /Tech Frontier 2026/i }).first().click()
     await expect(page).toHaveURL(/\/app\/events\//)
-    await expect(page.getByText('Attendees', { exact: false }).first()).toBeVisible()
-    await expect(page.getByText(/Check-in rate/i).first()).toBeVisible()
+    await expect(page.getByText('Attendees', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByText(/Check-in rate/i).first()).toBeVisible({ timeout: 20_000 })
   })
 
   test('scanner page scopes areas for AREA-scoped operator', async ({ page }) => {

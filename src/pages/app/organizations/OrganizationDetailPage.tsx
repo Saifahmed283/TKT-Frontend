@@ -1,157 +1,218 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
-import { useState, type FormEvent } from 'react'
-import { Building2, Shield, Users, Plus, Trash2 } from 'lucide-react'
+import { useMemo, useState, type FormEvent } from 'react'
+import { Shield, Users, Plus, Trash2, Pencil, Search, CheckSquare, Square } from 'lucide-react'
 import { api, ApiError } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Field, Input, Select } from '@/components/ui/input'
 import { Table, Td, EmptyState } from '@/components/ui/table'
-import { Dialog, ConfirmDialog } from '@/components/ui/dialog'
+import { Dialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 
 type Org = { id: string; name: string; slug: string; description?: string | null; myRole: string; _count: { events: number; members: number } }
 type Member = { id: string; role: string; status: string; user: { id: string; name: string; email: string } }
-type Role = { id: string; code: string; name: string; scope: string; permissions: string[]; kind?: string; system?: boolean }
+type Role = { id: string; code: string; name: string; description?: string | null; scope: string; permissions: string[]; kind?: string; system?: boolean }
+type CatalogPerm = { code: string; description: string }
+
+const SCOPES = ['EVENT', 'TEAM', 'AREA', 'ORGANIZATION'] as const
+
+function groupPermissions(perms: CatalogPerm[]) {
+  const groups: Record<string, CatalogPerm[]> = {}
+  for (const p of perms) {
+    const group = p.code.split('.')[0] || 'other'
+    ;(groups[group] ||= []).push(p)
+  }
+  return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b))
+}
+
+function RoleEditor({ open, onClose, initial, catalog, onSave, saving, error }: { open: boolean; onClose: () => void; initial?: Role | null; catalog: CatalogPerm[]; onSave: (data: { name: string; description: string; scope: string; permissions: string[] }) => void; saving: boolean; error: string }) {
+  const [name, setName] = useState(initial?.name ?? '')
+  const [description, setDescription] = useState(initial?.description ?? '')
+  const [scope, setScope] = useState(initial?.scope ?? 'EVENT')
+  const [permissions, setPermissions] = useState<string[]>(initial?.permissions ?? [])
+  const [q, setQ] = useState('')
+
+  const groups = useMemo(() => {
+    const filtered = q ? catalog.filter(p => p.code.includes(q.toLowerCase()) || p.description.toLowerCase().includes(q.toLowerCase())) : catalog
+    return groupPermissions(filtered)
+  }, [catalog, q])
+
+  const toggle = (code: string) => setPermissions(prev => prev.includes(code) ? prev.filter(p => p !== code) : [...prev, code])
+  const toggleGroup = (codes: string[], allSelected: boolean) => setPermissions(prev => allSelected ? prev.filter(p => !codes.includes(p)) : Array.from(new Set([...prev, ...codes])))
+
+  return (
+    <Dialog open={open} onClose={onClose} title={initial ? 'Edit role' : 'Create custom role'} wide>
+      <form onSubmit={(e: FormEvent) => { e.preventDefault(); onSave({ name, description, scope, permissions }) }} className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Role name"><Input value={name} onChange={e => setName(e.target.value)} required /></Field>
+          <Field label="Scope"><Select value={scope} onChange={e => setScope(e.target.value)}>{SCOPES.map(s => <option key={s} value={s}>{s}</option>)}</Select></Field>
+        </div>
+        <Field label="Description"><Input value={description} onChange={e => setDescription(e.target.value)} /></Field>
+        <Field label="Permissions">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" /><Input className="pl-8" value={q} onChange={e => setQ(e.target.value)} placeholder="Search permissions..." /></div>
+              <Badge tone="default">{permissions.length} selected</Badge>
+            </div>
+            <div className="max-h-[50vh] overflow-auto rounded-xl border border-[--color-structure] p-3 space-y-4">
+              {groups.map(([group, perms]) => {
+                const codes = perms.map(p => p.code)
+                const allSelected = codes.every(c => permissions.includes(c))
+                return (
+                  <div key={group}>
+                    <div className="mb-2 flex items-center justify-between">
+                      <button type="button" className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-2" onClick={() => toggleGroup(codes, allSelected)}>
+                        {allSelected ? <CheckSquare size={14} className="text-signal" /> : <Square size={14} />} {group}
+                      </button>
+                      <span className="text-[11px] text-ink-3">{codes.filter(c => permissions.includes(c)).length}/{codes.length}</span>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {perms.map(p => {
+                        const selected = permissions.includes(p.code)
+                        return (
+                          <label key={p.code} className={`flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 text-[12px] ${selected ? 'border-signal/40 bg-signal/5' : 'border-[--color-structure]'}`}>
+                            <input type="checkbox" className="mt-0.5" checked={selected} onChange={() => toggle(p.code)} />
+                            <div><div className="font-mono text-[11px] text-ink">{p.code}</div><div className="text-ink-3">{p.description}</div></div>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })}
+              {groups.length === 0 && <div className="text-sm text-ink-3">No permissions match.</div>}
+            </div>
+          </div>
+        </Field>
+        {error && <p className="text-sm text-danger">{error}</p>}
+        <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={onClose}>Cancel</Button><Button type="submit" loading={saving} disabled={permissions.length === 0}>{initial ? 'Save role' : 'Create role'}</Button></div>
+      </form>
+    </Dialog>
+  )
+}
 
 export function OrganizationDetailPage() {
   const { orgId = '' } = useParams()
   const qc = useQueryClient()
   const toast = useToast()
   const [memberOpen, setMemberOpen] = useState(false)
-  const [memberForm, setMemberForm] = useState({ email: '', role: 'VIEWER' })
-  const [memberErr, setMemberErr] = useState('')
   const [roleOpen, setRoleOpen] = useState(false)
-  const [roleForm, setRoleForm] = useState({ name: '', description: '', scope: 'EVENT', permissionsText: '' })
+  const [editRole, setEditRole] = useState<Role | null>(null)
+  const [deleteRoleId, setDeleteRoleId] = useState<string | null>(null)
+  const [memberForm, setMemberForm] = useState({ email: '', name: '', role: 'MEMBER' })
+  const [memberErr, setMemberErr] = useState('')
+  const [roleErr, setRoleErr] = useState('')
 
-  const orgQ = useQuery({ queryKey: ['org', orgId], queryFn: () => api.get<Org>(`/organizations/${orgId}`) })
-  const membersQ = useQuery({ queryKey: ['org-members', orgId], queryFn: () => api.get<Member[]>(`/organizations/${orgId}/members`) })
-  const rolesQ = useQuery({
-    queryKey: ['org-roles', orgId],
-    queryFn: async () => {
-      const data = await api.get<Role[] | { system: Role[]; custom: Role[] }>(`/organizations/${orgId}/roles`)
-      if (Array.isArray(data)) return data
-      return [...(data.system ?? []), ...(data.custom ?? [])]
-    },
-  })
+  const orgQ = useQuery({ queryKey: ['org', orgId], queryFn: () => api.get<Org>(`/organizations/${orgId}`), enabled: !!orgId })
+  const membersQ = useQuery({ queryKey: ['org', orgId, 'members'], queryFn: () => api.get<Member[]>(`/organizations/${orgId}/members`), enabled: !!orgId })
+  const rolesQ = useQuery({ queryKey: ['org', orgId, 'roles'], queryFn: () => api.get<{ system: Role[]; custom: Role[] }>(`/organizations/${orgId}/roles`), enabled: !!orgId })
+  const catalogQ = useQuery({ queryKey: ['permissions-catalog'], queryFn: () => api.get<{ permissions: CatalogPerm[] }>('/organizations/permissions/catalog') })
 
+  const invalidate = () => { void qc.invalidateQueries({ queryKey: ['org', orgId] }) }
   const addMember = useMutation({
     mutationFn: () => api.post(`/organizations/${orgId}/members`, memberForm),
-    onSuccess: () => { toast.success('Member added'); setMemberOpen(false); setMemberForm({ email: '', role: 'VIEWER' }); setMemberErr(''); qc.invalidateQueries({ queryKey: ['org-members', orgId] }); qc.invalidateQueries({ queryKey: ['org', orgId] }) },
-    onError: (e) => setMemberErr(e instanceof ApiError ? e.message : 'Could not add member'),
+    onSuccess: () => { toast.success('Member added'); setMemberOpen(false); setMemberForm({ email: '', name: '', role: 'MEMBER' }); invalidate() },
+    onError: (e) => setMemberErr(e instanceof ApiError ? e.message : 'Failed'),
   })
   const removeMember = useMutation({
-    mutationFn: (memberId: string) => api.delete(`/organizations/${orgId}/members/${memberId}`),
-    onSuccess: () => { toast.success('Member removed'); qc.invalidateQueries({ queryKey: ['org-members', orgId] }); qc.invalidateQueries({ queryKey: ['org', orgId] }) },
-    onError: (e: any) => toast.error(e?.message ?? 'Could not remove member'),
+    mutationFn: (id: string) => api.delete(`/organizations/${orgId}/members/${id}`),
+    onSuccess: () => { toast.success('Member removed'); invalidate() },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : 'Failed'),
   })
-  const updateMember = useMutation({
-    mutationFn: ({ memberId, role }: { memberId: string; role: string }) => api.patch(`/organizations/${orgId}/members/${memberId}`, { role }),
-    onSuccess: () => { toast.success('Member role updated'); qc.invalidateQueries({ queryKey: ['org-members', orgId] }) },
-    onError: (e: any) => toast.error(e?.message ?? 'Could not update member'),
-  })
-  const createRole = useMutation({
-    mutationFn: () => api.post(`/organizations/${orgId}/roles`, {
-      name: roleForm.name,
-      description: roleForm.description || undefined,
-      scope: roleForm.scope,
-      permissions: roleForm.permissionsText.split(/[\s,]+/).map((s) => s.trim()).filter(Boolean),
-    }),
-    onSuccess: () => { toast.success('Role created'); setRoleOpen(false); setRoleForm({ name: '', description: '', scope: 'EVENT', permissionsText: '' }); qc.invalidateQueries({ queryKey: ['org-roles', orgId] }) },
-    onError: (e: any) => toast.error(e?.message ?? 'Could not create role'),
+  const saveRole = useMutation({
+    mutationFn: (data: { name: string; description: string; scope: string; permissions: string[] }) => editRole ? api.patch(`/organizations/${orgId}/roles/${editRole.id}`, data) : api.post(`/organizations/${orgId}/roles`, data),
+    onSuccess: () => { toast.success(editRole ? 'Role updated' : 'Role created'); setRoleOpen(false); setEditRole(null); setRoleErr(''); invalidate() },
+    onError: (e) => setRoleErr(e instanceof ApiError ? e.message : 'Failed'),
   })
   const deleteRole = useMutation({
-    mutationFn: (roleId: string) => api.delete(`/organizations/${orgId}/roles/${roleId}`),
-    onSuccess: () => { toast.success('Role deleted'); qc.invalidateQueries({ queryKey: ['org-roles', orgId] }) },
-    onError: (e: any) => toast.error(e?.message ?? 'Could not delete role'),
+    mutationFn: (id: string) => api.delete(`/organizations/${orgId}/roles/${id}`),
+    onSuccess: () => { toast.success('Role deleted'); setDeleteRoleId(null); invalidate() },
+    onError: (e) => { toast.error(e instanceof ApiError ? e.message : 'Failed'); setDeleteRoleId(null) },
   })
 
   if (orgQ.isLoading) return <FullPageSpinner />
-  if (orgQ.error || !orgQ.data) return <InlineError message="Could not load organization." onRetry={() => orgQ.refetch()} />
+  if (orgQ.error || !orgQ.data) return <InlineError message={orgQ.error instanceof Error ? orgQ.error.message : "Failed to load organization"} />
   const org = orgQ.data
   const canManage = org.myRole === 'OWNER' || org.myRole === 'ADMIN'
+  const catalog = catalogQ.data?.permissions ?? []
 
   return (
-    <div className="pb-16">
-      <PageHeader title={org.name} subtitle={org.description || 'Organization roles, members, and event ownership.'} icon={<Building2 className="size-5" />} actions={canManage ? <Button icon={<Plus className="size-4" />} onClick={() => setMemberOpen(true)}>Add member</Button> : undefined} />
-      <div className="px-6 pt-6 space-y-8">
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="panel p-4"><p className="text-[10px] uppercase tracking-[0.16em] text-ink-3">Your role</p><p className="mt-2 font-display text-lg font-semibold">{org.myRole}</p></div>
-          <div className="panel p-4"><p className="text-[10px] uppercase tracking-[0.16em] text-ink-3">Members</p><p className="mt-2 font-display text-lg font-semibold">{org._count.members}</p></div>
-          <div className="panel p-4"><p className="text-[10px] uppercase tracking-[0.16em] text-ink-3">Events</p><p className="mt-2 font-display text-lg font-semibold">{org._count.events}</p></div>
+    <div>
+      <PageHeader title={org.name} subtitle={org.description ?? org.slug}
+        actions={canManage ? <><Button variant="ghost" onClick={() => { setEditRole(null); setRoleErr(''); setRoleOpen(true) }}><Plus size={15} /> New role</Button><Button onClick={() => setMemberOpen(true)}><Plus size={15} /> Add member</Button></> : undefined} />
+
+      <div className="space-y-6 p-6">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="panel p-4"><p className="text-[10px] uppercase tracking-[0.18em] text-ink-3">Your role</p><p className="mt-2 font-display text-2xl font-semibold text-signal">{org.myRole}</p></div>
+          <div className="panel p-4"><p className="text-[10px] uppercase tracking-[0.18em] text-ink-3">Members</p><p className="mt-2 font-display text-2xl font-semibold">{org._count.members}</p></div>
+          <div className="panel p-4"><p className="text-[10px] uppercase tracking-[0.18em] text-ink-3">Events</p><p className="mt-2 font-display text-2xl font-semibold">{org._count.events}</p></div>
         </div>
 
-        <div>
-          <div className="mb-3 flex items-center gap-2"><Users className="size-4 text-signal" /><h2 className="text-sm font-semibold">Members</h2></div>
-          <Table headers={['User', 'Org role', 'Status', '']}>
-            {(membersQ.data ?? []).length === 0 && <EmptyState colSpan={4} title="No members" />}
-            {(membersQ.data ?? []).map((m) => (
+        <div className="panel p-5">
+          <div className="mb-4 flex items-center gap-2"><Users size={16} className="text-signal" /><h2 className="font-display text-lg font-semibold">Members</h2></div>
+          <Table headers={['Member', 'Email', 'Role', 'Status', '']}>
+            {(membersQ.data ?? []).map(m => (
               <tr key={m.id}>
-                <Td><p className="text-[13px] font-medium">{m.user.name}</p><p className="text-[11px] text-ink-3">{m.user.email}</p></Td>
-                <Td>
-                  {canManage ? (
-                    <Select value={m.role} onChange={(e) => updateMember.mutate({ memberId: m.id, role: e.target.value })} className="!h-8 max-w-[160px] text-xs">
-                      <option value="OWNER">OWNER</option><option value="ADMIN">ADMIN</option><option value="VIEWER">VIEWER</option>
-                    </Select>
-                  ) : <Badge tone="default">{m.role}</Badge>}
-                </Td>
+                <Td><span className="font-medium text-ink">{m.user.name}</span></Td>
+                <Td className="text-ink-2">{m.user.email}</Td>
+                <Td><Badge tone={m.role === 'OWNER' ? 'live' : 'default'}>{m.role}</Badge></Td>
                 <Td><Badge tone={m.status === 'ACTIVE' ? 'ok' : 'warn'}>{m.status}</Badge></Td>
-                <Td>
-                  {canManage && (
-                    <div className="flex justify-end">
-                      <ConfirmDialog title="Remove member" body={`Remove ${m.user.name} from this organization?`} confirmLabel="Remove" onConfirm={() => removeMember.mutate(m.id)}>
-                        <button className="rounded p-1.5 text-danger hover:bg-danger/10" aria-label="Remove"><Trash2 className="size-4" /></button>
-                      </ConfirmDialog>
-                    </div>
-                  )}
-                </Td>
+                <Td>{canManage && m.role !== 'OWNER' && <Button size="sm" variant="ghost" className="text-danger" onClick={() => removeMember.mutate(m.id)}><Trash2 size={14} /></Button>}</Td>
               </tr>
             ))}
+            {(membersQ.data ?? []).length === 0 && <EmptyState colSpan={5} title="No members" />}
           </Table>
         </div>
 
-        <div>
-          <div className="mb-3 flex items-center justify-between gap-2"><div className="flex items-center gap-2"><Shield className="size-4 text-signal" /><h2 className="text-sm font-semibold">Role catalog</h2></div>{canManage && <Button size="sm" variant="ghost" icon={<Plus className="size-4" />} onClick={() => setRoleOpen(true)}>Custom role</Button>}</div>
-          <div className="grid gap-3 lg:grid-cols-2">
-            {(rolesQ.data ?? []).map((r) => (
+        <div className="panel p-5">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2"><Shield size={16} className="text-signal" /><h2 className="font-display text-lg font-semibold">Roles & permissions</h2></div>
+            {canManage && <Button size="sm" variant="ghost" onClick={() => { setEditRole(null); setRoleErr(''); setRoleOpen(true) }}><Plus size={14} /> Custom role</Button>}
+          </div>
+          <p className="mb-4 text-sm text-ink-3">System roles are read-only templates. Create custom roles to assign precise permissions per organization/event scope.</p>
+          <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-3">Custom roles</h3>
+          <div className="mb-6 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {(rolesQ.data?.custom ?? []).map(r => (
               <div key={r.id} className="panel p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <div><p className="text-[13px] font-semibold">{r.name}</p><p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">{r.code} · {r.scope}</p></div>
-                  <Badge tone={r.system ? 'live' : 'default'}>{r.system ? 'SYSTEM' : 'CUSTOM'}</Badge>
-                </div>
+                <div className="flex items-start justify-between gap-3"><div><p className="text-[13px] font-semibold">{r.name}</p><p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">{r.code} · {r.scope}</p></div><Badge tone="default">CUSTOM</Badge></div>
+                {r.description && <p className="mt-2 text-[12px] text-ink-3">{r.description}</p>}
                 <p className="mt-3 text-[11px] text-ink-3">{r.permissions.length} permissions</p>
-                {canManage && !r.system && (
-                  <div className="mt-3 flex justify-end"><Button size="sm" variant="ghost" className="text-danger" onClick={() => deleteRole.mutate(r.id)}>Delete</Button></div>
-                )}
+                {canManage && <div className="mt-3 flex justify-end gap-2"><Button size="sm" variant="ghost" onClick={() => { setEditRole(r); setRoleErr(''); setRoleOpen(true) }}><Pencil size={14} /> Edit</Button><Button size="sm" variant="ghost" className="text-danger" onClick={() => setDeleteRoleId(r.id)}><Trash2 size={14} /> Delete</Button></div>}
               </div>
             ))}
-            {(rolesQ.data ?? []).length === 0 && <div className="panel p-4 text-sm text-ink-3">No roles found.</div>}
+            {(rolesQ.data?.custom ?? []).length === 0 && <div className="panel p-4 text-sm text-ink-3">No custom roles yet.</div>}
+          </div>
+          <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-3">System roles</h3>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {(rolesQ.data?.system ?? []).map(r => (
+              <div key={r.code} className="panel p-4">
+                <div className="flex items-start justify-between gap-3"><div><p className="text-[13px] font-semibold">{r.name}</p><p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">{r.code} · {r.scope}</p></div><Badge tone="live">SYSTEM</Badge></div>
+                {r.description && <p className="mt-2 text-[12px] text-ink-3">{r.description}</p>}
+                <p className="mt-3 text-[11px] text-ink-3">{r.permissions.length} permissions</p>
+              </div>
+            ))}
           </div>
         </div>
-
         <div className="text-[12px] text-ink-3"><Link to="/app/organizations" className="text-signal hover:underline">Back to organizations</Link></div>
       </div>
 
       <Dialog open={memberOpen} onClose={() => setMemberOpen(false)} title="Add organization member">
         <form onSubmit={(e: FormEvent) => { e.preventDefault(); setMemberErr(''); addMember.mutate() }} className="space-y-4">
-          <Field label="Email"><Input type="email" value={memberForm.email} onChange={(e) => setMemberForm({ ...memberForm, email: e.target.value })} required /></Field>
-          <Field label="Role"><Select value={memberForm.role} onChange={(e) => setMemberForm({ ...memberForm, role: e.target.value })}><option value="OWNER">OWNER</option><option value="ADMIN">ADMIN</option><option value="VIEWER">VIEWER</option></Select></Field>
-          {memberErr && <p className="rounded-md border border-danger/25 bg-danger/10 px-3 py-2 text-[13px] text-danger">{memberErr}</p>}
+          <Field label="Email"><Input type="email" value={memberForm.email} onChange={e => setMemberForm({ ...memberForm, email: e.target.value })} required /></Field>
+          <Field label="Name"><Input value={memberForm.name} onChange={e => setMemberForm({ ...memberForm, name: e.target.value })} /></Field>
+          <Field label="Role"><Select value={memberForm.role} onChange={e => setMemberForm({ ...memberForm, role: e.target.value })}><option value="MEMBER">MEMBER</option><option value="ADMIN">ADMIN</option><option value="OWNER">OWNER</option></Select></Field>
+          {memberErr && <p className="text-sm text-danger">{memberErr}</p>}
           <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={() => setMemberOpen(false)}>Cancel</Button><Button type="submit" loading={addMember.isPending}>Add member</Button></div>
         </form>
       </Dialog>
 
-      <Dialog open={roleOpen} onClose={() => setRoleOpen(false)} title="Create custom role">
-        <form onSubmit={(e: FormEvent) => { e.preventDefault(); createRole.mutate() }} className="space-y-4">
-          <Field label="Role name"><Input value={roleForm.name} onChange={(e) => setRoleForm({ ...roleForm, name: e.target.value })} required /></Field>
-          <Field label="Description"><Input value={roleForm.description} onChange={(e) => setRoleForm({ ...roleForm, description: e.target.value })} /></Field>
-          <Field label="Scope"><Select value={roleForm.scope} onChange={(e) => setRoleForm({ ...roleForm, scope: e.target.value })}><option value="EVENT">EVENT</option><option value="AREA">AREA</option><option value="ORGANIZATION">ORGANIZATION</option></Select></Field>
-          <Field label="Permissions (comma or space separated)"><Input value={roleForm.permissionsText} onChange={(e) => setRoleForm({ ...roleForm, permissionsText: e.target.value })} placeholder="event.view ticket.view" /></Field>
-          <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={() => setRoleOpen(false)}>Cancel</Button><Button type="submit" loading={createRole.isPending}>Create role</Button></div>
-        </form>
-      </Dialog>
+      {roleOpen && <RoleEditor key={editRole?.id ?? 'new'} open={roleOpen} onClose={() => { setRoleOpen(false); setEditRole(null) }} initial={editRole} catalog={catalog} onSave={(d) => { setRoleErr(''); saveRole.mutate(d) }} saving={saveRole.isPending} error={roleErr} />}
+      {deleteRoleId && <Dialog open={!!deleteRoleId} onClose={() => setDeleteRoleId(null)} title="Delete custom role"><p className="text-sm text-ink-2">This role will be removed. It must not be assigned to staff.</p><div className="mt-4 flex justify-end gap-2"><Button variant="ghost" onClick={() => setDeleteRoleId(null)}>Cancel</Button><Button variant="ghost" className="text-danger" loading={deleteRole.isPending} onClick={() => { if (deleteRoleId) deleteRole.mutate(deleteRoleId) }}>Delete</Button></div></Dialog>}
     </div>
   )
 }
+
+

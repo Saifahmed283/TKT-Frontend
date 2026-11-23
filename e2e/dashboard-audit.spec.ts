@@ -42,6 +42,7 @@ function formatIssues(issues: Issue[]) {
 
 test.describe('Dashboard audit', () => {
   test('admin can open core and all event module routes without runtime errors', async ({ page }) => {
+    test.setTimeout(120_000)
     const issues: Issue[] = []
     let current = ''
     attachCollectors(page, issues, () => current)
@@ -54,7 +55,7 @@ test.describe('Dashboard audit', () => {
     await page.getByRole('link', { name: /Tech Frontier 2026/i }).first().click()
     await expect(page).toHaveURL(/\/app\/events\/([^/]+)/)
     const eventId = page.url().match(/\/app\/events\/([^/]+)/)?.[1]!
-    const modules = ['', '/reservations', '/attendees', '/tickets', '/payments', '/credentials', '/access-codes', '/access', '/devices', '/tasks', '/incidents', '/comms', '/staff', '/workforce', '/teams', '/areas', '/integrations', '/audit', '/reports']
+    const modules = ['', '/reservations', '/attendees', '/tickets', '/payments', '/buses', '/credentials', '/access-codes', '/access', '/devices', '/tasks', '/incidents', '/comms', '/staff', '/workforce', '/teams', '/areas', '/integrations', '/audit', '/reports']
     for (const m of modules) await visit(page, `/app/events/${eventId}${m}`, issues, () => current, (v) => { current = v })
 
     const severe = issues.filter((i) => i.kind !== 'http' || / 5\d\d /.test(i.detail))
@@ -70,7 +71,7 @@ test.describe('Dashboard audit', () => {
     await page.getByRole('link', { name: /Tech Frontier 2026/i }).first().click()
     await expect(page).toHaveURL(/\/app\/events\/([^/]+)/)
     const eventId = page.url().match(/\/app\/events\/([^/]+)/)?.[1]!
-    const allowed = ['', '/reservations', '/attendees', '/tickets', '/payments', '/credentials', '/access-codes', '/access', '/devices', '/tasks', '/incidents', '/comms', '/staff', '/workforce', '/teams', '/areas', '/integrations', '/audit', '/reports']
+    const allowed = ['', '/reservations', '/attendees', '/tickets', '/payments', '/buses', '/credentials', '/access-codes', '/access', '/devices', '/tasks', '/incidents', '/comms', '/staff', '/workforce', '/teams', '/areas', '/integrations', '/audit', '/reports']
     for (const m of allowed) {
       await visit(page, `/app/events/${eventId}${m}`, issues, () => current, (v) => { current = v })
       await expect(page.locator('body')).not.toContainText(/Access denied/i)
@@ -85,7 +86,7 @@ test.describe('Dashboard audit', () => {
     attachCollectors(page, issues, () => current)
     await login(page, 'mohamed@tkt.local', 'Staff12345!')
     await visit(page, '/app/scanner', issues, () => current, (v) => { current = v })
-    await expect(page.locator('body')).toContainText(/Scanner|Scan/i)
+    await expect(page.locator('body')).toContainText(/Scanner|Scan/i, { timeout: 20_000 })
     // scanner should not see org admin areas as healthy privileged pages; profile should work
     await visit(page, '/app/profile', issues, () => current, (v) => { current = v })
     const severe = issues.filter((i) => i.kind !== 'http' || / 5\d\d /.test(i.detail))

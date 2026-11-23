@@ -24,6 +24,7 @@ export function WorkforcePage() {
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState(empty)
   const [convertUserId, setConvertUserId] = useState<Record<string, string>>({})
+  const [createAccount, setCreateAccount] = useState<Record<string, boolean>>({})
 
   const apps = useQuery({ queryKey: ['workforce-apps', eventId], queryFn: () => api.get<AppRow[]>(`/events/${eventId}/workforce/applications`) })
   const profiles = useQuery({ queryKey: ['workforce-profiles', eventId], queryFn: () => api.get<Profile[]>(`/events/${eventId}/workforce/profiles`) })

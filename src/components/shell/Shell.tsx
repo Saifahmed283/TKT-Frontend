@@ -4,7 +4,7 @@ import {
   LayoutDashboard, CalendarDays, Users, Ticket, QrCode, ScanLine, ListTodo,
   AlertTriangle, Megaphone, Shield, LogOut, Radio, ChevronDown,
   UserCog, Building2, BookOpen, Search, ClipboardCheck, Sun, Moon, Languages, Globe, Plug,
-  CreditCard, KeyRound, Smartphone, BriefcaseBusiness, FileText, Radar, MapPinned, Layers,
+  CreditCard, KeyRound, Smartphone, BriefcaseBusiness, FileText, Radar, MapPinned, Layers, BusFront,
 } from 'lucide-react'
 import { useAuth, usePermissions } from '../../lib/auth'
 import { CommandPalette } from './CommandPalette'
@@ -55,6 +55,7 @@ const eventNavGroups = [
     items: [
       { to: 'tickets', icon: Ticket, label: 'tickets', perm: 'ticket.view' },
       { to: 'payments', icon: CreditCard, label: 'payments', perm: 'payment.view' },
+      { to: 'buses', icon: BusFront, label: 'buses', perm: 'bus.view' },
     ],
   },
   {

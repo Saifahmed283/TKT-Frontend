@@ -11,7 +11,8 @@ import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { useToast } from '@/components/ui/toast'
 import { useSse } from '@/lib/sse'
 import { Dialog } from '@/components/ui/dialog'
-import { ClipboardCheck, QrCode } from 'lucide-react'
+import { ClipboardCheck, QrCode, Download } from 'lucide-react'
+import { downloadAuthFile, exportPdf } from '@/lib/export'
 import { useState } from 'react'
 
 type ReservationRow = {
@@ -101,6 +102,9 @@ export function ReservationsPage() {
         subtitle={`${data.total} public registrations. Paid reservations wait for your decision before a QR is issued.`}
         icon={<ClipboardCheck className="size-5" />}
         actions={
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="ghost" onClick={() => void downloadAuthFile(`/events/${eventId}/reservations/export.xlsx?status=${filter}`, `reservations-${eventId}.xlsx`).catch(() => toast.error('Export failed'))}><Download size={14} /> Excel</Button>
+            <Button size="sm" variant="ghost" onClick={() => exportPdf(`reservations-${eventId}`, 'Reservations', ['Code', 'Name', 'Email', 'Ticket', 'Amount', 'Approval', 'Payment', 'Issued'], (data.rows ?? []).map(r => [r.reservationCode ?? r.id.slice(0, 8), r.attendee.name, r.attendee.email ?? '', r.ticketType.name, r.price, r.approval, r.paymentStatus ?? '', timeAgo(r.issuedAt)]))}><Download size={14} /> PDF</Button>
           <div className="flex gap-1 rounded-lg border border-line bg-raised p-1">
             {(['PENDING', 'APPROVED', 'REJECTED', 'ALL'] as Filter[]).map((f) => (
               <button
@@ -116,6 +120,7 @@ export function ReservationsPage() {
                 {f}
               </button>
             ))}
+          </div>
           </div>
         }
       />

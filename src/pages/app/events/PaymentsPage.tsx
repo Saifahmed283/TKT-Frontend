@@ -5,333 +5,199 @@ import { useSse } from '@/lib/sse'
 import { useToast } from '@/components/ui/toast'
 import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
-import { Field, Input, Select } from '@/components/ui/input'
+import { Field, Input } from '@/components/ui/input'
 import { FileUploadField } from '@/components/ui/file-upload'
 import { Table, Td, EmptyState } from '@/components/ui/table'
-import { Dialog, ConfirmDialog } from '@/components/ui/dialog'
+import { Dialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { StatCard, Panel } from '@/components/motion/primitives'
-import { CreditCard, Plus, Trash2, Check, X, ExternalLink } from 'lucide-react'
+import { CreditCard, Plus, Trash2, Check, X, ExternalLink, Download, Search, Wallet } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
 type Provider = {
-  id: string
-  name: string
-  accountName?: string | null
-  accountNumber?: string | null
-  paymentPhone?: string | null
-  paymentLink?: string | null
-  instructions?: string | null
-  imageUrl?: string | null
-  isActive: boolean
+  id: string; name: string; accountName?: string | null; accountNumber?: string | null; paymentPhone?: string | null;
+  paymentLink?: string | null; instructions?: string | null; imageUrl?: string | null; isActive: boolean
 }
-
 type PendingPayment = {
-  id: string
-  reservationCode?: string | null
-  approvalStatus: string
-  paymentStatus: string
-  price: string
-  paymentAmount?: string | null
-  paymentReference?: string | null
-  paymentProofUrl?: string | null
-  paymentSubmittedAt?: string | null
-  paymentProvider?: { id: string; name: string } | null
-  attendee: { id: string; name: string; email: string | null }
-  ticketType: { id: string; name: string }
+  id: string; reservationCode?: string | null; paymentReference?: string | null; paymentProofUrl?: string | null; paymentProvider?: string | null;
+  status: string; price: string; issuedAt: string; attendee?: { name: string; email?: string | null; phone?: string | null } | null;
+  ticketType?: { name: string; category: string } | null; metadata?: Record<string, unknown> | null
+}
+type Summary = {
+  currency: string; estimatedCost: number; financeNotes: string; confirmedRevenue: number; pendingRevenue: number; failedRevenue: number; refundedRevenue: number; netRevenue: number; estimatedProfit: number;
+  totalTickets: number; soldTickets: number; totalCapacity: number | null; remainingTickets: number | null;
+  byPaymentStatus: { status: string; count: number }[]; byCategory: { category: string; count: number; revenue: number }[];
+  byProvider: { provider: string; count: number; revenue: number }[]; byTicketType: { id: string; name: string; category: string; price: number; capacity: number | null; sold: number; remaining: number | null }[];
 }
 
-type Summary = { pending: number; confirmed: number; failed: number; totalRevenue: number }
-
-const emptyForm = {
-  name: '',
-  accountName: '',
-  accountNumber: '',
-  paymentPhone: '',
-  paymentLink: '',
-  instructions: '',
-  imageUrl: '',
-  isActive: 'true',
+const fmtMoney = (n: number, currency = 'EGP') => `${currency} ${n.toLocaleString()}`
+async function downloadBlob(path: string, filename: string) {
+  const token = localStorage.getItem('tkt_access_token')
+  const res = await fetch(`/api${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : undefined, credentials: 'include' })
+  if (!res.ok) throw new Error('Export failed')
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a'); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url)
 }
 
 export function PaymentsPage() {
-  const { eventId } = useParams()
+  const { eventId = '' } = useParams()
   const qc = useQueryClient()
   const toast = useToast()
-  const sse = useSse(eventId, 'reservation')
-  const [open, setOpen] = useState(false)
-  const [editing, setEditing] = useState<Provider | null>(null)
-  const [proof, setProof] = useState<string | null>(null)
-  const [form, setForm] = useState(emptyForm)
+  const [providerOpen, setProviderOpen] = useState(false)
+  const [deleteProviderId, setDeleteProviderId] = useState<string | null>(null)
+  const [refLookup, setRefLookup] = useState('')
+  const [form, setForm] = useState({ name: '', accountName: '', accountNumber: '', paymentPhone: '', paymentLink: '', instructions: '', imageUrl: '' })
 
-  const providers = useQuery({
-    queryKey: ['payment-providers', eventId],
-    queryFn: () => api.get<Provider[]>(`/events/${eventId}/payments/providers`),
-  })
-  const pending = useQuery({
-    queryKey: ['payment-pending', eventId, sse],
-    queryFn: () => api.get<PendingPayment[]>(`/events/${eventId}/payments/pending`),
-  })
-  const summary = useQuery({
-    queryKey: ['payment-summary', eventId, sse],
-    queryFn: () => api.get<Summary>(`/events/${eventId}/payments/summary`),
-  })
+  const providersQ = useQuery({ queryKey: ['events', eventId, 'payments', 'providers'], queryFn: () => api.get<Provider[]>(`/events/${eventId}/payments/providers`), enabled: !!eventId })
+  const pendingQ = useQuery({ queryKey: ['events', eventId, 'payments', 'pending'], queryFn: () => api.get<PendingPayment[]>(`/events/${eventId}/payments/pending`), enabled: !!eventId })
+  const summaryQ = useQuery({ queryKey: ['events', eventId, 'payments', 'summary'], queryFn: () => api.get<Summary>(`/events/${eventId}/payments/summary`), enabled: !!eventId })
+  const refQ = useQuery({ queryKey: ['events', eventId, 'payments', 'ref', refLookup], queryFn: () => api.get<PendingPayment[]>(`/events/${eventId}/payments/reference/${encodeURIComponent(refLookup)}`), enabled: !!eventId && refLookup.trim().length >= 3 })
 
-  const resetForm = () => {
-    setForm(emptyForm)
-    setEditing(null)
-  }
+  const refresh = () => { void qc.invalidateQueries({ queryKey: ['events', eventId, 'payments'] }); void qc.invalidateQueries({ queryKey: ['events', eventId] }) }
+  useSse(eventId, 'reservation')
 
-  const saveProvider = useMutation({
-    mutationFn: () => {
-      const payload = {
-        name: form.name,
-        accountName: form.accountName || null,
-        accountNumber: form.accountNumber || null,
-        paymentPhone: form.paymentPhone || null,
-        paymentLink: form.paymentLink || null,
-        instructions: form.instructions || null,
-        imageUrl: form.imageUrl || null,
-        isActive: form.isActive === 'true',
-      }
-      return editing
-        ? api.patch(`/events/${eventId}/payments/providers/${editing.id}`, payload)
-        : api.post(`/events/${eventId}/payments/providers`, payload)
-    },
-    onSuccess: () => {
-      toast.success(editing ? 'Provider updated' : 'Provider created')
-      qc.invalidateQueries({ queryKey: ['payment-providers'] })
-      setOpen(false)
-      resetForm()
-    },
-    onError: (e: any) => toast.error(e?.message ?? 'Could not save provider'),
+  const createProvider = useMutation({
+    mutationFn: () => api.post(`/events/${eventId}/payments/providers`, form),
+    onSuccess: () => { toast.success('Payment provider added'); setProviderOpen(false); setForm({ name: '', accountName: '', accountNumber: '', paymentPhone: '', paymentLink: '', instructions: '', imageUrl: '' }); refresh() },
+    onError: (e: any) => toast.error(e?.message ?? 'Failed to add provider'),
   })
-
   const deleteProvider = useMutation({
     mutationFn: (id: string) => api.delete(`/events/${eventId}/payments/providers/${id}`),
-    onSuccess: () => {
-      toast.success('Provider deleted')
-      qc.invalidateQueries({ queryKey: ['payment-providers'] })
-    },
-    onError: (e: any) => toast.error(e?.message ?? 'Could not delete provider'),
+    onSuccess: () => { toast.success('Provider deleted'); setDeleteProviderId(null); refresh() },
+    onError: (e: any) => { toast.error(e?.message ?? 'Failed to delete provider'); setDeleteProviderId(null) },
   })
-
   const review = useMutation({
-    mutationFn: ({ ticketId, action }: { ticketId: string; action: 'CONFIRM' | 'REJECT' }) =>
-      api.post(`/events/${eventId}/payments/reservations/${ticketId}/review`, { action }),
-    onSuccess: (_, v) => {
-      toast.success(v.action === 'CONFIRM' ? 'Payment confirmed' : 'Payment rejected')
-      qc.invalidateQueries({ queryKey: ['payment-pending'] })
-      qc.invalidateQueries({ queryKey: ['payment-summary'] })
-      qc.invalidateQueries({ queryKey: ['reservations'] })
-    },
+    mutationFn: ({ ticketId, action }: { ticketId: string; action: 'CONFIRM' | 'REJECT' }) => api.post(`/events/${eventId}/payments/reservations/${ticketId}/review`, { action }),
+    onSuccess: (_, v) => { toast.success(v.action === 'CONFIRM' ? 'Payment confirmed' : 'Payment rejected'); refresh() },
     onError: (e: any) => toast.error(e?.message ?? 'Review failed'),
   })
 
-  if (providers.isLoading || pending.isLoading) return <FullPageSpinner />
-  if (providers.error || pending.error) {
-    return (
-      <InlineError
-        message="Could not load payments."
-        onRetry={() => {
-          providers.refetch()
-          pending.refetch()
-          summary.refetch()
-        }}
-      />
-    )
+  const exportPayments = async () => {
+    try { await downloadBlob(`/events/${eventId}/payments/export.xlsx`, `payments-${eventId}.xlsx`); toast.success('Export ready') }
+    catch (e: any) { toast.error(e?.message ?? 'Export failed') }
   }
 
-  const onSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    saveProvider.mutate()
-  }
+  if (providersQ.isLoading || pendingQ.isLoading || summaryQ.isLoading) return <FullPageSpinner />
+  if (providersQ.error || pendingQ.error || summaryQ.error) { const err = providersQ.error ?? pendingQ.error ?? summaryQ.error; return <InlineError message={err instanceof Error ? err.message : 'Failed to load payments'} /> }
+
+  const providers = providersQ.data ?? []
+  const pending = pendingQ.data ?? []
+  const summary = summaryQ.data
 
   return (
-    <div className="pb-16">
-      <PageHeader
-        title="Payments"
-        subtitle="Payment providers, proof review, and reservation payment status."
-        icon={<CreditCard className="size-5" />}
-        actions={
-          <Button
-            onClick={() => {
-              resetForm()
-              setOpen(true)
-            }}
-            icon={<Plus className="size-4" />}
-          >
-            Add provider
-          </Button>
-        }
-      />
+    <div>
+      <PageHeader title="Payments" subtitle="Providers, payment review, revenue, remaining tickets, and finance exports."
+        actions={<div className="flex gap-2"><Button variant="ghost" onClick={() => void exportPayments()}><Download size={15} /> Excel</Button><Button onClick={() => setProviderOpen(true)}><Plus size={15} /> Add provider</Button></div>} />
 
-      <div className="px-6 pt-6 space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard label="Pending review" value={summary.data?.pending ?? 0} icon={<CreditCard className="size-4" />} />
-          <StatCard label="Confirmed" value={summary.data?.confirmed ?? 0} icon={<Check className="size-4" />} />
-          <StatCard label="Failed/Rejected" value={summary.data?.failed ?? 0} icon={<X className="size-4" />} />
-          <StatCard label="Revenue" value={(summary.data?.totalRevenue ?? 0).toLocaleString()} icon={<CreditCard className="size-4" />} />
-        </div>
+      <div className="space-y-6 p-6">
+        {summary && (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard label="Confirmed revenue" value={fmtMoney(summary.confirmedRevenue, summary.currency)} sub={`Net ${fmtMoney(summary.netRevenue, summary.currency)}`} icon={<Wallet size={18} />} />
+            <StatCard label="Pending revenue" value={fmtMoney(summary.pendingRevenue, summary.currency)} sub={`${summary.byPaymentStatus.find(s => s.status === 'PENDING')?.count ?? 0} pending`} icon={<CreditCard size={18} />} />
+            <StatCard label="Remaining tickets" value={summary.remainingTickets == null ? '—' : String(summary.remainingTickets)} sub={summary.totalCapacity ? `${summary.soldTickets}/${summary.totalCapacity} sold` : `${summary.soldTickets} sold`} icon={<Check size={18} />} />
+            <StatCard label="Estimated profit" value={fmtMoney(summary.estimatedProfit, summary.currency)} sub={`Cost ${fmtMoney(summary.estimatedCost, summary.currency)}`} icon={<Download size={18} />} />
+          </div>
+        )}
 
-        <Panel title="Payment providers">
-          <Table headers={['Provider', 'Account', 'Phone/Link', 'Active', '']}>
-            {(providers.data ?? []).length === 0 && <EmptyState colSpan={5} title="No payment providers" />}
-            {(providers.data ?? []).map((p) => (
-              <tr key={p.id} className="group">
-                <Td>
-                  <div className="font-medium">{p.name}</div>
-                  {p.instructions && <div className="text-[11px] text-ink-3 line-clamp-1">{p.instructions}</div>}
-                </Td>
-                <Td className="text-[12px] text-ink-2">{[p.accountName, p.accountNumber].filter(Boolean).join(' · ') || '—'}</Td>
-                <Td className="text-[12px] text-ink-2">{p.paymentPhone || p.paymentLink || '—'}</Td>
-                <Td>
-                  <Badge tone={p.isActive ? 'ok' : 'default'}>{p.isActive ? 'ACTIVE' : 'OFF'}</Badge>
-                </Td>
-                <Td>
-                  <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setEditing(p)
-                        setForm({
-                          name: p.name,
-                          accountName: p.accountName ?? '',
-                          accountNumber: p.accountNumber ?? '',
-                          paymentPhone: p.paymentPhone ?? '',
-                          paymentLink: p.paymentLink ?? '',
-                          instructions: p.instructions ?? '',
-                          imageUrl: p.imageUrl ?? '',
-                          isActive: p.isActive ? 'true' : 'false',
-                        })
-                        setOpen(true)
-                      }}
-                    >
-                      Edit
-                    </Button>
-                    <ConfirmDialog title="Delete payment provider?" body={`Delete ${p.name}? This cannot be undone.`} confirmLabel="Delete" onConfirm={() => deleteProvider.mutate(p.id)}>
-                      <Button variant="ghost" size="sm" className="text-danger" icon={<Trash2 className="size-3.5" />} />
-                    </ConfirmDialog>
-                  </div>
-                </Td>
-              </tr>
-            ))}
+        {summary && (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Panel>
+              <div className="mb-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-3">By category</div>
+              <Table headers={['Category', 'Count', 'Revenue']}>
+                {summary.byCategory.map(c => <tr key={c.category}><Td>{c.category}</Td><Td>{c.count}</Td><Td>{fmtMoney(c.revenue, summary.currency)}</Td></tr>)}
+                {summary.byCategory.length === 0 && <tr><td colSpan={3}><EmptyState colSpan={3} title="No payment categories" /></td></tr>}
+              </Table>
+            </Panel>
+            <Panel>
+              <div className="mb-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-3">By ticket type / remaining</div>
+              <Table headers={['Ticket type', 'Sold', 'Remaining', 'Revenue']}>
+                {summary.byTicketType.map(t => <tr key={t.id}><Td>{t.name}<div className="text-[11px] text-ink-3">{t.category}</div></Td><Td>{t.sold}</Td><Td>{t.remaining == null ? '—' : t.remaining}</Td><Td>{fmtMoney(t.sold * t.price, summary.currency)}</Td></tr>)}
+                {summary.byTicketType.length === 0 && <tr><td colSpan={4}><EmptyState colSpan={4} title="No ticket types" /></td></tr>}
+              </Table>
+            </Panel>
+          </div>
+        )}
+
+        <Panel>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <div className="text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-3">Payment reference lookup</div>
+            <div className="flex items-center gap-2"><Search size={14} className="text-ink-3" /><Input value={refLookup} onChange={e => setRefLookup(e.target.value)} placeholder="Search payment reference..." className="w-72" /></div>
+          </div>
+          {refLookup.trim().length >= 3 && (
+            <Table headers={['Reference', 'Reservation', 'Attendee', 'Proof', 'Status']}>
+              {(refQ.data ?? []).map(r => {
+                const meta = (r.metadata ?? {}) as Record<string, unknown>
+                return <tr key={r.id}><Td className="font-mono text-xs">{String(meta.paymentReference ?? '—')}</Td><Td>{r.reservationCode ?? r.id.slice(0, 8)}</Td><Td>{r.attendee?.name ?? '—'}</Td><Td>{meta.paymentProofUrl ? <a className="text-signal hover:underline" href={String(meta.paymentProofUrl)} target="_blank" rel="noreferrer">Open proof</a> : '—'}</Td><Td><Badge tone={String(meta.paymentStatus) === 'CONFIRMED' ? 'ok' : 'warn'}>{String(meta.paymentStatus ?? '—')}</Badge></Td></tr>
+              })}
+              {(refQ.data ?? []).length === 0 && <tr><td colSpan={5}><EmptyState colSpan={5} title="No reference match" body="Check reference number and event scope." /></td></tr>}
+            </Table>
+          )}
+        </Panel>
+
+        <Panel>
+          <div className="mb-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-3">Pending payment reviews</div>
+          <Table headers={['Reservation', 'Attendee', 'Amount', 'Reference', 'Proof', 'Actions']}>
+            {pending.map(p => {
+              const meta = (p.metadata ?? {}) as Record<string, unknown>
+              return (
+                <tr key={p.id}>
+                  <Td><div className="font-medium text-ink">{p.reservationCode ?? p.id.slice(0, 8)}</div><div className="text-[11px] text-ink-3">{p.ticketType?.name}</div></Td>
+                  <Td><div>{p.attendee?.name}</div><div className="text-[11px] text-ink-3">{p.attendee?.email ?? p.attendee?.phone}</div></Td>
+                  <Td>{p.price}</Td>
+                  <Td className="font-mono text-xs">{String(meta.paymentReference ?? p.paymentReference ?? '—')}</Td>
+                  <Td>{(meta.paymentProofUrl || p.paymentProofUrl) ? <a className="inline-flex items-center gap-1 text-signal hover:underline" href={String(meta.paymentProofUrl || p.paymentProofUrl)} target="_blank" rel="noreferrer"><ExternalLink size={12} /> Proof</a> : '—'}</Td>
+                  <Td><div className="flex gap-2"><Button size="sm" variant="ghost" onClick={() => review.mutate({ ticketId: p.id, action: 'CONFIRM' })}><Check size={14} /> Confirm</Button><Button size="sm" variant="ghost" className="text-danger" onClick={() => review.mutate({ ticketId: p.id, action: 'REJECT' })}><X size={14} /> Reject</Button></div></Td>
+                </tr>
+              )
+            })}
+            {pending.length === 0 && <tr><td colSpan={6}><EmptyState colSpan={6} title="No pending payments" body="Submitted payment proofs will appear here." /></td></tr>}
           </Table>
         </Panel>
 
-        <Panel title="Pending payment reviews">
-          <Table headers={['Reservation', 'Attendee', 'Ticket', 'Provider', 'Reference', 'Proof', 'Submitted', '']}>
-            {(pending.data ?? []).length === 0 && <EmptyState colSpan={8} title="No pending payments" />}
-            {(pending.data ?? []).map((r) => (
-              <tr key={r.id}>
-                <Td>
-                  <span className="font-mono text-[11px] text-signal">{r.reservationCode ?? r.id.slice(0, 8)}</span>
-                  <div className="text-[10px] text-ink-3">{r.approvalStatus}</div>
-                </Td>
-                <Td>
-                  <div className="text-[13px]">{r.attendee.name}</div>
-                  <div className="text-[11px] text-ink-3">{r.attendee.email ?? '—'}</div>
-                </Td>
-                <Td className="text-[12px]">
-                  {r.ticketType.name}
-                  <div className="text-ink-3">{r.paymentAmount ?? r.price}</div>
-                </Td>
-                <Td className="text-[12px]">{r.paymentProvider?.name ?? '—'}</Td>
-                <Td className="font-mono text-[11px] text-ink-3">{r.paymentReference ?? '—'}</Td>
-                <Td>
-                  {r.paymentProofUrl ? (
-                    <button className="text-signal text-[11px] underline" onClick={() => setProof(r.paymentProofUrl!)}>
-                      View
-                    </button>
-                  ) : (
-                    '—'
-                  )}
-                </Td>
-                <Td className="text-[11px] text-ink-3">{r.paymentSubmittedAt ? new Date(r.paymentSubmittedAt).toLocaleString() : '—'}</Td>
-                <Td>
-                  <div className="flex justify-end gap-1">
-                    <Button size="sm" variant="outline" onClick={() => review.mutate({ ticketId: r.id, action: 'CONFIRM' })} icon={<Check className="size-3.5" />}>
-                      Confirm
-                    </Button>
-                    <Button size="sm" variant="ghost" className="text-danger" onClick={() => review.mutate({ ticketId: r.id, action: 'REJECT' })} icon={<X className="size-3.5" />}>
-                      Reject
-                    </Button>
-                  </div>
-                </Td>
+        <Panel>
+          <div className="mb-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-3">Payment providers</div>
+          <Table headers={['Provider', 'Account', 'Phone/Link', 'Active', '']}>
+            {providers.map(p => (
+              <tr key={p.id}>
+                <Td><div className="font-medium text-ink">{p.name}</div><div className="text-[11px] text-ink-3">{p.instructions}</div></Td>
+                <Td><div>{p.accountName ?? '—'}</div><div className="text-[11px] text-ink-3">{p.accountNumber ?? ''}</div></Td>
+                <Td><div>{p.paymentPhone ?? '—'}</div>{p.paymentLink && <a className="text-[11px] text-signal hover:underline" href={p.paymentLink} target="_blank" rel="noreferrer">Payment link</a>}</Td>
+                <Td><Badge tone={p.isActive ? 'ok' : 'default'}>{p.isActive ? 'Active' : 'Inactive'}</Badge></Td>
+                <Td><Button size="sm" variant="ghost" className="text-danger" onClick={() => setDeleteProviderId(p.id)}><Trash2 size={14} /></Button></Td>
               </tr>
             ))}
+            {providers.length === 0 && <tr><td colSpan={5}><EmptyState colSpan={5} title="No providers" body="Add manual or online payment providers for this event." /></td></tr>}
           </Table>
         </Panel>
       </div>
 
-      <Dialog
-        open={open}
-        onClose={() => {
-          setOpen(false)
-          resetForm()
-        }}
-        title={editing ? 'Edit payment provider' : 'Add payment provider'}
-      >
-        <form onSubmit={onSubmit} className="space-y-3">
-          <Field label="Name">
-            <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required />
-          </Field>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Account name">
-              <Input value={form.accountName} onChange={(e) => setForm((f) => ({ ...f, accountName: e.target.value }))} />
-            </Field>
-            <Field label="Account number">
-              <Input value={form.accountNumber} onChange={(e) => setForm((f) => ({ ...f, accountNumber: e.target.value }))} />
-            </Field>
+      <Dialog open={providerOpen} onClose={() => setProviderOpen(false)} title="Add payment provider">
+        <form onSubmit={(e: FormEvent) => { e.preventDefault(); createProvider.mutate() }} className="space-y-4">
+          <Field label="Provider name"><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required /></Field>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Account name"><Input value={form.accountName} onChange={e => setForm({ ...form, accountName: e.target.value })} /></Field>
+            <Field label="Account number"><Input value={form.accountNumber} onChange={e => setForm({ ...form, accountNumber: e.target.value })} /></Field>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Payment phone">
-              <Input value={form.paymentPhone} onChange={(e) => setForm((f) => ({ ...f, paymentPhone: e.target.value }))} />
-            </Field>
-            <Field label="Payment link">
-              <Input value={form.paymentLink} onChange={(e) => setForm((f) => ({ ...f, paymentLink: e.target.value }))} />
-            </Field>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Payment phone"><Input value={form.paymentPhone} onChange={e => setForm({ ...form, paymentPhone: e.target.value })} /></Field>
+            <Field label="Payment link"><Input value={form.paymentLink} onChange={e => setForm({ ...form, paymentLink: e.target.value })} placeholder="https://..." /></Field>
           </div>
-          <Field label="Instructions">
-            <Input value={form.instructions} onChange={(e) => setForm((f) => ({ ...f, instructions: e.target.value }))} />
-          </Field>
-          <FileUploadField label="Provider image" hint="Optional" value={form.imageUrl} onChange={(url) => setForm((f) => ({ ...f, imageUrl: url }))} />
-          <Field label="Active">
-            <Select value={form.isActive} onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.value }))}>
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
-            </Select>
-          </Field>
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => {
-                setOpen(false)
-                resetForm()
-              }}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={saveProvider.isPending}>
-              {saveProvider.isPending ? 'Saving…' : 'Save'}
-            </Button>
-          </div>
+          <Field label="Instructions"><Input value={form.instructions} onChange={e => setForm({ ...form, instructions: e.target.value })} /></Field>
+          <FileUploadField label="Provider image / QR" value={form.imageUrl} onChange={(url) => setForm({ ...form, imageUrl: url })} accept="image/*,.pdf" />
+          <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={() => setProviderOpen(false)}>Cancel</Button><Button type="submit" loading={createProvider.isPending}>Add provider</Button></div>
         </form>
       </Dialog>
 
-      <Dialog open={!!proof} onClose={() => setProof(null)} title="Payment proof">
-        {proof &&
-          (proof.startsWith('data:image') || proof.startsWith('http') ? (
-            <img src={proof} alt="Payment proof" className="max-h-[70vh] w-full object-contain rounded-lg" />
-          ) : (
-            <a href={proof} target="_blank" rel="noreferrer" className="text-signal underline inline-flex items-center gap-1">
-              Open proof <ExternalLink className="size-3.5" />
-            </a>
-          ))}
-      </Dialog>
+      {deleteProviderId && <Dialog open={!!deleteProviderId} onClose={() => setDeleteProviderId(null)} title="Delete provider"><p className="text-sm text-ink-2">This payment provider will be removed from the event.</p><div className="mt-4 flex justify-end gap-2"><Button variant="ghost" onClick={() => setDeleteProviderId(null)}>Cancel</Button><Button className="text-danger" variant="ghost" loading={deleteProvider.isPending} onClick={() => { if (deleteProviderId) deleteProvider.mutate(deleteProviderId) }}>Delete</Button></div></Dialog>}
     </div>
   )
 }
+
+
+
+
+
+
+

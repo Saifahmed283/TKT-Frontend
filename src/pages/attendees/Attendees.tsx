@@ -5,7 +5,7 @@ import { Search, Users, Download, Trash2 } from 'lucide-react'
 import { api } from '../../lib/api'
 import { EmptyState, ErrorBanner, PageHeader, Spinner, fmtDateTime } from '../../components/ui'
 import { ConfirmDialog } from '../../components/ui/dialog'
-import { exportCsv } from '../../lib/export'
+import { exportCsv, exportPdf, downloadAuthFile } from '../../lib/export'
 
 interface AttendeeRow {
   id: string
@@ -102,6 +102,21 @@ export default function AttendeesPage() {
           disabled={exporting.isFetching}
         >
           <Download size={12} /> {exporting.isFetching ? 'Exporting…' : 'Export CSV'}
+        </button>
+        <button
+          className="btn-ghost py-1.5 text-xs"
+          onClick={() => void downloadAuthFile(`/events/${eventId}/attendees/export.xlsx${q ? `?q=${encodeURIComponent(q)}` : ''}${status ? `${q ? '&' : '?'}status=${status}` : ''}`, `attendees-${eventId.slice(0, 8)}.xlsx`).catch(() => {})}
+        >
+          <Download size={12} /> Excel
+        </button>
+        <button
+          className="btn-ghost py-1.5 text-xs"
+          onClick={() => {
+            const rows = query.data?.rows ?? []
+            exportPdf(`attendees-${eventId.slice(0, 8)}`, 'Attendees', ['Name', 'Email', 'Phone', 'Category', 'Status', 'Tickets', 'Scans', 'Registered'], rows.map((a) => [a.name, a.email, a.phone ?? '', a.category ?? '', a.status, a._count.tickets, a._count.accessLogs, fmtDateTime(a.createdAt)]))
+          }}
+        >
+          <Download size={12} /> PDF
         </button>
       </div>
 

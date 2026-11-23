@@ -26,6 +26,7 @@ import { PaymentsPage } from './pages/app/events/PaymentsPage'
 import { AccessCodesPage } from './pages/app/events/AccessCodesPage'
 import { DevicesPage } from './pages/app/events/DevicesPage'
 import { WorkforcePage } from './pages/app/events/WorkforcePage'
+import { BusesPage } from './pages/app/events/BusesPage'
 import { IntegrationsPage } from './pages/app/events/IntegrationsPage'
 import { ReportsPage } from './pages/app/events/ReportsPage'
 import { ReservationsPage } from './pages/app/events/ReservationsPage'
@@ -104,6 +105,7 @@ export default function App() {
         <Route path="events/:eventId/tickets" element={<RequirePermission permission="ticket.view"><TicketsPage /></RequirePermission>} />
         <Route path="events/:eventId/reservations" element={<RequirePermission permission="ticket.view"><ReservationsPage /></RequirePermission>} />
         <Route path="events/:eventId/payments" element={<RequirePermission permission="payment.view"><PaymentsPage /></RequirePermission>} />
+        <Route path="events/:eventId/buses" element={<RequirePermission permission="bus.view"><BusesPage /></RequirePermission>} />
         <Route path="events/:eventId/access-codes" element={<RequirePermission permission="access_code.view"><AccessCodesPage /></RequirePermission>} />
         <Route path="events/:eventId/credentials" element={<RequirePermission permission="credential.view"><CredentialsPage /></RequirePermission>} />
         <Route path="events/:eventId/access" element={<RequirePermission permission="access.logs.view"><AccessLogsPage /></RequirePermission>} />

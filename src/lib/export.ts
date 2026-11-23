@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { getAccessToken } from './api'
 
 const escape = (v: unknown): string => {
   const s = v == null ? '' : String(v)
@@ -13,6 +14,19 @@ export function exportCsv(filename: string, headers: string[], rows: unknown[][]
   const a = document.createElement('a')
   a.href = url
   a.download = filename.endsWith('.csv') ? filename : `${filename}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+export async function downloadAuthFile(path: string, filename: string) {
+  const token = getAccessToken()
+  const res = await fetch(`/api${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : undefined, credentials: 'include' })
+  if (!res.ok) throw new Error(`Export failed (${res.status})`)
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
   a.click()
   URL.revokeObjectURL(url)
 }
