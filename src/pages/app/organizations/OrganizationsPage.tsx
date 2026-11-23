@@ -18,7 +18,7 @@ type Org = {
 export function OrganizationsPage() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['organizations'],
-    queryFn: () => api.get<Org[]>('/organizations').catch(() => []),
+    queryFn: () => api.get<Org[]>('/organizations'),
   })
 
   if (isLoading) return <FullPageSpinner />

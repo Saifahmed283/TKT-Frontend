@@ -27,8 +27,15 @@ export function OrganizationDetailPage() {
   const [roleForm, setRoleForm] = useState({ name: '', description: '', scope: 'EVENT', permissionsText: '' })
 
   const orgQ = useQuery({ queryKey: ['org', orgId], queryFn: () => api.get<Org>(`/organizations/${orgId}`) })
-  const membersQ = useQuery({ queryKey: ['org-members', orgId], queryFn: () => api.get<Member[]>(`/organizations/${orgId}/members`).catch(() => []) })
-  const rolesQ = useQuery({ queryKey: ['org-roles', orgId], queryFn: () => api.get<Role[]>(`/organizations/${orgId}/roles`).catch(() => []) })
+  const membersQ = useQuery({ queryKey: ['org-members', orgId], queryFn: () => api.get<Member[]>(`/organizations/${orgId}/members`) })
+  const rolesQ = useQuery({
+    queryKey: ['org-roles', orgId],
+    queryFn: async () => {
+      const data = await api.get<Role[] | { system: Role[]; custom: Role[] }>(`/organizations/${orgId}/roles`)
+      if (Array.isArray(data)) return data
+      return [...(data.system ?? []), ...(data.custom ?? [])]
+    },
+  })
 
   const addMember = useMutation({
     mutationFn: () => api.post(`/organizations/${orgId}/members`, memberForm),

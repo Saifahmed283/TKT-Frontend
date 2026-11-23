@@ -33,6 +33,7 @@ import { StaffPage } from './pages/app/events/StaffPage'
 import { TasksPage } from './pages/app/events/TasksPage'
 import { TeamsPage } from './pages/app/events/TeamsPage'
 import { Guide } from './pages/app/Guide'
+import { ProfilePage } from './pages/app/ProfilePage'
 import { OrganizationsPage } from './pages/app/organizations/OrganizationsPage'
 import { OrganizationDetailPage } from './pages/app/organizations/OrganizationDetailPage'
 import { RequirePermission } from './components/auth/RequirePermission'
@@ -115,6 +116,7 @@ export default function App() {
         <Route path="organizations" element={<OrganizationsPage />} />
         <Route path="organizations/:orgId" element={<OrganizationDetailPage />} />
         <Route path="guide" element={<Guide />} />
+        <Route path="profile" element={<ProfilePage />} />
         <Route path="scanner" element={<ScannerPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -233,6 +233,14 @@ export default function Shell() {
             </button>
             {menuOpen && (
               <div className="absolute bottom-full left-0 right-0 mb-2 border border-line-soft bg-elevated p-1 shadow-float">
+                <Link
+                  to="/app/profile"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.1em] text-ink-2 transition-colors hover:bg-raised hover:text-ink"
+                >
+                  <UserCog size={14} />
+                  Profile
+                </Link>
                 <button
                   className="flex w-full items-center gap-2.5 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.1em] text-danger transition-colors hover:bg-danger/10"
                   onClick={onLogout}
