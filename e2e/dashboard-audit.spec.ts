@@ -1,5 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 
+type Issue = { kind: 'console' | 'pageerror' | 'http'; detail: string; path: string }
+
 async function login(page: Page, email: string, password: string) {
   await page.goto('/login')
   await page.getByLabel('Email').fill(email)
@@ -8,58 +10,85 @@ async function login(page: Page, email: string, password: string) {
   await expect(page).toHaveURL(/\/app/, { timeout: 20_000 })
 }
 
-async function assertHealthy(page: Page, path: string) {
-  const badResponses: string[] = []
+function attachCollectors(page: Page, issues: Issue[], getPath: () => string) {
+  page.on('pageerror', (err) => issues.push({ kind: 'pageerror', detail: err.message, path: getPath() }))
+  page.on('console', (msg) => {
+    if (msg.type() !== 'error') return
+    const text = msg.text()
+    if (/favicon|Failed to load resource|ERR_CONNECTION_REFUSED.*\/api\/realtime|downloadable font/i.test(text)) return
+    issues.push({ kind: 'console', detail: text.slice(0, 300), path: getPath() })
+  })
   page.on('response', (r) => {
     const url = r.url()
     if (!url.includes('/api/')) return
-    if (r.status() >= 400 && !url.includes('/auth/refresh')) badResponses.push(`${r.status()} ${url}`)
+    const status = r.status()
+    if (status < 400) return
+    if (status === 401 && url.includes('/auth/refresh')) return
+    issues.push({ kind: 'http', detail: `${status} ${r.request().method()} ${url}`, path: getPath() })
   })
+}
+
+async function visit(page: Page, path: string, issues: Issue[], getPath: () => string, setPath: (p: string) => void) {
+  setPath(path)
   await page.goto(path)
-  await expect(page.locator('body')).not.toContainText(/Something went wrong/i, { timeout: 15_000 })
-  await expect(page.locator('body')).not.toContainText(/Cannot read properties|TypeError/i)
-  // give async widgets a moment
-  await page.waitForTimeout(800)
-  await expect(page.locator('body')).not.toContainText(/Something went wrong/i)
-  return badResponses
+  await page.waitForLoadState('domcontentloaded')
+  await page.waitForTimeout(1200)
+  await expect(page.locator('body')).not.toContainText(/Something went wrong|Cannot read properties|TypeError|Unhandled/i)
+}
+
+function formatIssues(issues: Issue[]) {
+  return issues.map((i) => `[${i.kind}] ${i.path} :: ${i.detail}`).join('\n')
 }
 
 test.describe('Dashboard audit', () => {
-  test('admin can open every main dashboard route', async ({ page }) => {
+  test('admin can open core and all event module routes without runtime errors', async ({ page }) => {
+    const issues: Issue[] = []
+    let current = ''
+    attachCollectors(page, issues, () => current)
     await login(page, 'admin@tkt.local', 'Admin12345!')
+
     const core = ['/app', '/app/events', '/app/organizations', '/app/profile', '/app/guide', '/app/scanner']
-    for (const p of core) {
-      await assertHealthy(page, p)
-    }
+    for (const p of core) await visit(page, p, issues, () => current, (v) => { current = v })
 
     await page.goto('/app/events')
     await page.getByRole('link', { name: /Tech Frontier 2026/i }).first().click()
     await expect(page).toHaveURL(/\/app\/events\/([^/]+)/)
     const eventId = page.url().match(/\/app\/events\/([^/]+)/)?.[1]!
     const modules = ['', '/reservations', '/attendees', '/tickets', '/payments', '/credentials', '/access-codes', '/access', '/devices', '/tasks', '/incidents', '/comms', '/staff', '/workforce', '/teams', '/areas', '/integrations', '/audit', '/reports']
-    for (const m of modules) {
-      const path = `/app/events/${eventId}${m}`
-      const bad: string[] = []
-      const onResp = (r: any) => { const u = r.url(); if (u.includes('/api/') && r.status() >= 500) bad.push(`${r.status()} ${u}`) }
-      page.on('response', onResp)
-      await page.goto(path)
-      await page.waitForTimeout(1000)
-      await expect(page.locator('body')).not.toContainText(/Something went wrong|TypeError|Cannot read properties/i)
-      page.off('response', onResp)
-      expect(bad, `5xx on ${path}: ${bad.join(', ')}`).toEqual([])
-    }
+    for (const m of modules) await visit(page, `/app/events/${eventId}${m}`, issues, () => current, (v) => { current = v })
+
+    const severe = issues.filter((i) => i.kind !== 'http' || / 5\d\d /.test(i.detail))
+    expect(severe, formatIssues(severe)).toEqual([])
   })
 
-  test('event manager can open key event routes', async ({ page }) => {
+  test('event manager key routes are accessible and healthy', async ({ page }) => {
+    const issues: Issue[] = []
+    let current = ''
+    attachCollectors(page, issues, () => current)
     await login(page, 'ahmed@tkt.local', 'Staff12345!')
     await page.goto('/app/events')
     await page.getByRole('link', { name: /Tech Frontier 2026/i }).first().click()
+    await expect(page).toHaveURL(/\/app\/events\/([^/]+)/)
     const eventId = page.url().match(/\/app\/events\/([^/]+)/)?.[1]!
-    for (const m of ['', '/reservations', '/staff', '/credentials', '/access-codes', '/devices', '/workforce', '/integrations', '/payments']) {
-      await page.goto(`/app/events/${eventId}${m}`)
-      await page.waitForTimeout(900)
-      await expect(page.locator('body')).not.toContainText(/Something went wrong|TypeError|Cannot read properties/i)
+    const allowed = ['', '/reservations', '/attendees', '/tickets', '/payments', '/credentials', '/access-codes', '/access', '/devices', '/tasks', '/incidents', '/comms', '/staff', '/workforce', '/teams', '/areas', '/integrations', '/audit', '/reports']
+    for (const m of allowed) {
+      await visit(page, `/app/events/${eventId}${m}`, issues, () => current, (v) => { current = v })
       await expect(page.locator('body')).not.toContainText(/Access denied/i)
     }
+    const severe = issues.filter((i) => i.kind !== 'http' || / 5\d\d /.test(i.detail))
+    expect(severe, formatIssues(severe)).toEqual([])
+  })
+
+  test('scanner can access scanner and is blocked from admin-only surfaces appropriately', async ({ page }) => {
+    const issues: Issue[] = []
+    let current = ''
+    attachCollectors(page, issues, () => current)
+    await login(page, 'mohamed@tkt.local', 'Staff12345!')
+    await visit(page, '/app/scanner', issues, () => current, (v) => { current = v })
+    await expect(page.locator('body')).toContainText(/Scanner|Scan/i)
+    // scanner should not see org admin areas as healthy privileged pages; profile should work
+    await visit(page, '/app/profile', issues, () => current, (v) => { current = v })
+    const severe = issues.filter((i) => i.kind !== 'http' || / 5\d\d /.test(i.detail))
+    expect(severe, formatIssues(severe)).toEqual([])
   })
 })

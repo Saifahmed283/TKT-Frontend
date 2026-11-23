@@ -5,11 +5,11 @@ import { useToast } from '@/components/ui/toast'
 import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Input, Field } from '@/components/ui/input'
-import { Dialog } from '@/components/ui/dialog'
+import { Dialog, ConfirmDialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { useState, type FormEvent } from 'react'
-import { MapPin, Plus, Users } from 'lucide-react'
+import { MapPin, Plus, Users, Trash2 } from 'lucide-react'
 
 type Area = {
   id: string
@@ -57,6 +57,12 @@ export function AreasPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['areas'] })
     },
+  })
+
+  const remove = useMutation({
+    mutationFn: (id: string) => api.delete(`/events/${eventId}/areas/${id}`),
+    onSuccess: () => { toast.success('Area deleted'); qc.invalidateQueries({ queryKey: ['areas'] }) },
+    onError: (e: any) => toast.error(e?.message ?? 'Could not delete area'),
   })
 
   if (isLoading) return <FullPageSpinner />
@@ -122,13 +128,16 @@ export function AreasPage() {
                   ))}
                   {a.assignments.length === 0 && <span className="text-[11px] text-ink-3">None</span>}
                 </div>
-                <div className="mt-3">
+                <div className="mt-3 flex items-center justify-between gap-2">
                   <button
                     onClick={() => toggle.mutate({ id: a.id, active: !a.active })}
                     className="text-[12px] font-medium text-signal hover:underline"
                   >
                     {a.active ? 'Deactivate area' : 'Reactivate area'}
                   </button>
+                  <ConfirmDialog title="Delete area?" body={`Delete ${a.name}? Access logs and assignments may block deletion depending on backend constraints.`} confirmLabel="Delete" onConfirm={() => remove.mutate(a.id)}>
+                    <button className="rounded p-1.5 text-danger hover:bg-danger/10" aria-label="Delete area"><Trash2 className="size-4" /></button>
+                  </ConfirmDialog>
                 </div>
               </div>
             </div>

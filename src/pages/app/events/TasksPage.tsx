@@ -7,11 +7,11 @@ import { cn, formatDate } from '@/lib/utils'
 import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Input, Textarea, Select, Field } from '@/components/ui/input'
-import { Dialog } from '@/components/ui/dialog'
+import { Dialog, ConfirmDialog } from '@/components/ui/dialog'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { useState, type FormEvent } from 'react'
 import { motion } from 'motion/react'
-import { ListTodo, Plus, Check, Clock, Flag, Siren } from 'lucide-react'
+import { ListTodo, Plus, Check, Clock, Flag, Siren, Trash2 } from 'lucide-react'
 
 type Task = {
   id: string
@@ -79,6 +79,12 @@ export function TasksPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks'] }),
   })
 
+  const remove = useMutation({
+    mutationFn: (id: string) => api.delete(`/events/${eventId}/tasks/${id}`),
+    onSuccess: () => { toast.success('Task deleted'); qc.invalidateQueries({ queryKey: ['tasks'] }) },
+    onError: (e: any) => toast.error(e?.message ?? 'Could not delete task'),
+  })
+
   if (isLoading) return <FullPageSpinner />
   if (queryError || !data) return <InlineError message="Could not load tasks." onRetry={refetch} />
 
@@ -133,7 +139,12 @@ export function TasksPage() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <p className="text-[13px] font-medium leading-snug">{t.title}</p>
-                    <PriorityIcon p={t.priority} />
+                    <div className="flex items-center gap-1">
+                      <PriorityIcon p={t.priority} />
+                      <ConfirmDialog title="Delete task?" body={`Delete "${t.title}"?`} confirmLabel="Delete" onConfirm={() => remove.mutate(t.id)}>
+                        <button className="rounded p-1 text-ink-3 opacity-0 transition-opacity hover:bg-danger/10 hover:text-danger group-hover:opacity-100" aria-label="Delete task"><Trash2 className="size-3.5" /></button>
+                      </ConfirmDialog>
+                    </div>
                   </div>
                   {t.description && (
                     <p className="mt-1.5 line-clamp-2 text-[12px] leading-snug text-ink-3">{t.description}</p>

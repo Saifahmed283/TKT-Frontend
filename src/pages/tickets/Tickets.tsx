@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, Lock, Check, Pencil } from 'lucide-react'
+import { Search, Plus, Lock, Check, Pencil, Trash2 } from 'lucide-react'
 import { api } from '../../lib/api'
 import { ErrorBanner, PageHeader, Spinner, fmtDateTime } from '../../components/ui'
 import { Table, Td, EmptyState } from '../../components/ui/table'
 import { Badge } from '../../components/ui/badge'
+import { ConfirmDialog } from '../../components/ui/dialog'
 import { useSse } from '../../lib/sse'
 import { Corners } from '../../components/instruments'
 
@@ -100,6 +101,19 @@ export default function TicketsPage() {
     },
   })
 
+  const deleteType = useMutation({
+    mutationFn: (id: string) => api.delete(`/events/${eventId}/tickets/types/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['ticket-types'] }),
+  })
+
+  const deleteTicket = useMutation({
+    mutationFn: (id: string) => api.delete(`/events/${eventId}/tickets/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['tickets'] })
+      qc.invalidateQueries({ queryKey: ['ticket-types'] })
+    },
+  })
+
   const types = typesQ.data ?? []
 
   return (
@@ -182,6 +196,11 @@ export default function TicketsPage() {
                 <div className="mt-3 flex items-center gap-2 border-t border-line-soft pt-3">
                   <button className="btn-ghost !px-2.5 !py-1 text-[10px]" onClick={() => { setEditId(t.id); setEditForm({ name: t.name, description: t.description ?? '', category: t.category ?? '', price: t.price == null ? '' : String(t.price), currency: t.currency ?? 'USD', quota: t.quota == null ? '' : String(t.quota), salesStartAt: toDateInput(t.salesStartAt), salesEndAt: toDateInput(t.salesEndAt), isPublic: t.isPublic !== false, sortOrder: String(t.sortOrder ?? 0), active: t.active }) }}><Pencil size={11} /> Edit</button>
                   <button className="btn-ghost !px-2.5 !py-1 text-[10px]" disabled={patchType.isPending} onClick={() => patchType.mutate({ id: t.id, patch: { active: !t.active } })}>{t.active ? <><Lock size={11} /> Deactivate</> : <><Check size={11} /> Activate</>}</button>
+                  {t._count.tickets === 0 && (
+                    <ConfirmDialog title="Delete ticket type?" body={`Delete "${t.name}"? This cannot be undone.`} confirmLabel="Delete" onConfirm={() => deleteType.mutate(t.id)}>
+                      <button className="btn-ghost !px-2.5 !py-1 text-[10px] text-danger"><Trash2 size={11} /> Delete</button>
+                    </ConfirmDialog>
+                  )}
                 </div>
               )}
             </div>
@@ -214,7 +233,7 @@ export default function TicketsPage() {
           body="Issue tickets to attendees to enable credential minting."
         />
       ) : (
-        <Table headers={['Attendee', 'Type', 'Price', 'Status', 'Credential', 'Issued']}>
+        <Table headers={['Attendee', 'Type', 'Price', 'Status', 'Credential', 'Issued', '']}>
           {query.data?.rows.map((t) => (
             <tr key={t.id}>
               <Td>
@@ -236,6 +255,13 @@ export default function TicketsPage() {
                 )}
               </Td>
               <Td className="text-[12px] text-ink-3">{fmtDateTime(t.issuedAt)}</Td>
+              <Td className="text-end">
+                {!t.credential && (
+                  <ConfirmDialog title="Delete ticket?" body="Delete this issued ticket? This cannot be undone." confirmLabel="Delete" onConfirm={() => deleteTicket.mutate(t.id)}>
+                    <button className="btn-ghost !px-2.5 !py-1 text-[10px] text-danger"><Trash2 size={11} /> Delete</button>
+                  </ConfirmDialog>
+                )}
+              </Td>
             </tr>
           ))}
         </Table>

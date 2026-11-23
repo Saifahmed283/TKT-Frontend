@@ -26,8 +26,9 @@ export function useHeartbeat(eventId?: string) {
       inFlightRef.current = true
       try {
         await api.post(`/events/${eventId}/presence`, { status: status ?? currentStatus() })
-      } catch {
-        /* heartbeat is best-effort */
+      } catch (err: any) {
+        // best-effort: ignore permission/network issues so pages don't spam errors
+        if (err?.status === 403 || err?.status === 401) return
       } finally {
         inFlightRef.current = false
       }

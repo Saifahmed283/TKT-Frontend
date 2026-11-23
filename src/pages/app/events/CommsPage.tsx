@@ -6,11 +6,11 @@ import { timeAgo } from '@/lib/utils'
 import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Input, Textarea, Field } from '@/components/ui/input'
-import { Dialog } from '@/components/ui/dialog'
+import { Dialog, ConfirmDialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { useState, type FormEvent } from 'react'
-import { Megaphone, Siren, MessageSquare } from 'lucide-react'
+import { Megaphone, Siren, MessageSquare, Trash2 } from 'lucide-react'
 
 type Announcement = {
   id: string
@@ -69,6 +69,21 @@ export function CommsPage() {
     onSuccess: () => { setChatMsg(''); qc.invalidateQueries({ queryKey: ['team-chat'] }) },
     onError: (e) => toast.error(e instanceof ApiError ? e.message : 'Could not send message'),
   })
+  const removeAnnouncement = useMutation({
+    mutationFn: (id: string) => api.delete(`/events/${eventId}/communications/announcements/${id}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['announcements'] }); toast.success('Announcement deleted') },
+    onError: (e: any) => toast.error(e?.message ?? 'Could not delete announcement'),
+  })
+  const removeAlert = useMutation({
+    mutationFn: (id: string) => api.delete(`/events/${eventId}/communications/alerts/${id}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['ops-alerts'] }); toast.success('Alert deleted') },
+    onError: (e: any) => toast.error(e?.message ?? 'Could not delete alert'),
+  })
+  const removeChat = useMutation({
+    mutationFn: (id: string) => api.delete(`/events/${eventId}/communications/chat/${id}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['team-chat'] }); toast.success('Message deleted') },
+    onError: (e: any) => toast.error(e?.message ?? 'Could not delete message'),
+  })
 
   if (isLoading) return <FullPageSpinner />
   if (loadError || !data) return <InlineError message="Could not load communications." onRetry={refetch} />
@@ -109,6 +124,9 @@ export function CommsPage() {
                 <span className="ml-auto text-[11px] text-ink-3">
                   {a.author.name} · {timeAgo(a.createdAt)}
                 </span>
+                <ConfirmDialog title="Delete announcement?" body={`Delete "${a.title}"?`} confirmLabel="Delete" onConfirm={() => removeAnnouncement.mutate(a.id)}>
+                  <button className="rounded p-1 text-ink-3 hover:bg-danger/10 hover:text-danger" aria-label="Delete announcement"><Trash2 className="size-3.5" /></button>
+                </ConfirmDialog>
               </div>
               <p className="mt-2 text-[13px] leading-relaxed text-ink-2">{a.body}</p>
             </div>
@@ -125,7 +143,12 @@ export function CommsPage() {
             <div className="space-y-2 max-h-56 overflow-auto">
               {(alerts.data ?? []).slice(0, 8).map((a) => (
                 <div key={a.id} className="rounded-lg border border-line/60 px-3 py-2">
-                  <div className="flex items-center gap-2 text-[11px] text-ink-3"><Badge tone={a.resolved ? 'ok' : 'warn'}>{a.type}</Badge><span>{timeAgo(a.createdAt)}</span></div>
+                  <div className="flex items-center gap-2 text-[11px] text-ink-3">
+                    <Badge tone={a.resolved ? 'ok' : 'warn'}>{a.type}</Badge><span>{timeAgo(a.createdAt)}</span>
+                    <ConfirmDialog title="Delete alert?" body="Delete this alert?" confirmLabel="Delete" onConfirm={() => removeAlert.mutate(a.id)}>
+                      <button className="ml-auto rounded p-1 text-ink-3 hover:bg-danger/10 hover:text-danger" aria-label="Delete alert"><Trash2 className="size-3.5" /></button>
+                    </ConfirmDialog>
+                  </div>
                   <p className="text-[12px] text-ink-2 mt-1">{a.message}</p>
                 </div>
               ))}
@@ -142,7 +165,12 @@ export function CommsPage() {
             <div className="space-y-2 max-h-56 overflow-auto">
               {(chat.data ?? []).slice(0, 10).map((m) => (
                 <div key={m.id} className="rounded-lg border border-line/60 px-3 py-2">
-                  <div className="text-[11px] text-ink-3">{timeAgo(m.createdAt)}</div>
+                  <div className="flex items-center gap-2 text-[11px] text-ink-3">
+                    <span>{timeAgo(m.createdAt)}</span>
+                    <ConfirmDialog title="Delete message?" body="Delete this chat message?" confirmLabel="Delete" onConfirm={() => removeChat.mutate(m.id)}>
+                      <button className="ml-auto rounded p-1 text-ink-3 hover:bg-danger/10 hover:text-danger" aria-label="Delete message"><Trash2 className="size-3.5" /></button>
+                    </ConfirmDialog>
+                  </div>
                   <p className="text-[12px] text-ink-2 mt-1">{m.text}</p>
                 </div>
               ))}

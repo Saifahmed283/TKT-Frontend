@@ -1,9 +1,10 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Search, Users, Download } from 'lucide-react'
+import { Search, Users, Download, Trash2 } from 'lucide-react'
 import { api } from '../../lib/api'
 import { EmptyState, ErrorBanner, PageHeader, Spinner, fmtDateTime } from '../../components/ui'
+import { ConfirmDialog } from '../../components/ui/dialog'
 import { exportCsv } from '../../lib/export'
 
 interface AttendeeRow {
@@ -31,6 +32,7 @@ const statusClass: Record<string, string> = {
 
 export default function AttendeesPage() {
   const { eventId = '' } = useParams()
+  const qc = useQueryClient()
   const [q, setQ] = useState('')
   const [status, setStatus] = useState('')
   const [page, setPage] = useState(1)
@@ -41,6 +43,11 @@ export default function AttendeesPage() {
       api<{ rows: AttendeeRow[]; total: number; page: number; pageSize: number }>(
         `/events/${eventId}/attendees?page=${page}&pageSize=25${q ? `&q=${encodeURIComponent(q)}` : ''}${status ? `&status=${status}` : ''}`,
       ),
+  })
+
+  const remove = useMutation({
+    mutationFn: (id: string) => api.delete(`/events/${eventId}/attendees/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['attendees'] }),
   })
 
   const exporting = useQuery({
@@ -115,6 +122,7 @@ export default function AttendeesPage() {
                 <th className="px-4 py-3 font-medium">Tickets</th>
                 <th className="px-4 py-3 font-medium">Scans</th>
                 <th className="px-4 py-3 font-medium">Registered</th>
+                <th className="px-4 py-3 font-medium"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -131,6 +139,13 @@ export default function AttendeesPage() {
                   <td className="px-4 py-3 text-ink-300">{a._count.tickets}</td>
                   <td className="px-4 py-3 text-ink-300">{a._count.accessLogs}</td>
                   <td className="px-4 py-3 text-ink-400">{fmtDateTime(a.createdAt)}</td>
+                  <td className="px-4 py-3 text-end">
+                    {a._count.tickets === 0 && a._count.credentials === 0 && a._count.accessLogs === 0 && (
+                      <ConfirmDialog title="Delete attendee?" body={`Delete ${a.name}? This cannot be undone.`} confirmLabel="Delete" onConfirm={() => remove.mutate(a.id)}>
+                        <button className="btn-ghost !px-2 !py-1 text-[11px] text-danger"><Trash2 size={12} /></button>
+                      </ConfirmDialog>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

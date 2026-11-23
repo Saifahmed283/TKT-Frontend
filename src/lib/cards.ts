@@ -13,6 +13,7 @@ export type CardIdentity = {
   attendeeName: string
   ticketType: string
   price?: string
+  shortCode?: string | null
   code: string
 }
 
@@ -69,18 +70,18 @@ export async function downloadTicketPdf(c: CardIdentity) {
 
   doc.setFontSize(7)
   doc.setTextColor(MUTED)
-  doc.text('ENTRY CODE', 10, 90)
+  doc.text('TICKET CODE', 10, 90)
   doc.setTextColor(INK)
   doc.setFont('courier', 'bold')
-  doc.setFontSize(10)
-  doc.text(c.code, 10, 95)
+  doc.setFontSize(12)
+  doc.text(c.shortCode ?? c.code.slice(0, 12), 10, 96)
 
   const qr = await qrImage(c.code)
   doc.addImage(qr, 'PNG', 100, 38, 38, 38)
   doc.setFillColor(SIGNAL)
   doc.rect(0, H - 3, W, 3, 'F')
 
-  doc.save(`ticket-${c.code.slice(0, 12)}.pdf`)
+  doc.save(`ticket-${(c.shortCode ?? c.code.slice(0, 12)).replace(/[^a-zA-Z0-9-]/g, '')}.pdf`)
 }
 
 export async function downloadIdCardPdf(c: CardIdentity) {
@@ -116,11 +117,11 @@ export async function downloadIdCardPdf(c: CardIdentity) {
 
   doc.setFontSize(5)
   doc.setTextColor('#a1a1aa')
-  doc.text('ENTRY CODE', 6.5, 43)
+  doc.text('TICKET CODE', 6.5, 43)
   doc.setFont('courier', 'bold')
-  doc.setFontSize(7)
+  doc.setFontSize(8)
   doc.setTextColor(WHITE)
-  doc.text(c.code, 6.5, 47)
+  doc.text(c.shortCode ?? c.code.slice(0, 12), 6.5, 47)
 
   const qr = await qrImage(c.code)
   doc.addImage(qr, 'PNG', 52, 10, 26, 26)
@@ -129,7 +130,7 @@ export async function downloadIdCardPdf(c: CardIdentity) {
   doc.setTextColor('#a1a1aa')
   doc.text('PRESENT AT GATE', 52, 40)
 
-  doc.save(`id-card-${c.code.slice(0, 12)}.pdf`)
+  doc.save(`id-card-${(c.shortCode ?? c.code.slice(0, 12)).replace(/[^a-zA-Z0-9-]/g, '')}.pdf`)
 }
 
 export function money(price: string): string {

@@ -98,6 +98,9 @@
     color-scheme: dark;
     scroll-behavior: smooth;
   }
+  :root {
+    --upcoming-count-label: var(--color-signal);
+  }
   body {
     @apply bg-canvas text-ink font-sans antialiased;
     text-rendering: optimizeLegibility;
@@ -132,6 +135,7 @@
     --color-danger: #c24141;
     --color-info: #2f63c7;
     --color-ink-0: #12110f;
+    --upcoming-count-label: #12110f;
 
     --color-ink-950: #1d1b18;
     --color-ink-900: #fffdfa;

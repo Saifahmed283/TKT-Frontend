@@ -1,14 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 import { useState, type FormEvent } from 'react'
-import { BriefcaseBusiness, Plus, UserCheck, IdCard } from 'lucide-react'
+import { BriefcaseBusiness, Plus, UserCheck, IdCard, Trash2 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
-import { Field, Input } from '@/components/ui/input'
+import { Field, Input, Select } from '@/components/ui/input'
 import { Table, Td, EmptyState } from '@/components/ui/table'
-import { Dialog } from '@/components/ui/dialog'
+import { Dialog, ConfirmDialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 
@@ -46,6 +46,18 @@ export function WorkforcePage() {
     onError: (e: any) => toast.error(e?.message ?? 'Could not issue ID token'),
   })
 
+  const removeApp = useMutation({
+    mutationFn: (id: string) => api.delete(`/events/${eventId}/workforce/applications/${id}`),
+    onSuccess: () => { toast.success('Application deleted'); qc.invalidateQueries({ queryKey: ['workforce-apps'] }) },
+    onError: (e: any) => toast.error(e?.message ?? 'Could not delete application'),
+  })
+
+  const removeProfile = useMutation({
+    mutationFn: (id: string) => api.delete(`/events/${eventId}/workforce/profiles/${id}`),
+    onSuccess: () => { toast.success('Profile deleted'); qc.invalidateQueries({ queryKey: ['workforce-profiles'] }) },
+    onError: (e: any) => toast.error(e?.message ?? 'Could not delete profile'),
+  })
+
   if (apps.isLoading) return <FullPageSpinner />
   if (apps.error) return <InlineError message="Could not load workforce." onRetry={() => apps.refetch()} />
 
@@ -65,7 +77,14 @@ export function WorkforcePage() {
                 <Td className="text-[12px]">{a.requestedRoleCode || '—'}</Td>
                 <Td><Badge tone={a.status === 'CONVERTED' ? 'ok' : a.status === 'REJECTED' ? 'danger' : 'warn'}>{a.status}</Badge></Td>
                 <Td>{a.status !== 'CONVERTED' ? <Input value={convertUserId[a.id] ?? ''} onChange={e => setConvertUserId(m => ({ ...m, [a.id]: e.target.value }))} placeholder="Existing user UUID" /> : <span className="text-[11px] text-ink-3">{a.convertedUserId}</span>}</Td>
-                <Td>{a.status !== 'CONVERTED' && <Button size="sm" variant="ghost" icon={<UserCheck className="size-4" />} onClick={() => convert.mutate(a.id)} disabled={!convertUserId[a.id]}>Convert</Button>}</Td>
+                <Td>
+                  <div className="flex justify-end gap-1">
+                    {a.status !== 'CONVERTED' && <Button size="sm" variant="ghost" icon={<UserCheck className="size-4" />} onClick={() => convert.mutate(a.id)} disabled={!convertUserId[a.id]}>Convert</Button>}
+                    <ConfirmDialog title="Delete application?" body={`Delete application for ${a.fullName}?`} confirmLabel="Delete" onConfirm={() => removeApp.mutate(a.id)}>
+                      <Button size="sm" variant="ghost" className="text-danger" icon={<Trash2 className="size-4" />} />
+                    </ConfirmDialog>
+                  </div>
+                </Td>
               </tr>
             ))}
           </Table>
@@ -80,7 +99,14 @@ export function WorkforcePage() {
                 <Td className="font-mono text-[12px]">{p.workerCode || '—'}</Td>
                 <Td><Badge tone={p.onboardingComplete ? 'ok' : 'warn'}>{p.onboardingComplete ? 'Complete' : 'Pending'}</Badge></Td>
                 <Td className="text-[12px]">{p.idCardIssuedAt ? new Date(p.idCardIssuedAt).toLocaleString() : '—'}</Td>
-                <Td><Button size="sm" variant="ghost" icon={<IdCard className="size-4" />} onClick={() => issueId.mutate(p.userId)}>Issue ID token</Button></Td>
+                <Td>
+                  <div className="flex justify-end gap-1">
+                    <Button size="sm" variant="ghost" icon={<IdCard className="size-4" />} onClick={() => issueId.mutate(p.userId)}>Issue ID token</Button>
+                    <ConfirmDialog title="Delete profile?" body={`Delete staff profile for ${p.user?.name ?? p.userId}?`} confirmLabel="Delete" onConfirm={() => removeProfile.mutate(p.id)}>
+                      <Button size="sm" variant="ghost" className="text-danger" icon={<Trash2 className="size-4" />} />
+                    </ConfirmDialog>
+                  </div>
+                </Td>
               </tr>
             ))}
           </Table>
@@ -94,7 +120,16 @@ export function WorkforcePage() {
             <Field label="Email"><Input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></Field>
             <Field label="Phone"><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></Field>
           </div>
-          <Field label="Requested role code"><Input value={form.requestedRoleCode} onChange={e => setForm(f => ({ ...f, requestedRoleCode: e.target.value }))} placeholder="registration_staff / access_scanner / ..." /></Field>
+          <Field label="Requested role">
+            <Select value={form.requestedRoleCode} onChange={e => setForm(f => ({ ...f, requestedRoleCode: e.target.value }))}>
+              <option value="">Select role…</option>
+              <option value="registration_staff">Registration staff</option>
+              <option value="access_scanner">Access scanner</option>
+              <option value="gate_supervisor">Gate supervisor</option>
+              <option value="zone_staff">Zone staff</option>
+              <option value="event_manager">Event manager</option>
+            </Select>
+          </Field>
           <Field label="Notes"><Input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} /></Field>
           <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" disabled={create.isPending}>{create.isPending ? 'Saving…' : 'Create'}</Button></div>
         </form>

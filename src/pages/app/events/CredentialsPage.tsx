@@ -7,29 +7,30 @@ import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Select, Field } from '@/components/ui/input'
 import { Table, Td, EmptyState } from '@/components/ui/table'
-import { Dialog } from '@/components/ui/dialog'
+import { Dialog, ConfirmDialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { useState, type FormEvent } from 'react'
-import { BadgeCheck, QrCode, Ban, Download, CreditCard } from 'lucide-react'
+import { BadgeCheck, QrCode, Ban, Download, CreditCard, Trash2 } from 'lucide-react'
 import { downloadTicketPdf, downloadIdCardPdf, type CardIdentity } from '@/lib/cards'
 
 type Credential = {
   id: string
+  shortCode?: string | null
   code: string
   status: string
   payloadVersion?: string
   issuedAt: string
   lastUsedAt?: string | null
-  attendee: { id: string; name: string }
-  ticket: {
+  attendee?: { id: string; name: string } | null
+  ticket?: {
     id: string
     typeName?: string
     deliveryStatus?: string | null
     deliveryChannel?: string | null
     lastDeliveryAt?: string | null
-    ticketType?: { name: string }
-  }
+    ticketType?: { name?: string | null } | null
+  } | null
 }
 
 type EventSummary = {
@@ -69,13 +70,13 @@ export function CredentialsPage() {
     queryFn: () => api.get<EventSummary>(`/events/${eventId}`),
   })
 
-  const ticketTypeName = (c: Credential) => c.ticket.ticketType?.name ?? c.ticket.typeName ?? 'Ticket'
+  const ticketTypeName = (c: Credential) => c.ticket?.ticketType?.name ?? c.ticket?.typeName ?? 'Ticket'
 
   const pdfIdentity = (c: Credential): CardIdentity => ({
     eventName: event.data?.name ?? 'TKT Event',
     eventDate: event.data?.startAt ? new Date(event.data.startAt).toLocaleDateString() : '',
     venue: event.data?.venueName ?? null,
-    attendeeName: c.attendee.name,
+    attendeeName: c.attendee?.name ?? 'Attendee',
     ticketType: ticketTypeName(c),
     code: c.code,
   })
@@ -109,6 +110,16 @@ export function CredentialsPage() {
     },
   })
 
+  const remove = useMutation({
+    mutationFn: (id: string) => api.delete(`/events/${eventId}/credentials/${id}`),
+    onSuccess: () => {
+      toast.success('Credential deleted')
+      qc.invalidateQueries({ queryKey: ['credentials'] })
+      qc.invalidateQueries({ queryKey: ['attendees-eligible'] })
+    },
+    onError: (e: any) => toast.error(e?.message ?? 'Could not delete credential'),
+  })
+
   if (isLoading) return <FullPageSpinner />
   if (error || !data) return <InlineError message="Could not load credentials." onRetry={refetch} />
 
@@ -136,9 +147,16 @@ export function CredentialsPage() {
           {data.map((c) => (
             <tr key={c.id} className="group">
               <Td>
-                <span className="font-mono text-[12px] text-signal">{c.code}</span>
+                <div className="flex flex-col gap-1">
+                  <span className="inline-flex w-fit items-center rounded-md border border-signal/30 bg-signal/10 px-2 py-0.5 font-mono text-[11px] font-semibold tracking-[0.08em] text-signal">
+                    {c.shortCode ?? c.code.slice(0, 12)}
+                  </span>
+                  <span className="font-mono text-[10px] text-ink-3" title={c.code}>
+                    secure QR payload
+                  </span>
+                </div>
               </Td>
-              <Td className="text-[13px]">{c.attendee.name}</Td>
+              <Td className="text-[13px]">{c.attendee?.name ?? 'Unknown attendee'}</Td>
               <Td>
                 <span className="rounded border border-line bg-elevated px-1.5 py-0.5 text-[10px] text-ink-2">
                   {ticketTypeName(c)}
@@ -149,8 +167,8 @@ export function CredentialsPage() {
               </Td>
               <Td>
                 <div className="flex flex-col gap-0.5 font-mono text-[10px] text-ink-3">
-                  <span>{c.ticket.deliveryChannel ?? 'EMAIL'}</span>
-                  <span>{c.ticket.deliveryStatus ?? 'PENDING'}</span>
+                  <span>{c.ticket?.deliveryChannel ?? 'EMAIL'}</span>
+                  <span>{c.ticket?.deliveryStatus ?? 'PENDING'}</span>
                 </div>
               </Td>
               <Td className="text-[12px] text-ink-3">{c.issuedAt.split('T')[0]}</Td>
@@ -186,13 +204,18 @@ export function CredentialsPage() {
                     <CreditCard className="size-4" />
                   </button>
                   {c.status === 'ACTIVE' && (
-                    <button
-                      className="rounded p-1.5 text-danger hover:bg-danger/10"
-                      onClick={() => revoke.mutate(c.id)}
-                      aria-label="Revoke"
-                    >
-                      <Ban className="size-4" />
-                    </button>
+                    <ConfirmDialog title="Revoke credential?" body={`Revoke credential for ${c.attendee?.name ?? 'this attendee'}? This disables access.`} confirmLabel="Revoke" onConfirm={() => revoke.mutate(c.id)}>
+                      <button className="rounded p-1.5 text-danger hover:bg-danger/10" aria-label="Revoke">
+                        <Ban className="size-4" />
+                      </button>
+                    </ConfirmDialog>
+                  )}
+                  {c.status !== 'ACTIVE' && (
+                    <ConfirmDialog title="Delete credential?" body="Delete this credential permanently? Only allowed when there are no access logs." confirmLabel="Delete" onConfirm={() => remove.mutate(c.id)}>
+                      <button className="rounded p-1.5 text-danger hover:bg-danger/10" aria-label="Delete">
+                        <Trash2 className="size-4" />
+                      </button>
+                    </ConfirmDialog>
                   )}
                 </div>
               </Td>
@@ -280,20 +303,24 @@ function CredentialQrDialog({
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title={data ? data.code.split('.').slice(0, 2).join('.') + '…' : 'Credential'}>
+    <Dialog open={open} onClose={onClose} title={data?.shortCode ?? 'Credential'}>
       <div className="flex flex-col items-center gap-4">
         {data && (
           <>
-            <p className="max-w-full break-all rounded-md border border-line bg-canvas px-3 py-2 text-center font-mono text-[11px] leading-relaxed text-ink-2">
-              {data.code}
+            <div className="rounded-xl border border-signal/30 bg-signal/10 px-5 py-3 text-center">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-ink-3">Ticket code</p>
+              <p className="mt-1 font-mono text-2xl font-bold tracking-[0.12em] text-signal">{data.shortCode ?? 'PENDING'}</p>
+            </div>
+            <p className="max-w-full break-all rounded-md border border-line bg-canvas px-3 py-2 text-center font-mono text-[10px] leading-relaxed text-ink-3">
+              Secure signed QR payload attached to this code
             </p>
             <div className="w-full rounded-lg border border-line bg-raised px-4 py-3 text-center">
-              <p className="text-[13px] font-medium">{data.attendee.name}</p>
+              <p className="text-[13px] font-medium">{data.attendee?.name ?? 'Unknown attendee'}</p>
               <p className="mt-0.5 text-[11px] text-ink-3">
-                {(data.ticket.ticketType?.name ?? data.ticket.typeName ?? 'Ticket')} · {data.status}
+                {(data.ticket?.ticketType?.name ?? data.ticket?.typeName ?? 'Ticket')} · {data.status}
               </p>
             </div>
-            <Button variant="outline" onClick={() => download(data.code, data.code.slice(0, 16))} icon={<Download className="size-4" />}>
+            <Button variant="outline" onClick={() => download(data.code, data.shortCode ?? data.code.slice(0, 16))} icon={<Download className="size-4" />}>
               Download payload
             </Button>
           </>

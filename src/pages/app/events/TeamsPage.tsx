@@ -6,10 +6,10 @@ import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Input, Field } from '@/components/ui/input'
 import { EmptyState } from '@/components/ui/table'
-import { Dialog } from '@/components/ui/dialog'
+import { Dialog, ConfirmDialog } from '@/components/ui/dialog'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { useState, type FormEvent } from 'react'
-import { UsersRound, Plus } from 'lucide-react'
+import { UsersRound, Plus, Trash2 } from 'lucide-react'
 
 type Team = {
   id: string
@@ -46,6 +46,12 @@ export function TeamsPage() {
     onError: (e) => toast.error(e instanceof ApiError ? e.message : 'Could not create team'),
   })
 
+  const remove = useMutation({
+    mutationFn: (id: string) => api.delete(`/events/${eventId}/teams/${id}`),
+    onSuccess: () => { toast.success('Team deleted'); qc.invalidateQueries({ queryKey: ['teams'] }) },
+    onError: (e: any) => toast.error(e?.message ?? 'Could not delete team'),
+  })
+
   if (isLoading) return <FullPageSpinner />
   if (error || !data) return <InlineError message="Could not load teams." onRetry={refetch} />
 
@@ -77,9 +83,14 @@ export function TeamsPage() {
             <div key={t.id} className="rounded-xl border border-line bg-raised/70 p-5">
               <div className="flex items-start justify-between">
                 <h3 className="text-[15px] font-semibold">{t.name}</h3>
-                <span className="rounded-full border border-line bg-elevated px-2 py-0.5 text-[10px] text-ink-3">
-                  {t._count.tasks} tasks
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full border border-line bg-elevated px-2 py-0.5 text-[10px] text-ink-3">
+                    {t._count.tasks} tasks
+                  </span>
+                  <ConfirmDialog title="Delete team?" body={`Delete ${t.name}? This removes team assignments.`} confirmLabel="Delete" onConfirm={() => remove.mutate(t.id)}>
+                    <button className="rounded p-1.5 text-danger hover:bg-danger/10" aria-label="Delete team"><Trash2 className="size-4" /></button>
+                  </ConfirmDialog>
+                </div>
               </div>
               {t.description && <p className="mt-1.5 text-[13px] text-ink-3 line-clamp-2">{t.description}</p>}
               <div className="mt-4 flex flex-wrap gap-1.5">

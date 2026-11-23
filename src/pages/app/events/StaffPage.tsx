@@ -106,9 +106,6 @@ export function StaffPage() {
     queryFn: () => api.get<{ id: string; name: string; email: string }[]>(`/events/${eventId}/org-users`),
   })
 
-  if (isLoading) return <FullPageSpinner />
-  if (staffError || !staff) return <InlineError message="Could not load staff." onRetry={refetch} />
-
   const allRoles = [...(roles.data?.custom ?? []), ...(roles.data?.system ?? [])]
 
   const add = useMutation({
@@ -135,6 +132,9 @@ export function StaffPage() {
       qc.invalidateQueries({ queryKey: ['staff'] })
     },
   })
+
+  if (isLoading) return <FullPageSpinner />
+  if (staffError || !staff) return <InlineError message="Could not load staff." onRetry={refetch} />
 
   const submit = (e: FormEvent) => {
     e.preventDefault()

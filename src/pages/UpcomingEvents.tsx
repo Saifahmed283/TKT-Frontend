@@ -262,8 +262,8 @@ export default function UpcomingEvents() {
 
               {events && events.length > 0 && (
                 <div className="flex items-center gap-4 border border-line-soft/70 bg-raised/40 px-5 py-4 backdrop-blur-sm lg:mb-2">
-                  <p className="font-display text-4xl font-semibold tabular-nums text-signal">{events.length}</p>
-                  <ShinyText text={t('eventsAvailable')} className="text-[11px] font-medium uppercase tracking-[0.16em]" color="var(--color-ink-3)" shineColor="var(--color-signal)" speed={2.8} />
+                  <p className="font-display text-4xl font-semibold tabular-nums text-[color:var(--upcoming-count-label)]">{events.length}</p>
+                  <ShinyText text={t('eventsAvailable')} className="text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--upcoming-count-label)]" color="var(--upcoming-count-label)" shineColor="var(--color-signal)" speed={2.8} />
                 </div>
               )}
             </div>

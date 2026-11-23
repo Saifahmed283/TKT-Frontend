@@ -119,7 +119,17 @@ export function AccessCodesPage() {
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Full name"><Input value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} /></Field>
-            <Field label="Category"><Input value={form.attendeeCategory} onChange={e => setForm(f => ({ ...f, attendeeCategory: e.target.value }))} placeholder="VIP / Guest / Speaker" /></Field>
+            <Field label="Category">
+              <Select value={form.attendeeCategory} onChange={e => setForm(f => ({ ...f, attendeeCategory: e.target.value }))}>
+                <option value="">Select category…</option>
+                <option value="VIP">VIP</option>
+                <option value="Guest">Guest</option>
+                <option value="Speaker">Speaker</option>
+                <option value="Media">Media</option>
+                <option value="Staff">Staff</option>
+                <option value="Partner">Partner</option>
+              </Select>
+            </Field>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Email"><Input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></Field>

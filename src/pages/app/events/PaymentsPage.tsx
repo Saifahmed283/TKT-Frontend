@@ -6,8 +6,9 @@ import { useToast } from '@/components/ui/toast'
 import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Field, Input, Select } from '@/components/ui/input'
+import { FileUploadField } from '@/components/ui/file-upload'
 import { Table, Td, EmptyState } from '@/components/ui/table'
-import { Dialog } from '@/components/ui/dialog'
+import { Dialog, ConfirmDialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { StatCard, Panel } from '@/components/motion/primitives'
@@ -210,15 +211,9 @@ export function PaymentsPage() {
                     >
                       Edit
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-danger"
-                      onClick={() => {
-                        if (confirm('Delete provider?')) deleteProvider.mutate(p.id)
-                      }}
-                      icon={<Trash2 className="size-3.5" />}
-                    />
+                    <ConfirmDialog title="Delete payment provider?" body={`Delete ${p.name}? This cannot be undone.`} confirmLabel="Delete" onConfirm={() => deleteProvider.mutate(p.id)}>
+                      <Button variant="ghost" size="sm" className="text-danger" icon={<Trash2 className="size-3.5" />} />
+                    </ConfirmDialog>
                   </div>
                 </Td>
               </tr>
@@ -302,9 +297,7 @@ export function PaymentsPage() {
           <Field label="Instructions">
             <Input value={form.instructions} onChange={(e) => setForm((f) => ({ ...f, instructions: e.target.value }))} />
           </Field>
-          <Field label="Image URL">
-            <Input value={form.imageUrl} onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))} />
-          </Field>
+          <FileUploadField label="Provider image" hint="Optional" value={form.imageUrl} onChange={(url) => setForm((f) => ({ ...f, imageUrl: url }))} />
           <Field label="Active">
             <Select value={form.isActive} onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.value }))}>
               <option value="true">Active</option>
