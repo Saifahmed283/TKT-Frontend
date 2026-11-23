@@ -27,7 +27,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     ;(async () => {
       try {
-        await refresh()
+        // Try silent refresh first to avoid noisy 401 on /auth/me for guests.
+        const res = await fetch(`${import.meta.env.VITE_API_BASE ?? '/api'}/auth/refresh`, {
+          method: 'POST',
+          credentials: 'include',
+        })
+        if (res.ok) {
+          const body = (await res.json()) as { data?: { token?: string } }
+          if (body.data?.token) setAccessToken(body.data.token)
+          await refresh()
+        } else {
+          setUser(null)
+        }
       } catch {
         setUser(null)
       } finally {
