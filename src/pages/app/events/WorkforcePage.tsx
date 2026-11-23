@@ -36,9 +36,19 @@ export function WorkforcePage() {
   })
 
   const convert = useMutation({
-    mutationFn: (id: string) => api.post(`/events/${eventId}/workforce/applications/${id}/convert`, { userId: convertUserId[id] }),
-    onSuccess: () => { toast.success('Applicant converted to staff'); qc.invalidateQueries({ queryKey: ['workforce-apps'] }); qc.invalidateQueries({ queryKey: ['workforce-profiles'] }); qc.invalidateQueries({ queryKey: ['staff'] }) },
-    onError: (e: any) => toast.error(e?.message ?? 'Conversion failed (provide existing user ID)'),
+    mutationFn: (id: string) => {
+      const uid = (convertUserId[id] ?? '').trim()
+      return api.post<{ onboardingEmailOk: boolean; onboardingEmailError?: string | null; accountCreated: boolean }>(
+        `/events/${eventId}/workforce/applications/${id}/convert`,
+        uid ? { userId: uid } : { createUserIfMissing: true },
+      )
+    },
+    onSuccess: (d) => {
+      if (d.accountCreated) toast.success(d.onboardingEmailOk ? 'Account created and credentials emailed' : `Account created, but email failed: ${d.onboardingEmailError ?? 'check SMTP'}`)
+      else toast.success('Applicant converted to staff')
+      qc.invalidateQueries({ queryKey: ['workforce-apps'] }); qc.invalidateQueries({ queryKey: ['workforce-profiles'] }); qc.invalidateQueries({ queryKey: ['staff'] })
+    },
+    onError: (e: any) => toast.error(e?.message ?? 'Conversion failed'),
   })
 
   const issueId = useMutation({
@@ -70,17 +80,27 @@ export function WorkforcePage() {
       <div className="px-6 pt-6 space-y-8">
         <div>
           <h2 className="text-sm font-semibold mb-3">Applications</h2>
-          <Table headers={['Applicant', 'Requested role', 'Status', 'Convert (existing user ID)', '']}>
+          <Table headers={['Applicant', 'Requested role', 'Status', 'Convert', '']}>
             {(apps.data ?? []).length === 0 && <EmptyState colSpan={5} title="No applications" />}
             {(apps.data ?? []).map((a) => (
               <tr key={a.id}>
                 <Td><div className="text-[13px] font-medium">{a.fullName}</div><div className="text-[11px] text-ink-3">{a.email || a.phone || '—'}</div></Td>
                 <Td className="text-[12px]">{a.requestedRoleCode || '—'}</Td>
                 <Td><Badge tone={a.status === 'CONVERTED' ? 'ok' : a.status === 'REJECTED' ? 'danger' : 'warn'}>{a.status}</Badge></Td>
-                <Td>{a.status !== 'CONVERTED' ? <Input value={convertUserId[a.id] ?? ''} onChange={e => setConvertUserId(m => ({ ...m, [a.id]: e.target.value }))} placeholder="Existing user UUID" /> : <span className="text-[11px] text-ink-3">{a.convertedUserId}</span>}</Td>
+                <Td>
+                  {a.status !== 'CONVERTED' ? (
+                    <div className="space-y-1.5">
+                      <Input value={convertUserId[a.id] ?? ''} onChange={e => setConvertUserId(m => ({ ...m, [a.id]: e.target.value }))} placeholder="Existing user UUID (optional)" />
+                      <label className="flex items-center gap-2 text-[11px] text-ink-3">
+                        <input type="checkbox" checked={!!createAccount[a.id]} onChange={e => setCreateAccount(m => ({ ...m, [a.id]: e.target.checked }))} disabled={!!convertUserId[a.id]?.trim()} />
+                        Create account & email temp password
+                      </label>
+                    </div>
+                  ) : <span className="text-[11px] text-ink-3">{a.convertedUserId}</span>}
+                </Td>
                 <Td>
                   <div className="flex justify-end gap-1">
-                    {a.status !== 'CONVERTED' && <Button size="sm" variant="ghost" icon={<UserCheck className="size-4" />} onClick={() => convert.mutate(a.id)} disabled={!convertUserId[a.id]}>Convert</Button>}
+                    {a.status !== 'CONVERTED' && <Button size="sm" variant="ghost" icon={<UserCheck className="size-4" />} onClick={() => convert.mutate(a.id)} disabled={!(convertUserId[a.id]?.trim() || createAccount[a.id])} loading={convert.isPending && convert.variables === a.id}>{createAccount[a.id] && !convertUserId[a.id]?.trim() ? 'Create & send' : 'Convert'}</Button>}
                     <ConfirmDialog title="Delete application?" body={`Delete application for ${a.fullName}?`} confirmLabel="Delete" onConfirm={() => removeApp.mutate(a.id)}>
                       <Button size="sm" variant="ghost" className="text-danger" icon={<Trash2 className="size-4" />} />
                     </ConfirmDialog>

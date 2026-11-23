@@ -48,6 +48,9 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
   const [checkingCode, setCheckingCode] = useState('')
   const [copied, setCopied] = useState(false)
   const [existingReservation, setExistingReservation] = useState<{ reservationCode: string; approval?: string; qr?: string | null } | null>(null)
+  const buses = (event.buses ?? []).filter(b => (b.seats?.length ?? 0) > 0)
+  const [busId, setBusId] = useState(buses[0]?.id ?? '')
+  const [selectedSeatIds, setSelectedSeatIds] = useState<string[]>([])
   const qrUrl = useQrDataUrl(done?.approval === 'APPROVED' && done.qr ? done.qr : null)
   const pending = done?.approval === 'PENDING'
   const status = useReservationStatus(event.id, pending && checkingCode ? checkingCode : null)
@@ -79,6 +82,8 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
         paymentReference: isPaid && paymentReference.trim() ? paymentReference.trim() : undefined,
         paymentProofUrl: isPaid && paymentProofUrl ? paymentProofUrl : undefined,
         paymentAmount: isPaid && selected ? Number(selected.price) : undefined,
+        busId: busId || undefined,
+        seatIds: selectedSeatIds.length ? selectedSeatIds : undefined,
       }),
     onSuccess: (data) => {
       setDone(data)
@@ -166,6 +171,12 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
                   <p className="mt-1 text-sm text-ink-0">{money(done.price, lang)}</p>
                 </div>
               </div>
+              {done.seats && done.seats.length > 0 && (
+                <div className="border border-line-soft bg-elevated/30 p-3">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">Seats</p>
+                  <p className="mt-1 text-sm text-ink-0">{done.seats.map(s => s.label).join(', ')}</p>
+                </div>
+              )}
               <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">
                 <ShieldCheck size={13} className="text-signal" /> {t('secureBooking')}
               </div>
@@ -252,6 +263,44 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
               })}
             </select>
           </div>
+          {buses.length > 0 && (
+            <div className="space-y-3 border border-line-soft bg-elevated/20 p-4">
+              <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-signal">Bus seats (optional)</p>
+              {buses.length > 1 && (
+                <select className="input" value={busId} onChange={(e) => { setBusId(e.target.value); setSelectedSeatIds([]) }}>
+                  {buses.map(b => <option key={b.id} value={b.id}>{b.name} ({b.availableSeats} available)</option>)}
+                </select>
+              )}
+              {(() => {
+                const bus = buses.find(b => b.id === busId) ?? buses[0]
+                if (!bus) return null
+                const cols = bus.layout.cols
+                const aisleAfter = bus.layout.aisleAfterCol ?? 0
+                return (
+                  <div>
+                    <div className="mb-2 flex items-center gap-3 text-[10px] text-ink-3"><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-sm bg-ok/40" />Available</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-sm bg-danger/40" />Reserved</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-sm bg-ink-3/40" />Unavailable</span></div>
+                    <div className="overflow-x-auto"><div className="grid w-fit gap-1.5" style={{ gridTemplateColumns: `repeat(${cols + (aisleAfter > 0 && aisleAfter < cols ? 1 : 0)}, minmax(0,1fr))` }}>
+                      {Array.from({ length: bus.layout.rows }).flatMap((_, r) => {
+                        const row = r + 1; const cells: any[] = []
+                        for (let c = 1; c <= cols; c++) {
+                          const seat = bus.seats.find(s => s.row === row && s.col === c)
+                          if (!seat) { cells.push(<div key={`${row}-${c}`} />) }
+                          else {
+                            const selectedSeat = selectedSeatIds.includes(seat.id)
+                            const cls = selectedSeat ? 'border-signal bg-signal text-black' : seat.state === 'AVAILABLE' ? 'border-ok/40 bg-ok/15 text-ok hover:bg-ok/25' : seat.state === 'RESERVED' ? 'border-danger/40 bg-danger/15 text-danger cursor-not-allowed' : 'border-line bg-ink-3/20 text-ink-3 cursor-not-allowed'
+                            cells.push(<button key={seat.id} type="button" disabled={seat.state !== 'AVAILABLE' && !selectedSeat} onClick={() => setSelectedSeatIds(prev => prev.includes(seat.id) ? prev.filter(x => x !== seat.id) : [...prev, seat.id])} className={`grid h-8 w-8 place-items-center rounded-md border text-[10px] font-semibold transition-colors ${cls}`} title={seat.holderName ? `${seat.label} · ${seat.holderName}` : seat.label}>{seat.label}</button>)
+                          }
+                          if (aisleAfter === c && c < cols) cells.push(<div key={`a-${row}-${c}`} className="w-3" />)
+                        }
+                        return cells
+                      })}
+                    </div></div>
+                    {selectedSeatIds.length > 0 && <p className="mt-2 text-[11px] text-ink-2">Selected seats: {bus.seats.filter(s => selectedSeatIds.includes(s.id)).map(s => s.label).join(', ')}</p>}
+                  </div>
+                )
+              })()}
+            </div>
+          )}
           {isPaid && (
             <div className="space-y-3 border border-line-soft bg-elevated/20 p-4">
               <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-signal">Payment details</p>

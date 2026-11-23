@@ -30,6 +30,9 @@ export interface PublicPaymentProvider {
   imageUrl?: string | null
 }
 
+export interface PublicSeat { id: string; label: string; row: number; col: number; state: 'AVAILABLE' | 'RESERVED' | 'UNAVAILABLE'; holderName?: string | null }
+export interface PublicBus { id: string; name: string; layout: { rows: number; cols: number; aisleAfterCol?: number }; totalSeats: number; availableSeats: number; seats: PublicSeat[] }
+
 export interface PublicEvent {
   id: string
   name: string
@@ -50,6 +53,7 @@ export interface PublicEvent {
   }
   ticketTypes: PublicTicketType[]
   paymentProviders?: PublicPaymentProvider[]
+  buses?: PublicBus[]
   attendeeCount: number
   ticketCount: number
   scanCount: number
@@ -65,6 +69,7 @@ export interface ReservationResult {
   approval: ReservationApproval
   paymentStatus?: 'NOT_REQUIRED' | 'PENDING' | 'CONFIRMED' | 'FAILED' | 'REFUNDED'
   qr: string | null
+  seats?: { id: string; label: string; busId: string }[]
 }
 
 export interface ReservationStatus {
@@ -80,6 +85,7 @@ export interface ReservationStatus {
   ticketName: string
   attendeeName: string
   qr: string | null
+  seats?: { id: string; label: string; busId: string }[]
 }
 
 export interface PublicStats {

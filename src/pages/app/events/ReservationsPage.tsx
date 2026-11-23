@@ -13,7 +13,7 @@ import { useSse } from '@/lib/sse'
 import { Dialog } from '@/components/ui/dialog'
 import { ClipboardCheck, QrCode, Download } from 'lucide-react'
 import { downloadAuthFile, exportPdf } from '@/lib/export'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 type ReservationRow = {
   id: string
@@ -45,6 +45,10 @@ export function ReservationsPage() {
   const [rejectTarget, setRejectTarget] = useState<ReservationRow | null>(null)
   const [rejectReason, setRejectReason] = useState('')
   const [historyTicketId, setHistoryTicketId] = useState<string | null>(null)
+  const [resendTarget, setResendTarget] = useState<ReservationRow | null>(null)
+  const [resendEmail, setResendEmail] = useState('')
+  const [emailTplOpen, setEmailTplOpen] = useState(false)
+  const [emailTpl, setEmailTpl] = useState({ subject: '', preheader: '', title: '', body: '', footer: '' })
 
   const history = useQuery({
     queryKey: ['reservation-deliveries', eventId, historyTicketId],
@@ -80,14 +84,33 @@ export function ReservationsPage() {
   })
 
   const resend = useMutation({
-    mutationFn: (ticketId: string) => api.post(`/events/${eventId}/reservations/${ticketId}/resend`, {}),
+    mutationFn: ({ ticketId, toEmail }: { ticketId: string; toEmail?: string }) => api.post(`/events/${eventId}/reservations/${ticketId}/resend`, toEmail ? { toEmail } : {}),
     onSuccess: () => {
-      toast.success('Ticket email resent')
+      toast.success('Ticket email sent')
+      setResendTarget(null)
+      setResendEmail('')
       void qc.invalidateQueries({ queryKey: ['reservations'] })
     },
     onError: (e) => {
-      toast.error(e instanceof ApiError ? e.message : 'Resend failed')
+      toast.error(e instanceof ApiError ? e.message : 'Send failed')
     },
+  })
+
+  const eventQ = useQuery({
+    queryKey: ['event', eventId, 'emailTpl'],
+    queryFn: () => api.get<any>(`/events/${eventId}`),
+    enabled: emailTplOpen && !!eventId,
+  })
+  useEffect(() => {
+    if (emailTplOpen && eventQ.data?.settings?.ticketEmail) {
+      const s = eventQ.data.settings.ticketEmail as any
+      setEmailTpl({ subject: s.subject ?? '', preheader: s.preheader ?? '', title: s.title ?? '', body: s.body ?? '', footer: s.footer ?? '' })
+    }
+  }, [emailTplOpen, eventQ.data])
+  const saveEmailTpl = useMutation({
+    mutationFn: () => api.patch(`/events/${eventId}`, { settings: { ...(eventQ.data?.settings ?? {}), ticketEmail: emailTpl } }),
+    onSuccess: () => { toast.success('Ticket email template saved'); setEmailTplOpen(false); void qc.invalidateQueries({ queryKey: ['event', eventId] }) },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : 'Could not save template'),
   })
 
   if (isLoading) return <FullPageSpinner />
@@ -103,6 +126,7 @@ export function ReservationsPage() {
         icon={<ClipboardCheck className="size-5" />}
         actions={
           <div className="flex items-center gap-2">
+            <Button size="sm" variant="ghost" onClick={() => { const s = (eventQ.data?.settings?.ticketEmail ?? {}) as any; setEmailTpl({ subject: s.subject ?? '', preheader: s.preheader ?? '', title: s.title ?? '', body: s.body ?? '', footer: s.footer ?? '' }); setEmailTplOpen(true) }}>Email template</Button>
             <Button size="sm" variant="ghost" onClick={() => void downloadAuthFile(`/events/${eventId}/reservations/export.xlsx?status=${filter}`, `reservations-${eventId}.xlsx`).catch(() => toast.error('Export failed'))}><Download size={14} /> Excel</Button>
             <Button size="sm" variant="ghost" onClick={() => exportPdf(`reservations-${eventId}`, 'Reservations', ['Code', 'Name', 'Email', 'Ticket', 'Amount', 'Approval', 'Payment', 'Issued'], (data.rows ?? []).map(r => [r.reservationCode ?? r.id.slice(0, 8), r.attendee.name, r.attendee.email ?? '', r.ticketType.name, r.price, r.approval, r.paymentStatus ?? '', timeAgo(r.issuedAt)]))}><Download size={14} /> PDF</Button>
           <div className="flex gap-1 rounded-lg border border-line bg-raised p-1">
@@ -214,11 +238,9 @@ export function ReservationsPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={resend.isPending}
-                      loading={resend.isPending && resend.variables === r.id}
-                      onClick={() => resend.mutate(r.id)}
+                      onClick={() => { setResendTarget(r); setResendEmail(r.attendee.email ?? '') }}
                     >
-                      Resend
+                      Send
                     </Button>
                   </div>
                 ) : (
@@ -293,6 +315,32 @@ export function ReservationsPage() {
               <p className="mt-1 font-mono text-[10px] text-ink-3">{d.recipient ?? '—'} · attempt {d.attempt}{d.provider ? ` · ${d.provider}` : ''}{d.error ? ` · ${d.error}` : ''}</p>
             </div>
           ))}
+        </div>
+      </Dialog>
+
+      <Dialog open={!!resendTarget} onClose={() => { if (!resend.isPending) { setResendTarget(null); setResendEmail('') } }} title="Send ticket email">
+        <div className="space-y-4">
+          <p className="text-[13px] text-ink-2">Send the signed QR ticket for <span className="font-medium text-ink">{resendTarget?.attendee.name}</span>. Leave email as-is to resend, or change it to self-send / forward.</p>
+          <label className="block space-y-1.5">
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3">Recipient email</span>
+            <input value={resendEmail} onChange={e => setResendEmail(e.target.value)} type="email" className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-[13px] text-ink outline-none transition focus:border-gold/40" />
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => { setResendTarget(null); setResendEmail('') }} disabled={resend.isPending}>Cancel</Button>
+            <Button loading={resend.isPending} disabled={!resendEmail.trim()} onClick={() => resendTarget && resend.mutate({ ticketId: resendTarget.id, toEmail: resendEmail.trim() })}>Send ticket</Button>
+          </div>
+        </div>
+      </Dialog>
+
+      <Dialog open={emailTplOpen} onClose={() => setEmailTplOpen(false)} title="Ticket email template" wide>
+        <div className="space-y-3">
+          <p className="text-[12px] text-ink-3">Customize reservation/ticket email text. Use {'{event}'} in subject/title/body. Leave blank to use defaults.</p>
+          <label className="block space-y-1"><span className="text-[11px] text-ink-3">Subject</span><input className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-[13px]" value={emailTpl.subject} onChange={e => setEmailTpl({ ...emailTpl, subject: e.target.value })} /></label>
+          <label className="block space-y-1"><span className="text-[11px] text-ink-3">Preheader</span><input className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-[13px]" value={emailTpl.preheader} onChange={e => setEmailTpl({ ...emailTpl, preheader: e.target.value })} /></label>
+          <label className="block space-y-1"><span className="text-[11px] text-ink-3">Title</span><input className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-[13px]" value={emailTpl.title} onChange={e => setEmailTpl({ ...emailTpl, title: e.target.value })} /></label>
+          <label className="block space-y-1"><span className="text-[11px] text-ink-3">Body</span><textarea rows={4} className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-[13px]" value={emailTpl.body} onChange={e => setEmailTpl({ ...emailTpl, body: e.target.value })} /></label>
+          <label className="block space-y-1"><span className="text-[11px] text-ink-3">Footer</span><input className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-[13px]" value={emailTpl.footer} onChange={e => setEmailTpl({ ...emailTpl, footer: e.target.value })} /></label>
+          <div className="flex justify-end gap-2"><Button variant="ghost" onClick={() => setEmailTplOpen(false)}>Cancel</Button><Button loading={saveEmailTpl.isPending} onClick={() => saveEmailTpl.mutate()}>Save template</Button></div>
         </div>
       </Dialog>
     </div>
