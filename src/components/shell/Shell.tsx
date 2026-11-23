@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from 'react'
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, CalendarDays, Users, Ticket, QrCode, ScanLine, ListTodo,
   AlertTriangle, Megaphone, Shield, LogOut, Radio, ChevronDown,
@@ -94,6 +94,7 @@ export default function Shell() {
   const { user, logout } = useAuth()
   const { has } = usePermissions()
   const navigate = useNavigate()
+  const location = useLocation()
   const { t, lang, toggle: toggleLang } = useLanguage()
   const { theme, toggle: toggleTheme } = useTheme()
   const [paletteOpen, setPaletteOpen] = useState(false)

@@ -31,7 +31,7 @@ export function TeamsPage() {
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['teams', eventId],
-    queryFn: () => api.get<Team[]>(`/events/${eventId}/teams`).catch(() => []),
+    queryFn: () => api.get<Team[]>(`/events/${eventId}/teams`),
   })
 
   const create = useMutation({

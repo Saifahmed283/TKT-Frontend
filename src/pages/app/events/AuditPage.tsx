@@ -35,10 +35,7 @@ export function AuditPage() {
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['audit', eventId, page],
-    queryFn: () =>
-      api
-        .get<AuditResponse>(`/events/${eventId}/audit-logs?page=${page}`)
-        .catch(() => null),
+    queryFn: () => api.get<AuditResponse>(`/events/${eventId}/audit-logs?page=${page}`),
   })
 
   if (isLoading) return <FullPageSpinner />

@@ -32,11 +32,9 @@ export function AccessLogsPage() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['access-logs', eventId, page, sse],
     queryFn: () =>
-      api
-        .get<{ rows: AccessLog[]; total: number; page: number; pages: number }>(
-          `/events/${eventId}/access/logs?page=${page}`,
-        )
-        .catch(() => null),
+      api.get<{ rows: AccessLog[]; total: number; page: number; pages: number }>(
+        `/events/${eventId}/access/logs?page=${page}`,
+      ),
   })
 
   if (isLoading) return <FullPageSpinner />
@@ -44,10 +42,7 @@ export function AccessLogsPage() {
 
   const exportAll = async (kind: 'csv' | 'pdf') => {
     const eid = eventId ?? ''
-    const all = await api
-      .get<{ rows: AccessLog[] }>(`/events/${eid}/access/logs?page=1&pageSize=100000`)
-      .catch(() => null)
-    if (!all) return
+    const all = await api.get<{ rows: AccessLog[] }>(`/events/${eid}/access/logs?page=1&pageSize=100000`)
     const headers = ['Attendee', 'Credential', 'Area', 'Result', 'Reason', 'Parse', 'Lookup', 'Operator', 'Timestamp']
     const rows = all.rows.map((l) => [
       l.attendee?.name ?? 'Unknown',

@@ -61,7 +61,7 @@ export function ReservationsPage() {
         .get<{ rows: ReservationRow[]; total: number; page: number; pageSize: number }>(
           `/events/${eventId}/reservations?status=${filter}&page=${page}`,
         )
-        .catch(() => null),
+        ,
   })
 
   const decide = useMutation({

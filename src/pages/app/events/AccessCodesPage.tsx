@@ -43,8 +43,8 @@ export function AccessCodesPage() {
   const [editing, setEditing] = useState<AccessCode | null>(null)
   const [form, setForm] = useState(empty)
 
-  const codes = useQuery({ queryKey: ['access-codes', eventId, sse], queryFn: () => api.get<AccessCode[]>(`/events/${eventId}/access-codes`).catch(() => []) })
-  const ticketTypes = useQuery({ queryKey: ['ticket-types', eventId], queryFn: () => api.get<TicketType[]>(`/events/${eventId}/tickets/types`).catch(() => []) })
+  const codes = useQuery({ queryKey: ['access-codes', eventId, sse], queryFn: () => api.get<AccessCode[]>(`/events/${eventId}/access-codes`) })
+  const ticketTypes = useQuery({ queryKey: ['ticket-types', eventId], queryFn: () => api.get<TicketType[]>(`/events/${eventId}/tickets/types`) })
 
   const reset = () => { setForm(empty); setEditing(null) }
 

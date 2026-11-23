@@ -42,12 +42,12 @@ export function IncidentsPage() {
 
   const { data, isLoading, error: queryError, refetch } = useQuery({
     queryKey: ['incidents', eventId, sse],
-    queryFn: () => api.get<Incident[]>(`/events/${eventId}/incidents`).catch(() => []),
+    queryFn: () => api.get<Incident[]>(`/events/${eventId}/incidents`),
   })
 
   const staff = useQuery({
     queryKey: ['staff', eventId],
-    queryFn: () => api.get<Staff[]>(`/events/${eventId}/members`).catch(() => []),
+    queryFn: () => api.get<Staff[]>(`/events/${eventId}/members`),
   })
 
   const create = useMutation({

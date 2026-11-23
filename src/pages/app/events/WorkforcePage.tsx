@@ -25,8 +25,8 @@ export function WorkforcePage() {
   const [form, setForm] = useState(empty)
   const [convertUserId, setConvertUserId] = useState<Record<string, string>>({})
 
-  const apps = useQuery({ queryKey: ['workforce-apps', eventId], queryFn: () => api.get<AppRow[]>(`/events/${eventId}/workforce/applications`).catch(() => []) })
-  const profiles = useQuery({ queryKey: ['workforce-profiles', eventId], queryFn: () => api.get<Profile[]>(`/events/${eventId}/workforce/profiles`).catch(() => []) })
+  const apps = useQuery({ queryKey: ['workforce-apps', eventId], queryFn: () => api.get<AppRow[]>(`/events/${eventId}/workforce/applications`) })
+  const profiles = useQuery({ queryKey: ['workforce-profiles', eventId], queryFn: () => api.get<Profile[]>(`/events/${eventId}/workforce/profiles`) })
 
   const create = useMutation({
     mutationFn: () => api.post(`/events/${eventId}/workforce/applications`, { ...form, email: form.email || undefined }),

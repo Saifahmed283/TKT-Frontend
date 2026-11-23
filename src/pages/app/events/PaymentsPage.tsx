@@ -1,4 +1,4 @@
-﻿import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { useSse } from '@/lib/sse'
@@ -66,15 +66,15 @@ export function PaymentsPage() {
 
   const providers = useQuery({
     queryKey: ['payment-providers', eventId],
-    queryFn: () => api.get<Provider[]>(`/events/${eventId}/payments/providers`).catch(() => []),
+    queryFn: () => api.get<Provider[]>(`/events/${eventId}/payments/providers`),
   })
   const pending = useQuery({
     queryKey: ['payment-pending', eventId, sse],
-    queryFn: () => api.get<PendingPayment[]>(`/events/${eventId}/payments/pending`).catch(() => []),
+    queryFn: () => api.get<PendingPayment[]>(`/events/${eventId}/payments/pending`),
   })
   const summary = useQuery({
     queryKey: ['payment-summary', eventId, sse],
-    queryFn: () => api.get<Summary>(`/events/${eventId}/payments/summary`).catch(() => null),
+    queryFn: () => api.get<Summary>(`/events/${eventId}/payments/summary`),
   })
 
   const resetForm = () => {

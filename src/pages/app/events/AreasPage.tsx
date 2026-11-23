@@ -33,7 +33,7 @@ export function AreasPage() {
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['areas', eventId],
-    queryFn: () => api.get<Area[]>(`/events/${eventId}/areas`).catch(() => []),
+    queryFn: () => api.get<Area[]>(`/events/${eventId}/areas`),
   })
 
   const create = useMutation({

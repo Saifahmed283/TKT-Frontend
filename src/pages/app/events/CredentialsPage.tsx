@@ -61,12 +61,12 @@ export function CredentialsPage() {
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['credentials', eventId, activitySse, reservationSse],
-    queryFn: () => api.get<Credential[]>(`/events/${eventId}/credentials`).catch(() => []),
+    queryFn: () => api.get<Credential[] | { rows: Credential[] }>(`/events/${eventId}/credentials`).then((r) => Array.isArray(r) ? r : r.rows ?? []),
   })
 
   const event = useQuery({
     queryKey: ['event-summary', eventId],
-    queryFn: () => api.get<EventSummary>(`/events/${eventId}`).catch(() => null),
+    queryFn: () => api.get<EventSummary>(`/events/${eventId}`),
   })
 
   const ticketTypeName = (c: Credential) => c.ticket.ticketType?.name ?? c.ticket.typeName ?? 'Ticket'
@@ -85,8 +85,7 @@ export function CredentialsPage() {
     queryFn: () =>
       api
         .get<{ rows: { id: string; name: string; credential: { id: string } | null }[] }>(`/events/${eventId}/attendees?page=1&limit=200`)
-        .then((r) => r.rows.filter((a) => !a.credential))
-        .catch(() => []),
+        .then((r) => r.rows.filter((a) => !a.credential)),
   })
 
   const issue = useMutation({
@@ -266,7 +265,7 @@ function CredentialQrDialog({
 }) {
   const { data } = useQuery({
     queryKey: ['credential-payload', eventId, credentialId],
-    queryFn: () => api.get<Credential>(`/events/${eventId}/credentials/${credentialId}/offline-payload`).catch(() => null),
+    queryFn: () => api.get<Credential>(`/events/${eventId}/credentials/${credentialId}/offline-payload`),
     enabled: open && !!credentialId,
   })
 

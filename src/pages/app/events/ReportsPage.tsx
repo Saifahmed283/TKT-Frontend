@@ -41,7 +41,7 @@ export function ReportsPage() {
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['reports', eventId, sse],
-    queryFn: () => api.get<Report>(`/events/${eventId}/reports`).catch(() => null),
+    queryFn: () => api.get<Report>(`/events/${eventId}/reports`),
   })
 
   if (isLoading) return <FullPageSpinner />

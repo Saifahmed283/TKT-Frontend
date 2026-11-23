@@ -13,11 +13,11 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: 'node node_modules/tsx/dist/cli.mjs src/server.ts',
-      cwd: '../TKT-Backend',
+      command: 'npm run dev',
+      cwd: '../Backend',
       url: 'http://localhost:4000/health',
       reuseExistingServer: true,
-      timeout: 30_000,
+      timeout: 60_000,
     },
     {
       command: 'npm run dev',

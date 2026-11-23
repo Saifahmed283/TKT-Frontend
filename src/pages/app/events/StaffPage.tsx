@@ -76,18 +76,18 @@ export function StaffPage() {
 
   const { data: staff, isLoading, error: staffError, refetch } = useQuery({
     queryKey: ['staff', eventId],
-    queryFn: () => api.get<Staff[]>(`/events/${eventId}/members`).catch(() => []),
+    queryFn: () => api.get<Staff[]>(`/events/${eventId}/members`),
   })
 
   const presence = useQuery({
     queryKey: ['presence', eventId, sse],
-    queryFn: () => api.get<PresenceRow[]>(`/events/${eventId}/presence`).catch(() => []),
+    queryFn: () => api.get<PresenceRow[]>(`/events/${eventId}/presence`),
     refetchInterval: 10_000,
   })
 
   const activity = useQuery({
     queryKey: ['activity', eventId, sse],
-    queryFn: () => api.get<ActivityItem[]>(`/events/${eventId}/activity?limit=40`).catch(() => []),
+    queryFn: () => api.get<ActivityItem[]>(`/events/${eventId}/activity?limit=40`),
     refetchInterval: 10_000,
   })
 
@@ -98,12 +98,12 @@ export function StaffPage() {
 
   const teams = useQuery({
     queryKey: ['teams', eventId],
-    queryFn: () => api.get<{ id: string; name: string }[]>(`/events/${eventId}/teams`).catch(() => []),
+    queryFn: () => api.get<{ id: string; name: string }[]>(`/events/${eventId}/teams`),
   })
 
   const candidates = useQuery({
     queryKey: ['org-users', eventId],
-    queryFn: () => api.get<{ id: string; name: string; email: string }[]>(`/events/${eventId}/org-users`).catch(() => []),
+    queryFn: () => api.get<{ id: string; name: string; email: string }[]>(`/events/${eventId}/org-users`),
   })
 
   if (isLoading) return <FullPageSpinner />

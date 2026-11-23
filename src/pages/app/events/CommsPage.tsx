@@ -37,10 +37,10 @@ export function CommsPage() {
   const { data, isLoading, error: loadError, refetch } = useQuery({
     queryKey: ['announcements', eventId],
     queryFn: () =>
-      api.get<Announcement[]>(`/events/${eventId}/communications/announcements`).catch(() => []),
+      api.get<Announcement[]>(`/events/${eventId}/communications/announcements`),
   })
-  const alerts = useQuery({ queryKey: ['ops-alerts', eventId], queryFn: () => api.get<OpsAlert[]>(`/events/${eventId}/communications/alerts`).catch(() => []), refetchInterval: 15000 })
-  const chat = useQuery({ queryKey: ['team-chat', eventId], queryFn: () => api.get<ChatMsg[]>(`/events/${eventId}/communications/chat`).catch(() => []), refetchInterval: 10000 })
+  const alerts = useQuery({ queryKey: ['ops-alerts', eventId], queryFn: () => api.get<OpsAlert[]>(`/events/${eventId}/communications/alerts`), refetchInterval: 15000 })
+  const chat = useQuery({ queryKey: ['team-chat', eventId], queryFn: () => api.get<ChatMsg[]>(`/events/${eventId}/communications/chat`), refetchInterval: 10000 })
 
   const create = useMutation({
     mutationFn: () =>

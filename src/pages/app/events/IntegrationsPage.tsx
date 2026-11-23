@@ -25,9 +25,9 @@ export function IntegrationsPage() {
   const [ins, setIns] = useState({ provider: '', policyNumber: '', coverageDetails: '' })
   const [map, setMap] = useState({ map3dUrl: '', mapImageUrl: '', mapPdfUrl: '', routeNotes: '' })
 
-  const webhooks = useQuery({ queryKey: ['webhooks', eventId], queryFn: () => api.get<Webhook[]>(`/events/${eventId}/integrations/webhooks`).catch(() => []) })
-  const insurance = useQuery({ queryKey: ['insurance', eventId], queryFn: () => api.get<Insurance[]>(`/events/${eventId}/integrations/insurance`).catch(() => []) })
-  const mapAsset = useQuery({ queryKey: ['event-map', eventId], queryFn: () => api.get<MapAsset>(`/events/${eventId}/integrations/map`).catch(() => null) })
+  const webhooks = useQuery({ queryKey: ['webhooks', eventId], queryFn: () => api.get<Webhook[]>(`/events/${eventId}/integrations/webhooks`) })
+  const insurance = useQuery({ queryKey: ['insurance', eventId], queryFn: () => api.get<Insurance[]>(`/events/${eventId}/integrations/insurance`) })
+  const mapAsset = useQuery({ queryKey: ['event-map', eventId], queryFn: () => api.get<MapAsset>(`/events/${eventId}/integrations/map`) })
 
   const createHook = useMutation({
     mutationFn: () => api.post(`/events/${eventId}/integrations/webhooks`, { ...hook, events: hook.events.split(',').map(s => s.trim()).filter(Boolean) }),

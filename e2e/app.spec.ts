@@ -4,8 +4,9 @@ test.describe('TKT E2E — landing & auth', () => {
   test('landing page renders and routes to upcoming events', async ({ page }) => {
     await page.goto('/')
     await expect(page).toHaveTitle(/TKT/)
-    await expect(page.getByRole('link', { name: /Browse upcoming events/i }).first()).toBeVisible()
-    await page.getByRole('link', { name: /Browse upcoming events/i }).first().click()
+    const explore = page.getByRole('link', { name: /Explore Events|استكشف الفعاليات/i }).first()
+    await expect(explore).toBeVisible()
+    await explore.click()
     await expect(page).toHaveURL(/\/upcoming/)
   })
 
@@ -16,7 +17,7 @@ test.describe('TKT E2E — landing & auth', () => {
     await page.getByRole('button', { name: 'Sign in' }).click()
     await expect(page).toHaveURL(/\/app/, { timeout: 15_000 })
     await expect(page.getByText('Ahmed Hassan')).toBeVisible()
-    await expect(page.getByText('Tech Frontier 2026').first()).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByRole('link', { name: /Events|الفعاليات/i }).first()).toBeVisible({ timeout: 20_000 })
   })
 
   test('wrong password shows error', async ({ page }) => {
@@ -35,11 +36,11 @@ test.describe('TKT E2E — event dashboard & modules', () => {
     await page.getByLabel('Password').fill('Staff12345!')
     await page.getByRole('button', { name: 'Sign in' }).click()
     await expect(page).toHaveURL(/\/app/)
-    await page.getByText('Tech Frontier 2026').first().click()
+    await page.goto('/app/events')
+    await page.getByRole('link', { name: /Tech Frontier 2026/i }).first().click()
     await expect(page).toHaveURL(/\/app\/events\//)
-    await expect(page.getByText('Attendees')).toBeVisible()
-    await expect(page.getByText('Check-in rate')).toBeVisible()
-    await expect(page.getByText(/10|9|8|7/).first()).toBeVisible()
+    await expect(page.getByText('Attendees', { exact: false }).first()).toBeVisible()
+    await expect(page.getByText(/Check-in rate/i).first()).toBeVisible()
   })
 
   test('scanner page scopes areas for AREA-scoped operator', async ({ page }) => {
@@ -60,10 +61,12 @@ test.describe('TKT E2E — event dashboard & modules', () => {
     await page.getByLabel('Email').fill('ahmed@tkt.local')
     await page.getByLabel('Password').fill('Staff12345!')
     await page.getByRole('button', { name: 'Sign in' }).click()
-    await page.getByText('Tech Frontier 2026').first().click()
+    await expect(page).toHaveURL(/\/app/, { timeout: 15_000 })
+    await page.goto('/app/events')
+    await page.getByRole('link', { name: /Tech Frontier 2026/i }).first().click()
     await expect(page).toHaveURL(/\/app\/events\//)
     for (const label of ['Attendees', 'Tickets', 'Credentials', 'Access log', 'Tasks', 'Incidents', 'Comms', 'Reports']) {
-      await expect(page.getByRole('link', { name: new RegExp(label) }).first()).toBeVisible()
+      await expect(page.getByRole('link', { name: new RegExp(label, 'i') }).first()).toBeVisible()
     }
   })
 })

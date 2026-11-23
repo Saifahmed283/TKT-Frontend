@@ -44,12 +44,12 @@ export function DevicesPage() {
 
   const devices = useQuery({
     queryKey: ['devices', eventId, sse],
-    queryFn: () => api.get<Device[]>(`/events/${eventId}/devices`).catch(() => []),
+    queryFn: () => api.get<Device[]>(`/events/${eventId}/devices`),
     refetchInterval: 15000,
   })
   const stats = useQuery({
     queryKey: ['device-stats', eventId, sse],
-    queryFn: () => api.get<Stats>(`/events/${eventId}/devices/stats`).catch(() => null),
+    queryFn: () => api.get<Stats>(`/events/${eventId}/devices/stats`),
     refetchInterval: 15000,
   })
 
