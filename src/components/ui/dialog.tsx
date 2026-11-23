@@ -49,7 +49,7 @@ export function Dialog({
             role="dialog"
             aria-modal="true"
             className={cn(
-              'relative w-full overflow-hidden border border-line bg-elevated shadow-float',
+              'tkt-window relative w-full overflow-hidden border border-signal/35 bg-elevated shadow-float',
               wide ? 'max-w-2xl' : 'max-w-md',
               className,
             )}
@@ -58,7 +58,7 @@ export function Dialog({
             exit={{ opacity: 0, scale: 0.98, y: 6 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="flex items-center justify-between border-b border-line-soft px-5 py-3.5">
+            <div className="flex items-center justify-between border-b border-signal/20 bg-raised/40 px-5 py-3.5">
               <h2 className="font-display text-lg font-semibold uppercase tracking-wide">{title}</h2>
               <button
                 onClick={onClose}
@@ -69,6 +69,7 @@ export function Dialog({
               </button>
             </div>
             <Corners />
+            <span className="tkt-window-corner" aria-hidden="true" />
             <div className="max-h-[calc(100vh-10rem)] overflow-y-auto p-5">{children}</div>
           </motion.div>
         </div>
@@ -141,7 +142,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
       {children}
       <Dialog open={!!state} onClose={() => close(state?.kind === 'prompt' ? null : false)} title={state?.title ?? 'Confirm'}>
         <div className="flex gap-3">
-          <div className={cn('mt-0.5 grid size-10 shrink-0 place-items-center border',
+          <div className={cn('mt-0.5 grid size-10 shrink-0 place-items-center border rounded-none',
             tone === 'danger' && 'border-danger/30 bg-danger/10 text-danger',
             tone === 'warning' && 'border-signal/30 bg-signal/10 text-signal',
             tone === 'success' && 'border-ok/30 bg-ok/10 text-ok',

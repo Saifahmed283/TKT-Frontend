@@ -46,10 +46,10 @@ describe('timeAgo', () => {
 
 describe('money', () => {
   it('formats currency', () => {
-    expect(money(1234.5)).toBe('$1,234.50')
-    expect(money('99')).toBe('$99.00')
-    expect(money(null)).toBe('$0.00')
-    expect(money('abc')).toBe('$0.00')
+    expect(money(1234.5)).toBe('EGP 1,234.50')
+    expect(money('99')).toBe('EGP 99.00')
+    expect(money(null)).toBe('EGP 0.00')
+    expect(money('abc')).toBe('EGP 0.00')
   })
 })
 

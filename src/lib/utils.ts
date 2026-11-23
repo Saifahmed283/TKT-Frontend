@@ -39,10 +39,10 @@ export function timeAgo(input: string | Date | number | null | undefined): strin
   return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
-export function money(value: number | string | null | undefined): string {
+export function money(value: number | string | null | undefined, currency = 'EGP'): string {
   const n = Number(value ?? 0)
-  if (Number.isNaN(n)) return '$0.00'
-  return `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  if (Number.isNaN(n)) return `${currency} 0.00`
+  return `${currency} ${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 export function truncate(input: string, len = 24): string {

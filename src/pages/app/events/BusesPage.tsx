@@ -105,10 +105,10 @@ export function BusesPage() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2"><Armchair size={16} className="text-signal" /><span className="font-display text-lg font-semibold">{bus?.name}</span></div>
                 <div className="flex items-center gap-3 text-[11px] text-ink-3">
-                  <span className="inline-flex items-center gap-1"><span className="size-3 rounded-sm bg-ok/40" /> Available</span>
-                  <span className="inline-flex items-center gap-1"><span className="size-3 rounded-sm bg-amber/40" /> Held</span>
-                  <span className="inline-flex items-center gap-1"><span className="size-3 rounded-sm bg-danger/40" /> Reserved</span>
-                  <span className="inline-flex items-center gap-1"><span className="size-3 rounded-sm bg-ink-3/40" /> Unavailable</span>
+                  <span className="inline-flex items-center gap-1"><span className="size-3 rounded-none bg-ok/40" /> Available</span>
+                  <span className="inline-flex items-center gap-1"><span className="size-3 rounded-none bg-amber/40" /> Held</span>
+                  <span className="inline-flex items-center gap-1"><span className="size-3 rounded-none bg-danger/40" /> Reserved</span>
+                  <span className="inline-flex items-center gap-1"><span className="size-3 rounded-none bg-ink-3/40" /> Unavailable</span>
                 </div>
               </div>
 

@@ -42,7 +42,7 @@ export function InlineError({
       {onRetry && (
         <button
           onClick={onRetry}
-          className="inline-flex items-center gap-1.5 rounded-none border border-danger/30 px-2.5 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-danger transition-colors hover:bg-danger/10"
+          className="inline-flex items-center gap-1.5 border border-danger/30 px-2.5 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-danger transition-colors hover:bg-danger/10"
         >
           <RotateCcw className="size-3" />
           Retry

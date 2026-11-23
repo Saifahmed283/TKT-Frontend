@@ -39,11 +39,11 @@ function LiveCountdown({ startAt, compact = false }: { startAt: string; compact?
   )
 }
 
-function money(price: string, lang: string) {
+function money(price: string, lang: string, currency = 'EGP') {
   const n = Number(price)
   if (!Number.isFinite(n)) return price
   if (n === 0) return lang === 'ar' ? 'مجاني' : 'Free'
-  return `$${n.toLocaleString()}`
+  return `${currency} ${n.toLocaleString()}`
 }
 
 function AvailabilityBadge({ availability }: { availability: ReservationAvailability }) {
@@ -183,7 +183,7 @@ export function EventCard({ e, i, onReserve }: { e: PublicEvent; i: number; onRe
                         <span className="truncate">{tt.name}</span>
                       </span>
                       <span className={`shrink-0 font-mono text-[11px] ${tt.soldOut ? 'text-ink-3' : 'text-signal'}`}>
-                        {money(tt.price, lang)}
+                        {money(tt.price, lang, tt.currency ?? 'EGP')}
                       </span>
                     </p>
                     <TicketCapacity ticket={tt} />

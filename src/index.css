@@ -210,6 +210,28 @@
 }
 
 @layer components {
+  .tkt-window {
+    @apply relative border border-signal/35 bg-elevated shadow-float;
+  }
+  .tkt-window::before,
+  .tkt-window::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    background: color-mix(in srgb, var(--color-signal) 72%, transparent);
+  }
+  .tkt-window::before { left: 0; top: 0; width: 24px; height: 1px; }
+  .tkt-window::after { left: 0; top: 0; width: 1px; height: 24px; }
+  .tkt-window > .tkt-window-corner {
+    position: absolute; right: 0; bottom: 0; width: 24px; height: 24px; pointer-events: none;
+  }
+  .tkt-window > .tkt-window-corner::before,
+  .tkt-window > .tkt-window-corner::after {
+    content: ''; position: absolute; background: color-mix(in srgb, var(--color-signal) 72%, transparent);
+  }
+  .tkt-window > .tkt-window-corner::before { right: 0; bottom: 0; width: 24px; height: 1px; }
+  .tkt-window > .tkt-window-corner::after { right: 0; bottom: 0; width: 1px; height: 24px; }
+
   .card {
     @apply relative border border-line-soft bg-raised;
   }

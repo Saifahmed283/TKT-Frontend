@@ -241,7 +241,7 @@ export default function TicketsPage() {
                 <p className="font-mono text-[10px] text-ink-3">{t.attendee?.email}</p>
               </Td>
               <Td>{t.ticketType?.name ?? '—'}</Td>
-              <Td className="font-mono text-[12px]">{t.price != null ? `$${Number(t.price).toLocaleString()}` : '—'}</Td>
+              <Td className="font-mono text-[12px]">{t.price != null ? ` ` : '—'}</Td>
               <Td>
                 <Badge tone={ticketTone[t.status] ?? 'default'}>{t.status}</Badge>
               </Td>

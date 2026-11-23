@@ -59,19 +59,19 @@ export function FileUploadField({
         <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-2">{label}</span>
         {hint && <span className="text-[11px] text-ink-3">{hint}</span>}
       </span>
-      <div className="rounded-none border border-line bg-elevated p-3">
+      <div className="border border-line bg-elevated p-3">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={uploading}
-            className="inline-flex items-center gap-2 rounded-none border border-line-soft bg-raised px-3 py-2 text-[12px] font-medium text-ink-2 transition hover:border-signal/40 hover:text-ink disabled:opacity-60"
+            className="inline-flex items-center gap-2 border border-line-soft bg-raised px-3 py-2 text-[12px] font-medium text-ink-2 transition hover:border-signal/40 hover:text-ink disabled:opacity-60"
           >
             {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
             {uploading ? 'Uploading…' : value ? 'Replace file' : 'Upload file'}
           </button>
           {value && (
-            <button type="button" onClick={() => onChange('')} className="inline-flex items-center gap-1 rounded-none px-2 py-2 text-[12px] text-ink-3 hover:text-danger">
+            <button type="button" onClick={() => onChange('')} className="inline-flex items-center gap-1 px-2 py-2 text-[12px] text-ink-3 hover:text-danger">
               <X className="size-3.5" /> Remove
             </button>
           )}
@@ -80,9 +80,9 @@ export function FileUploadField({
         {value ? (
           <div className="mt-3 flex items-center gap-3">
             {preview && isImage ? (
-              <img src={value} alt="" className="h-14 w-14 rounded-none border border-line object-cover bg-canvas" />
+              <img src={value} alt="" className="h-14 w-14 border border-line object-cover bg-canvas" />
             ) : (
-              <div className="flex h-14 w-14 items-center justify-center rounded-none border border-line bg-canvas text-ink-3"><FileImage className="size-5" /></div>
+              <div className="flex h-14 w-14 items-center justify-center border border-line bg-canvas text-ink-3"><FileImage className="size-5" /></div>
             )}
             <div className="min-w-0 flex-1">
               <p className="truncate text-[12px] text-ink-2">{value}</p>

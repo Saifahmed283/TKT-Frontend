@@ -7,11 +7,11 @@ import { api, ApiError } from '../../lib/api'
 import { useLanguage } from '../../lib/i18n'
 import { useReservationStatus, type PublicEvent, type ReservationResult } from '../../lib/public'
 
-function money(price: string, lang: string) {
+function money(price: string, lang: string, currency = 'EGP') {
   const n = Number(price)
   if (!Number.isFinite(n)) return price
   if (n === 0) return lang === 'ar' ? 'مجاني' : 'Free'
-  return `$${n.toLocaleString()}`
+  return `${currency} ${n.toLocaleString()}`
 }
 
 function useQrDataUrl(code: string | null) {
@@ -287,7 +287,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
                 const suffix = tt.soldOut ? ` (${t('soldOut')})` : notStarted ? ' (Not started)' : ended ? ' (Ended)' : tt.remaining != null ? ` (${tt.remaining} ${t('left')})` : ''
                 return (
                   <option key={tt.id} value={tt.id} disabled={disabled}>
-                    {tt.name}{tt.category ? ` · ${tt.category}` : ''} — {money(tt.price, lang)}{suffix}
+                    {tt.name}{tt.category ? ` · ${tt.category}` : ''} — {money(tt.price, lang, tt.currency ?? 'EGP')}{suffix}
                   </option>
                 )
               })}
@@ -308,7 +308,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
                 const aisleAfter = bus.layout.aisleAfterCol ?? 0
                 return (
                   <div>
-                    <div className="mb-2 flex items-center gap-3 text-[10px] text-ink-3"><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-sm bg-ok/40" />Available</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-sm bg-amber/40" />Held</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-sm bg-danger/40" />Reserved</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-sm bg-ink-3/40" />Unavailable</span></div>
+                    <div className="mb-2 flex items-center gap-3 text-[10px] text-ink-3"><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-ok/40" />Available</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-amber/40" />Held</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-danger/40" />Reserved</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-ink-3/40" />Unavailable</span></div>
                     <div className="overflow-x-auto"><div className="grid w-fit gap-1.5" style={{ gridTemplateColumns: `repeat(${cols + (aisleAfter > 0 && aisleAfter < cols ? 1 : 0)}, minmax(0,1fr))` }}>
                       {Array.from({ length: bus.layout.rows }).flatMap((_, r) => {
                         const row = r + 1; const cells: any[] = []
@@ -382,7 +382,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
             </div>
           )}
           <div className="space-y-2 border border-line-soft bg-elevated/20 px-4 py-3 text-sm">
-            <div className="flex items-center justify-between gap-3"><span className="flex items-center gap-2 text-ink-3"><Ticket size={14} className="text-signal" /> {selected?.name ?? t('ticket')}</span><span className="font-mono text-ink-1">{selected ? money(selected.price, lang) : '—'}</span></div>
+            <div className="flex items-center justify-between gap-3"><span className="flex items-center gap-2 text-ink-3"><Ticket size={14} className="text-signal" /> {selected?.name ?? t('ticket')}</span><span className="font-mono text-ink-1">{selected ? money(selected.price, lang, selected.currency ?? 'EGP') : '—'}</span></div>
             {seatTotal > 0 && <div className="flex items-center justify-between gap-3 text-ink-3"><span>Bus seats ({selectedSeatIds.length})</span><span className="font-mono">{selectedBus?.currency ?? 'EGP'} {seatTotal.toLocaleString()}</span></div>}
             <div className="flex items-center justify-between gap-3 border-t border-line-soft pt-2 font-medium text-ink-0"><span>Total</span><span className="font-mono text-signal">{selectedBus?.currency ?? 'EGP'} {totalPrice.toLocaleString()}</span></div>
           </div>

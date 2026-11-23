@@ -133,9 +133,9 @@ export async function downloadIdCardPdf(c: CardIdentity) {
   doc.save(`id-card-${(c.shortCode ?? c.code.slice(0, 12)).replace(/[^a-zA-Z0-9-]/g, '')}.pdf`)
 }
 
-export function money(price: string): string {
+export function money(price: string, currency = 'EGP'): string {
   const n = Number(price)
   if (!Number.isFinite(n)) return price
   if (n === 0) return 'FREE'
-  return `$${n.toLocaleString()}`
+  return `${currency} ${n.toLocaleString()}`
 }

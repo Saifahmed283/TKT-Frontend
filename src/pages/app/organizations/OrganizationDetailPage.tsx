@@ -1,19 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { useMemo, useState, type FormEvent } from 'react'
-import { Shield, Users, Plus, Trash2, Pencil, Search, CheckSquare, Square } from 'lucide-react'
+import { Shield, Users, Plus, Trash2, Pencil, Search, CheckSquare, Square, FolderPlus, Folder, ImageIcon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { api, ApiError } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Field, Input, Select } from '@/components/ui/input'
+import { FileUploadField } from '@/components/ui/file-upload'
 import { Table, Td, EmptyState } from '@/components/ui/table'
 import { Dialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 
-type Org = { id: string; name: string; slug: string; description?: string | null; myRole: string; _count: { events: number; members: number } }
+type OrgFolder = { id: string; name: string; color?: string | null; sortOrder: number; _count?: { events: number } }
+type OrgEvent = { id: string; name: string; status: string; startAt?: string | null; type?: string; folderId?: string | null }
+type Org = { id: string; name: string; slug: string; description?: string | null; logoUrl?: string | null; myRole: string; folders?: OrgFolder[]; events?: OrgEvent[]; _count: { events: number; members: number } }
 type Member = { id: string; role: string; status: string; user: { id: string; name: string; email: string } }
 type Role = { id: string; code: string; name: string; description?: string | null; scope: string; permissions: string[]; kind?: string; system?: boolean }
 type CatalogPerm = { code: string; description: string }
@@ -108,6 +111,10 @@ export function OrganizationDetailPage() {
   const [memberErr, setMemberErr] = useState('')
   const [roleErr, setRoleErr] = useState('')
   const [deleteOrgOpen, setDeleteOrgOpen] = useState(false)
+  const [folderOpen, setFolderOpen] = useState(false)
+  const [folderName, setFolderName] = useState('')
+  const [folderErr, setFolderErr] = useState('')
+  const [activeFolderId, setActiveFolderId] = useState<string | 'all' | 'none'>('all')
 
   const orgQ = useQuery({ queryKey: ['org', orgId], queryFn: () => api.get<Org>(`/organizations/${orgId}`), enabled: !!orgId })
   const membersQ = useQuery({ queryKey: ['org', orgId, 'members'], queryFn: () => api.get<Member[]>(`/organizations/${orgId}/members`), enabled: !!orgId })
@@ -141,23 +148,90 @@ export function OrganizationDetailPage() {
     onSuccess: () => { toast.success('Organization deleted'); qc.invalidateQueries({ queryKey: ['organizations'] }); navigate('/app/organizations') },
     onError: (e) => toast.error(e instanceof ApiError ? e.message : 'Failed to delete organization'),
   })
+  const updateLogo = useMutation({
+    mutationFn: (logoUrl: string | null) => api.patch(`/organizations/${orgId}`, { logoUrl }),
+    onSuccess: () => { toast.success('Organization logo updated'); invalidate() },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : 'Failed to update logo'),
+  })
+  const createFolder = useMutation({
+    mutationFn: () => api.post(`/organizations/${orgId}/folders`, { name: folderName.trim() }),
+    onSuccess: () => { toast.success('Folder created'); setFolderOpen(false); setFolderName(''); setFolderErr(''); invalidate() },
+    onError: (e) => setFolderErr(e instanceof ApiError ? e.message : 'Failed to create folder'),
+  })
+  const deleteFolder = useMutation({
+    mutationFn: (folderId: string) => api.delete(`/organizations/${orgId}/folders/${folderId}`),
+    onSuccess: () => { toast.success('Folder deleted'); if (activeFolderId !== 'all' && activeFolderId !== 'none') setActiveFolderId('all'); invalidate() },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : 'Failed to delete folder'),
+  })
+  const moveEvent = useMutation({
+    mutationFn: ({ eventId, folderId }: { eventId: string; folderId: string | null }) => api.patch(`/events/${eventId}`, { folderId }),
+    onSuccess: () => { toast.success('Event moved'); invalidate() },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : 'Failed to move event'),
+  })
 
   if (orgQ.isLoading) return <FullPageSpinner />
   if (orgQ.error || !orgQ.data) return <InlineError message={orgQ.error instanceof Error ? orgQ.error.message : "Failed to load organization"} />
   const org = orgQ.data
   const canManage = org.myRole === 'OWNER' || org.myRole === 'ADMIN'
   const catalog = catalogQ.data?.permissions ?? []
+  const folders = org.folders ?? []
+  const events = org.events ?? []
+  const visibleEvents = activeFolderId === 'all' ? events : activeFolderId === 'none' ? events.filter(e => !e.folderId) : events.filter(e => e.folderId === activeFolderId)
 
   return (
     <div>
       <PageHeader title={org.name} subtitle={org.description ?? org.slug}
-        actions={canManage ? <div className="flex items-center gap-2"><Button variant="ghost" onClick={() => { setEditRole(null); setRoleErr(''); setRoleOpen(true) }}><Plus size={15} /> New role</Button><Button onClick={() => setMemberOpen(true)}><Plus size={15} /> Add member</Button><Button variant="ghost" className="!text-danger" icon={<Trash2 className="size-4" />} onClick={() => setDeleteOrgOpen(true)}>Delete org</Button></div> : undefined} />
+        actions={canManage ? <div className="flex items-center gap-2"><Button variant="ghost" onClick={() => setFolderOpen(true)} icon={<FolderPlus className="size-4" />}>New folder</Button><Button variant="ghost" onClick={() => { setEditRole(null); setRoleErr(''); setRoleOpen(true) }}><Plus size={15} /> New role</Button><Button onClick={() => setMemberOpen(true)}><Plus size={15} /> Add member</Button><Button variant="ghost" className="!text-danger" icon={<Trash2 className="size-4" />} onClick={() => setDeleteOrgOpen(true)}>Delete org</Button></div> : undefined} />
 
       <div className="space-y-6 p-6">
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="panel p-4"><p className="text-[10px] uppercase tracking-[0.18em] text-ink-3">Your role</p><p className="mt-2 font-display text-2xl font-semibold text-signal">{org.myRole}</p></div>
-          <div className="panel p-4"><p className="text-[10px] uppercase tracking-[0.18em] text-ink-3">Members</p><p className="mt-2 font-display text-2xl font-semibold">{org._count.members}</p></div>
-          <div className="panel p-4"><p className="text-[10px] uppercase tracking-[0.18em] text-ink-3">Events</p><p className="mt-2 font-display text-2xl font-semibold">{org._count.events}</p></div>
+        <div className="grid gap-4 xl:grid-cols-[320px_1fr]">
+          <div className="panel p-5">
+            <div className="mb-4 flex items-center gap-2"><ImageIcon size={16} className="text-signal" /><h2 className="font-display text-lg font-semibold">Organization identity</h2></div>
+            <div className="mb-4 flex items-center gap-4">
+              <div className="grid size-20 place-items-center overflow-hidden border border-line bg-elevated">
+                {org.logoUrl ? <img src={org.logoUrl} alt="" className="h-full w-full object-cover" /> : <span className="font-display text-2xl font-semibold text-signal">{org.name.slice(0, 1).toUpperCase()}</span>}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-medium text-ink">{org.name}</p>
+                <p className="text-[12px] text-ink-3">{org.slug}</p>
+                {canManage && <div className="mt-3 max-w-xs"><FileUploadField label="" value={org.logoUrl ?? ''} onChange={(v) => updateLogo.mutate(v || null)} accept="image/*" /></div>}
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+              <div className="border border-line-soft p-3"><p className="text-[10px] uppercase tracking-[0.18em] text-ink-3">Your role</p><p className="mt-1 font-display text-xl font-semibold text-signal">{org.myRole}</p></div>
+              <div className="border border-line-soft p-3"><p className="text-[10px] uppercase tracking-[0.18em] text-ink-3">Members</p><p className="mt-1 font-display text-xl font-semibold">{org._count.members}</p></div>
+              <div className="border border-line-soft p-3"><p className="text-[10px] uppercase tracking-[0.18em] text-ink-3">Events</p><p className="mt-1 font-display text-xl font-semibold">{org._count.events}</p></div>
+            </div>
+          </div>
+
+          <div className="panel p-5">
+            <div className="mb-4 flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Folder size={16} className="text-signal" /><h2 className="font-display text-lg font-semibold">Folders & events</h2></div>{canManage && <Button size="sm" variant="ghost" onClick={() => setFolderOpen(true)} icon={<FolderPlus className="size-4" />}>Folder</Button>}</div>
+            <div className="mb-4 flex flex-wrap gap-2">
+              <button type="button" onClick={() => setActiveFolderId('all')} className={`border px-3 py-1.5 text-[12px] ${activeFolderId === 'all' ? 'border-signal/40 bg-signal/10 text-signal' : 'border-line text-ink-2'}`}>All ({events.length})</button>
+              <button type="button" onClick={() => setActiveFolderId('none')} className={`border px-3 py-1.5 text-[12px] ${activeFolderId === 'none' ? 'border-signal/40 bg-signal/10 text-signal' : 'border-line text-ink-2'}`}>Unfiled ({events.filter(e => !e.folderId).length})</button>
+              {folders.map(f => (
+                <div key={f.id} className={`flex items-center border ${activeFolderId === f.id ? 'border-signal/40 bg-signal/10 text-signal' : 'border-line text-ink-2'}`}>
+                  <button type="button" onClick={() => setActiveFolderId(f.id)} className="px-3 py-1.5 text-[12px]">{f.name} ({f._count?.events ?? events.filter(e => e.folderId === f.id).length})</button>
+                  {canManage && <button type="button" onClick={() => deleteFolder.mutate(f.id)} className="border-l border-line px-2 py-1.5 text-ink-3 hover:text-danger" aria-label="Delete folder"><Trash2 size={12} /></button>}
+                </div>
+              ))}
+            </div>
+            <div className="space-y-2">
+              {visibleEvents.map(e => (
+                <div key={e.id} className="flex flex-wrap items-center gap-3 border border-line-soft px-3 py-2">
+                  <Link to={`/app/events/${e.id}`} className="min-w-0 flex-1 truncate text-[13px] font-medium hover:text-signal">{e.name}</Link>
+                  <Badge tone={e.status === 'LIVE' ? 'live' : 'default'}>{e.status}</Badge>
+                  {canManage && (
+                    <select className="border border-line bg-canvas px-2 py-1 text-[11px] text-ink-2" value={e.folderId ?? ''} onChange={ev => moveEvent.mutate({ eventId: e.id, folderId: ev.target.value || null })}>
+                      <option value="">Unfiled</option>
+                      {folders.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                    </select>
+                  )}
+                </div>
+              ))}
+              {visibleEvents.length === 0 && <div className="border border-dashed border-line p-6 text-center text-sm text-ink-3">No events in this view.</div>}
+            </div>
+          </div>
         </div>
 
         <div className="panel p-5">
@@ -231,6 +305,13 @@ export function OrganizationDetailPage() {
             <Button variant="danger" loading={deleteOrg.isPending} onClick={() => deleteOrg.mutate()}>Delete organization</Button>
           </div>
         </div>
+      </Dialog>
+      <Dialog open={folderOpen} onClose={() => setFolderOpen(false)} title="Create folder">
+        <form onSubmit={(e: FormEvent) => { e.preventDefault(); setFolderErr(''); if (!folderName.trim()) { setFolderErr('Folder name is required'); return } createFolder.mutate() }} className="space-y-4">
+          <Field label="Folder name"><Input value={folderName} onChange={e => setFolderName(e.target.value)} required maxLength={80} /></Field>
+          {folderErr && <p className="text-sm text-danger">{folderErr}</p>}
+          <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={() => setFolderOpen(false)}>Cancel</Button><Button type="submit" loading={createFolder.isPending}>Create folder</Button></div>
+        </form>
       </Dialog>
     </div>
   )

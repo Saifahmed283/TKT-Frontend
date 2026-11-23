@@ -14,9 +14,10 @@ import { Building2, CalendarDays, ChevronRight, Plus, Trash2 } from 'lucide-reac
 type Org = {
   id: string
   name: string
+  logoUrl?: string | null
   createdAt: string
   myRole: { name: string } | string | null
-  _count: { members: number; events: number }
+  _count: { members: number; events: number; folders?: number }
   events: { id: string; name: string; status: string }[]
 }
 
@@ -73,12 +74,17 @@ export function OrganizationsPage() {
         {data?.map((o) => (
           <div key={o.id} className="rounded-none border border-line bg-raised/70 p-5">
             <div className="flex items-start justify-between gap-3">
-              <div>
-                <Link to={`/app/organizations/${o.id}`} className="text-[15px] font-semibold hover:text-signal transition-colors">{o.name}</Link>
-                {o.myRole && <Badge tone="live" className="mt-1.5">{typeof o.myRole === 'string' ? o.myRole : o.myRole.name}</Badge>}
+              <div className="flex items-center gap-3">
+                <div className="grid size-10 shrink-0 place-items-center overflow-hidden border border-line bg-elevated text-signal">
+                  {o.logoUrl ? <img src={o.logoUrl} alt="" className="h-full w-full object-cover" /> : <span className="font-display text-sm font-semibold">{o.name.slice(0, 1).toUpperCase()}</span>}
+                </div>
+                <div>
+                  <Link to={`/app/organizations/${o.id}`} className="text-[15px] font-semibold hover:text-signal transition-colors">{o.name}</Link>
+                  {o.myRole && <Badge tone="live" className="mt-1.5">{typeof o.myRole === 'string' ? o.myRole : o.myRole.name}</Badge>}
+                </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] text-ink-3">{o._count.members} members</span>
+                <span className="text-[11px] text-ink-3">{o._count.members} members · {o._count.folders ?? 0} folders</span>
                 {(typeof o.myRole === 'string' ? o.myRole : o.myRole?.name) === 'OWNER' && (
                   <ConfirmDialog title="Delete organization?" body={`Delete "${o.name}" and all its events/data? This cannot be undone.`} confirmLabel="Delete" onConfirm={() => remove.mutate(o.id)}>
                     <button className="rounded p-1.5 text-danger hover:bg-danger/10" aria-label="Delete organization"><Trash2 className="size-4" /></button>

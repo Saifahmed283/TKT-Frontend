@@ -166,7 +166,7 @@ export function ReservationsPage() {
               <Td>
                 <p className="text-[13px]">{r.ticketType.name}</p>
                 <p className="font-mono text-[10px] text-ink-3">
-                  {Number(r.price) > 0 ? `$${Number(r.price).toLocaleString()}` : 'FREE'}
+                  {Number(r.price) > 0 ? `EGP ` : 'FREE'}
                 </p>
               </Td>
               <Td>
