@@ -76,7 +76,7 @@ const falloff = (color: string, softness: number) => {
 };
 
 const CARD =
-  'relative isolate overflow-hidden rounded-3xl p-8 [background-color:var(--spotlight-card-surface)] [box-shadow:var(--spotlight-card-shadow)]';
+  'relative isolate overflow-hidden rounded-none p-8 [background-color:var(--spotlight-card-surface)] [box-shadow:var(--spotlight-card-shadow)]';
 
 const SpotlightCard = ({
   children,
@@ -312,23 +312,23 @@ const SpotlightCard = ({
     >
       <span
         ref={lightRef}
-        className="pointer-events-none absolute inset-0 -z-10 rounded-[inherit] opacity-0"
+        className="pointer-events-none absolute inset-0 -z-10 rounded-none opacity-0"
         aria-hidden="true"
       />
       <span
         ref={grainRef}
-        className="pointer-events-none absolute inset-0 -z-10 rounded-[inherit] bg-[length:160px_160px] opacity-0 mix-blend-overlay"
+        className="pointer-events-none absolute inset-0 -z-10 rounded-none bg-[length:160px_160px] opacity-0 mix-blend-overlay"
         style={{ backgroundImage: NOISE }}
         aria-hidden="true"
       />
       {children}
       <span
-        className="pointer-events-none absolute inset-0 z-[1] rounded-[inherit] p-px [background:var(--spotlight-card-border)] [-webkit-mask:linear-gradient(#000_0_0)_content-box,linear-gradient(#000_0_0)] [-webkit-mask-composite:xor] [mask:linear-gradient(#000_0_0)_content-box_exclude,linear-gradient(#000_0_0)]"
+        className="pointer-events-none absolute inset-0 z-[1] rounded-none p-px [background:var(--spotlight-card-border)] [-webkit-mask:linear-gradient(#000_0_0)_content-box,linear-gradient(#000_0_0)] [-webkit-mask-composite:xor] [mask:linear-gradient(#000_0_0)_content-box_exclude,linear-gradient(#000_0_0)]"
         aria-hidden="true"
       />
       <span
         ref={edgeRef}
-        className="pointer-events-none absolute inset-0 z-[1] rounded-[inherit] p-px opacity-0 [-webkit-mask:linear-gradient(#000_0_0)_content-box,linear-gradient(#000_0_0)] [-webkit-mask-composite:xor] [mask:linear-gradient(#000_0_0)_content-box_exclude,linear-gradient(#000_0_0)]"
+        className="pointer-events-none absolute inset-0 z-[1] rounded-none p-px opacity-0 [-webkit-mask:linear-gradient(#000_0_0)_content-box,linear-gradient(#000_0_0)] [-webkit-mask-composite:xor] [mask:linear-gradient(#000_0_0)_content-box_exclude,linear-gradient(#000_0_0)]"
         aria-hidden="true"
       />
     </div>

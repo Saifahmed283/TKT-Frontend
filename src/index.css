@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+﻿@import 'tailwindcss';
 
 @theme {
   /* TKT Design System — typography (aligned to luxury reference) */
@@ -238,7 +238,7 @@
     @apply btn border border-err-400/30 text-err-400 hover:bg-err-400/10;
   }
   .input {
-    @apply w-full rounded-lg border border-line-soft bg-elevated px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-3 focus:border-signal/50 focus:ring-2 focus:ring-signal/15;
+    @apply w-full border border-line-soft bg-elevated px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-3 focus:border-signal/50 focus:ring-2 focus:ring-signal/15;
   }
   .label {
     @apply font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-3;
@@ -259,7 +259,7 @@
     @apply badge border-line bg-elevated text-ink-2;
   }
   .kbd {
-    @apply rounded-md border border-line bg-elevated px-1.5 py-0.5 font-mono text-[10px] text-ink-2;
+    @apply border border-line bg-elevated px-1.5 py-0.5 font-mono text-[10px] text-ink-2;
   }
   .panel {
     @apply relative border border-line-soft bg-raised;
@@ -291,9 +291,9 @@
 }
 
 @utility btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-xs font-medium uppercase tracking-[0.1em] transition-all duration-150 select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed;
+  @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium uppercase tracking-[0.1em] transition-all duration-150 select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed;
 }
 
 @utility badge {
-  @apply inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-0.5 text-xs font-medium;
+  @apply inline-flex items-center gap-1.5 border border-line px-2.5 py-0.5 text-xs font-medium;
 }

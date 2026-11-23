@@ -130,7 +130,7 @@ export function ReservationsPage() {
             <Button size="sm" variant="ghost" onClick={() => void downloadAuthFile(`/events/${eventId}/reservations/export.xlsx?status=${filter}`, `reservations-${eventId}.xlsx`).catch(() => toast.error('Export failed'))}><Download size={14} /> Excel</Button>
             <Button size="sm" variant="ghost" onClick={() => void downloadAuthFile(`/events/${eventId}/reservations/deliveries/export.xlsx`, `deliveries-${eventId}.xlsx`).catch(() => toast.error('Export failed'))}><Download size={14} /> Delivery log</Button>
             <Button size="sm" variant="ghost" onClick={() => exportPdf(`reservations-${eventId}`, 'Reservations', ['Code', 'Name', 'Email', 'Ticket', 'Amount', 'Approval', 'Payment', 'Issued'], (data.rows ?? []).map(r => [r.reservationCode ?? r.id.slice(0, 8), r.attendee.name, r.attendee.email ?? '', r.ticketType.name, r.price, r.approval, r.paymentStatus ?? '', timeAgo(r.issuedAt)]))}><Download size={14} /> PDF</Button>
-          <div className="flex gap-1 rounded-lg border border-line bg-raised p-1">
+          <div className="flex gap-1 rounded-none border border-line bg-raised p-1">
             {(['PENDING', 'APPROVED', 'REJECTED', 'ALL'] as Filter[]).map((f) => (
               <button
                 key={f}
@@ -138,7 +138,7 @@ export function ReservationsPage() {
                   setFilter(f)
                   setPage(1)
                 }}
-                className={`rounded-md px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.15em] transition-colors ${
+                className={`rounded-none px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.15em] transition-colors ${
                   filter === f ? 'bg-signal text-black' : 'text-ink-2 hover:bg-elevated hover:text-ink'
                 }`}
               >
@@ -274,7 +274,7 @@ export function ReservationsPage() {
               onChange={(e) => setRejectReason(e.target.value)}
               rows={3}
               maxLength={280}
-              className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-[13px] text-ink outline-none transition focus:border-gold/40"
+              className="w-full rounded-none border border-line bg-panel px-3 py-2 text-[13px] text-ink outline-none transition focus:border-gold/40"
               placeholder="Optional note for audit/internal context"
             />
           </label>
@@ -324,7 +324,7 @@ export function ReservationsPage() {
           <p className="text-[13px] text-ink-2">Send the signed QR ticket for <span className="font-medium text-ink">{resendTarget?.attendee.name}</span>. Leave email as-is to resend, or change it to self-send / forward.</p>
           <label className="block space-y-1.5">
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3">Recipient email</span>
-            <input value={resendEmail} onChange={e => setResendEmail(e.target.value)} type="email" className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-[13px] text-ink outline-none transition focus:border-gold/40" />
+            <input value={resendEmail} onChange={e => setResendEmail(e.target.value)} type="email" className="w-full rounded-none border border-line bg-panel px-3 py-2 text-[13px] text-ink outline-none transition focus:border-gold/40" />
           </label>
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => { setResendTarget(null); setResendEmail('') }} disabled={resend.isPending}>Cancel</Button>
@@ -336,11 +336,11 @@ export function ReservationsPage() {
       <Dialog open={emailTplOpen} onClose={() => setEmailTplOpen(false)} title="Ticket email template" wide>
         <div className="space-y-3">
           <p className="text-[12px] text-ink-3">Customize reservation/ticket email text. Use {'{event}'} in subject/title/body. Leave blank to use defaults.</p>
-          <label className="block space-y-1"><span className="text-[11px] text-ink-3">Subject</span><input className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-[13px]" value={emailTpl.subject} onChange={e => setEmailTpl({ ...emailTpl, subject: e.target.value })} /></label>
-          <label className="block space-y-1"><span className="text-[11px] text-ink-3">Preheader</span><input className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-[13px]" value={emailTpl.preheader} onChange={e => setEmailTpl({ ...emailTpl, preheader: e.target.value })} /></label>
-          <label className="block space-y-1"><span className="text-[11px] text-ink-3">Title</span><input className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-[13px]" value={emailTpl.title} onChange={e => setEmailTpl({ ...emailTpl, title: e.target.value })} /></label>
-          <label className="block space-y-1"><span className="text-[11px] text-ink-3">Body</span><textarea rows={4} className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-[13px]" value={emailTpl.body} onChange={e => setEmailTpl({ ...emailTpl, body: e.target.value })} /></label>
-          <label className="block space-y-1"><span className="text-[11px] text-ink-3">Footer</span><input className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-[13px]" value={emailTpl.footer} onChange={e => setEmailTpl({ ...emailTpl, footer: e.target.value })} /></label>
+          <label className="block space-y-1"><span className="text-[11px] text-ink-3">Subject</span><input className="w-full rounded-none border border-line bg-panel px-3 py-2 text-[13px]" value={emailTpl.subject} onChange={e => setEmailTpl({ ...emailTpl, subject: e.target.value })} /></label>
+          <label className="block space-y-1"><span className="text-[11px] text-ink-3">Preheader</span><input className="w-full rounded-none border border-line bg-panel px-3 py-2 text-[13px]" value={emailTpl.preheader} onChange={e => setEmailTpl({ ...emailTpl, preheader: e.target.value })} /></label>
+          <label className="block space-y-1"><span className="text-[11px] text-ink-3">Title</span><input className="w-full rounded-none border border-line bg-panel px-3 py-2 text-[13px]" value={emailTpl.title} onChange={e => setEmailTpl({ ...emailTpl, title: e.target.value })} /></label>
+          <label className="block space-y-1"><span className="text-[11px] text-ink-3">Body</span><textarea rows={4} className="w-full rounded-none border border-line bg-panel px-3 py-2 text-[13px]" value={emailTpl.body} onChange={e => setEmailTpl({ ...emailTpl, body: e.target.value })} /></label>
+          <label className="block space-y-1"><span className="text-[11px] text-ink-3">Footer</span><input className="w-full rounded-none border border-line bg-panel px-3 py-2 text-[13px]" value={emailTpl.footer} onChange={e => setEmailTpl({ ...emailTpl, footer: e.target.value })} /></label>
           <div className="flex justify-end gap-2"><Button variant="ghost" onClick={() => setEmailTplOpen(false)}>Cancel</Button><Button loading={saveEmailTpl.isPending} onClick={() => saveEmailTpl.mutate()}>Save template</Button></div>
         </div>
       </Dialog>

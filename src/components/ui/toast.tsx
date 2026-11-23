@@ -63,7 +63,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   {t.title && <p className="text-[12px] font-semibold text-ink">{t.title}</p>}
                   <p className="text-[13px] leading-snug text-ink-2">{t.message}</p>
                 </div>
-                <button onClick={() => setItems(prev => prev.filter(x => x.id !== t.id))} className="rounded-md p-1 text-ink-3 hover:bg-raised hover:text-ink" aria-label="Dismiss"><X className="size-3.5" /></button>
+                <button onClick={() => setItems(prev => prev.filter(x => x.id !== t.id))} className="p-1 text-ink-3 hover:bg-raised hover:text-ink" aria-label="Dismiss"><X className="size-3.5" /></button>
               </div>
             </motion.div>
           ))}
@@ -72,3 +72,4 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     </ToastContext.Provider>
   )
 }
+

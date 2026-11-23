@@ -87,7 +87,7 @@ export function BusesPage() {
           <div className="mb-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-3">Buses</div>
           <div className="space-y-2">
             {buses.map(b => (
-              <div key={b.id} className={`flex items-center justify-between rounded-lg border px-3 py-2 ${activeBusId === b.id ? 'border-signal/40 bg-signal/5' : 'border-line'}`}>
+              <div key={b.id} className={`flex items-center justify-between rounded-none border px-3 py-2 ${activeBusId === b.id ? 'border-signal/40 bg-signal/5' : 'border-line'}`}>
                 <button className="text-left" onClick={() => { setActiveBusId(b.id); setSelected([]) }}>
                   <div className="text-[13px] font-medium text-ink">{b.name}</div>
                   <div className="text-[11px] text-ink-3">{b._count?.seats ?? 0} seats</div>
@@ -112,7 +112,7 @@ export function BusesPage() {
                 </div>
               </div>
 
-              <div className="mx-auto w-fit rounded-[2rem] border-2 border-line bg-raised/60 p-4">
+              <div className="mx-auto w-fit rounded-none border-2 border-line bg-raised/60 p-4">
                 <div className="mb-3 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3">Front</div>
                 <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${cols + (aisleAfter > 0 && aisleAfter < cols ? 1 : 0)}, minmax(0,1fr))` }}>
                   {Array.from({ length: bus?.layout?.rows ?? 0 }).flatMap((_, r) => {
@@ -127,7 +127,7 @@ export function BusesPage() {
                           <button key={seat.id} type="button" title={seat.holderName ? `${seat.label} · ${seat.holderName}` : seat.label}
                             onClick={() => toggleSelect(seat)}
                             onContextMenu={(e) => { e.preventDefault(); if (seat.state !== 'RESERVED') toggleUnavailable.mutate({ seatId: seat.id, state: seat.state === 'UNAVAILABLE' ? 'AVAILABLE' : 'UNAVAILABLE' }) }}
-                            className={`grid h-10 w-10 place-items-center rounded-lg border text-[11px] font-semibold transition-colors ${seatClass(seat.state, isSelected)}`}>
+                            className={`grid h-10 w-10 place-items-center rounded-none border text-[11px] font-semibold transition-colors ${seatClass(seat.state, isSelected)}`}>
                             {seat.label}
                           </button>
                         )
@@ -149,7 +149,7 @@ export function BusesPage() {
               <p className="text-[11px] text-ink-3">Tip: right-click a seat to mark unavailable/available. Reserved seats show holder name on hover.</p>
 
               {seats.some(s => s.state === 'RESERVED' || s.state === 'HELD') && (
-                <div className="rounded-xl border border-line p-3">
+                <div className="rounded-none border border-line p-3">
                   <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-3">Reserved / held seats</div>
                   <div className="flex flex-wrap gap-2">
                     {seats.filter(s => s.state === 'RESERVED' || s.state === 'HELD').map(s => <Badge key={s.id} tone={s.state === 'HELD' ? 'warn' : 'danger'}>{s.label} · {s.passengerName || s.holderName || s.state}</Badge>)}

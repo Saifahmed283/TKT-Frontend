@@ -64,14 +64,14 @@ export function OrganizationsPage() {
       />
       <div className="grid gap-4 px-6 pt-6 md:grid-cols-2">
         {data?.length === 0 && (
-          <div className="col-span-full rounded-xl border border-dashed border-line py-16 text-center">
+          <div className="col-span-full rounded-none border border-dashed border-line py-16 text-center">
             <Building2 className="mx-auto size-7 text-ink-3" />
             <p className="mt-3 text-sm text-ink-2">You're not a member of any organization yet</p>
             <Button className="mt-4" icon={<Plus className="size-4" />} onClick={() => setOpen(true)}>Create organization</Button>
           </div>
         )}
         {data?.map((o) => (
-          <div key={o.id} className="rounded-xl border border-line bg-raised/70 p-5">
+          <div key={o.id} className="rounded-none border border-line bg-raised/70 p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <Link to={`/app/organizations/${o.id}`} className="text-[15px] font-semibold hover:text-signal transition-colors">{o.name}</Link>
@@ -91,7 +91,7 @@ export function OrganizationsPage() {
                 <Link
                   key={e.id}
                   to={`/app/events/${e.id}`}
-                  className="group flex items-center gap-3 rounded-lg px-2 py-1.5 text-[13px] transition-colors hover:bg-raised"
+                  className="group flex items-center gap-3 rounded-none px-2 py-1.5 text-[13px] transition-colors hover:bg-raised"
                 >
                   <CalendarDays className="size-4 text-ink-3" />
                   <span className="min-w-0 flex-1 truncate">{e.name}</span>

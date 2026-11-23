@@ -80,7 +80,7 @@ export function TeamsPage() {
             </div>
           )}
           {data.map((t) => (
-            <div key={t.id} className="rounded-xl border border-line bg-raised/70 p-5">
+            <div key={t.id} className="rounded-none border border-line bg-raised/70 p-5">
               <div className="flex items-start justify-between">
                 <h3 className="text-[15px] font-semibold">{t.name}</h3>
                 <div className="flex items-center gap-2">

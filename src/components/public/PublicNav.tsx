@@ -89,7 +89,7 @@ export default function PublicNav() {
                 end={l.to === '/'}
                 onClick={() => setOpen(false)}
                 className={({ isActive }) =>
-                  `block rounded-md px-3 py-3 text-sm font-medium transition-all duration-200 active:scale-[0.99] ${
+                  `block rounded-none px-3 py-3 text-sm font-medium transition-all duration-200 active:scale-[0.99] ${
                     isActive ? 'text-signal' : 'text-ink-2 hover:translate-x-1 rtl:hover:-translate-x-1 hover:text-signal'
                   }`
                 }

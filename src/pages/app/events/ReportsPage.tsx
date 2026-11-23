@@ -163,7 +163,7 @@ export function ReportsPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="mt-4 grid gap-3 rounded-xl border border-line bg-raised/70 p-5 sm:grid-cols-3"
+          className="mt-4 grid gap-3 rounded-none border border-line bg-raised/70 p-5 sm:grid-cols-3"
         >
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-3">Revenue</p>

@@ -156,7 +156,7 @@ export function CredentialsPage() {
             <tr key={c.id} className="group">
               <Td>
                 <div className="flex flex-col gap-1">
-                  <span className="inline-flex w-fit items-center rounded-md border border-signal/30 bg-signal/10 px-2 py-0.5 font-mono text-[11px] font-semibold tracking-[0.08em] text-signal">
+                  <span className="inline-flex w-fit items-center rounded-none border border-signal/30 bg-signal/10 px-2 py-0.5 font-mono text-[11px] font-semibold tracking-[0.08em] text-signal">
                     {c.shortCode ?? c.code.slice(0, 12)}
                   </span>
                   <span className="font-mono text-[10px] text-ink-3" title={c.code}>
@@ -288,7 +288,7 @@ export function CredentialsPage() {
       <Dialog open={!!resendTarget} onClose={() => { if (!resend.isPending) { setResendTarget(null); setResendEmail('') } }} title="Send ticket email">
         <div className="space-y-4">
           <p className="text-[13px] text-ink-2">Send ticket for <span className="font-medium text-ink">{resendTarget?.attendee?.name ?? 'attendee'}</span>.</p>
-          <Field label="Recipient email"><input value={resendEmail} onChange={e => setResendEmail(e.target.value)} type="email" className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-[13px] text-ink outline-none transition focus:border-gold/40" /></Field>
+          <Field label="Recipient email"><input value={resendEmail} onChange={e => setResendEmail(e.target.value)} type="email" className="w-full rounded-none border border-line bg-panel px-3 py-2 text-[13px] text-ink outline-none transition focus:border-gold/40" /></Field>
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => { setResendTarget(null); setResendEmail('') }} disabled={resend.isPending}>Cancel</Button>
             <Button loading={resend.isPending} disabled={!resendEmail.trim() || !resendTarget?.ticket?.id} onClick={() => resendTarget?.ticket?.id && resend.mutate({ ticketId: resendTarget.ticket.id, toEmail: resendEmail.trim() })}>Send ticket</Button>
@@ -331,14 +331,14 @@ function CredentialQrDialog({
       <div className="flex flex-col items-center gap-4">
         {data && (
           <>
-            <div className="rounded-xl border border-signal/30 bg-signal/10 px-5 py-3 text-center">
+            <div className="rounded-none border border-signal/30 bg-signal/10 px-5 py-3 text-center">
               <p className="text-[10px] uppercase tracking-[0.2em] text-ink-3">Ticket code</p>
               <p className="mt-1 font-mono text-2xl font-bold tracking-[0.12em] text-signal">{data.shortCode ?? 'PENDING'}</p>
             </div>
-            <p className="max-w-full break-all rounded-md border border-line bg-canvas px-3 py-2 text-center font-mono text-[10px] leading-relaxed text-ink-3">
+            <p className="max-w-full break-all rounded-none border border-line bg-canvas px-3 py-2 text-center font-mono text-[10px] leading-relaxed text-ink-3">
               Secure signed QR payload attached to this code
             </p>
-            <div className="w-full rounded-lg border border-line bg-raised px-4 py-3 text-center">
+            <div className="w-full rounded-none border border-line bg-raised px-4 py-3 text-center">
               <p className="text-[13px] font-medium">{data.attendee?.name ?? 'Unknown attendee'}</p>
               <p className="mt-0.5 text-[11px] text-ink-3">
                 {(data.ticket?.ticketType?.name ?? data.ticket?.typeName ?? 'Ticket')} · {data.status}

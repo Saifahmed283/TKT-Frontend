@@ -1,4 +1,4 @@
-import type { ReactNode, TdHTMLAttributes } from 'react'
+﻿import type { ReactNode, TdHTMLAttributes } from 'react'
 import { cn } from '@/lib/utils'
 import { ChevronLeft, ChevronRight, Inbox } from 'lucide-react'
 
@@ -74,7 +74,7 @@ export function Pagination({
           onClick={() => onPage(page - 1)}
           disabled={page <= 1}
           aria-label="Previous page"
-          className="inline-flex size-8 items-center justify-center rounded-lg border border-line text-ink-2 transition-colors hover:bg-raised disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex size-8 items-center justify-center border border-line text-ink-2 transition-colors hover:bg-raised disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ChevronLeft className="size-4" />
         </button>
@@ -82,7 +82,7 @@ export function Pagination({
           onClick={() => onPage(page + 1)}
           disabled={page >= pages}
           aria-label="Next page"
-          className="inline-flex size-8 items-center justify-center rounded-lg border border-line text-ink-2 transition-colors hover:bg-raised disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex size-8 items-center justify-center border border-line text-ink-2 transition-colors hover:bg-raised disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ChevronRight className="size-4" />
         </button>

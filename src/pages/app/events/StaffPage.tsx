@@ -300,7 +300,7 @@ export function StaffPage() {
             </Select>
           </Field>
           {error && (
-            <p role="alert" className="rounded-md border border-danger/25 bg-danger/10 px-3 py-2 text-[13px] text-danger">
+            <p role="alert" className="rounded-none border border-danger/25 bg-danger/10 px-3 py-2 text-[13px] text-danger">
               {error}
             </p>
           )}

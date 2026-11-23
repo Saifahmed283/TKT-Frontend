@@ -132,7 +132,7 @@ export function PaymentsPage() {
             <div className="flex items-center gap-2"><Search size={14} className="text-ink-3" /><Input value={refLookup} onChange={e => setRefLookup(e.target.value)} placeholder="Search payment reference..." className="w-72" />
               <Button size="sm" variant="ghost" disabled={refLookup.trim().length < 3 || fetchRef.isPending} loading={fetchRef.isPending} onClick={() => fetchRef.mutate(refLookup.trim())}>Fetch by reference</Button></div>
           </div>
-          {fetchRef.data && <div className="mb-3 rounded-xl border border-line-soft bg-raised/50 p-3 text-[12px] text-ink-2"><span className="font-semibold text-ink">Fetch result:</span> {fetchRef.data.message}</div>}
+          {fetchRef.data && <div className="mb-3 rounded-none border border-line-soft bg-raised/50 p-3 text-[12px] text-ink-2"><span className="font-semibold text-ink">Fetch result:</span> {fetchRef.data.message}</div>}
           {refLookup.trim().length >= 3 && (
             <Table headers={['Reference', 'Reservation', 'Attendee', 'Proof', 'Status']}>
               {(refQ.data ?? []).map(r => {

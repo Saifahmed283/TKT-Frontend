@@ -88,13 +88,13 @@ export function AreasPage() {
       <div className="px-6 pt-5">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {data.length === 0 && (
-            <div className="col-span-full rounded-xl border border-dashed border-line py-16 text-center">
+            <div className="col-span-full rounded-none border border-dashed border-line py-16 text-center">
               <MapPin className="mx-auto size-7 text-ink-3" />
               <p className="mt-3 text-sm text-ink-2">No areas defined</p>
             </div>
           )}
           {data.map((a) => (
-            <div key={a.id} className="rounded-xl border border-line bg-raised/70 p-5">
+            <div key={a.id} className="rounded-none border border-line bg-raised/70 p-5">
               <div className="flex items-start justify-between gap-2">
                 <h3 className="text-[15px] font-semibold">{a.name}</h3>
                 {!a.active && <Badge tone="danger">INACTIVE</Badge>}

@@ -111,13 +111,13 @@ export function CommsPage() {
         <div className="space-y-3">
           <h2 className="text-sm font-semibold">Announcements</h2>
           {data.length === 0 && (
-            <div className="rounded-xl border border-dashed border-line py-16 text-center">
+            <div className="rounded-none border border-dashed border-line py-16 text-center">
               <Megaphone className="mx-auto size-7 text-ink-3" />
               <p className="mt-3 text-sm text-ink-2">No announcements yet</p>
             </div>
           )}
           {data.map((a) => (
-            <div key={a.id} className="rounded-xl border border-line bg-raised/70 p-5">
+            <div key={a.id} className="rounded-none border border-line bg-raised/70 p-5">
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="text-[14px] font-semibold">{a.title}</h3>
                 <Badge tone="live">{a.targetAudience?.scope ?? 'ALL_STAFF'}</Badge>
@@ -134,7 +134,7 @@ export function CommsPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-xl border border-line bg-raised/70 p-4 space-y-3">
+          <div className="rounded-none border border-line bg-raised/70 p-4 space-y-3">
             <h2 className="text-sm font-semibold flex items-center gap-2"><Siren className="size-4 text-danger" /> Ops Alerts</h2>
             <div className="flex gap-2">
               <Input value={alertMsg} onChange={(e) => setAlertMsg(e.target.value)} placeholder="Help needed at Gate A..." />
@@ -142,7 +142,7 @@ export function CommsPage() {
             </div>
             <div className="space-y-2 max-h-56 overflow-auto">
               {(alerts.data ?? []).slice(0, 8).map((a) => (
-                <div key={a.id} className="rounded-lg border border-line/60 px-3 py-2">
+                <div key={a.id} className="rounded-none border border-line/60 px-3 py-2">
                   <div className="flex items-center gap-2 text-[11px] text-ink-3">
                     <Badge tone={a.resolved ? 'ok' : 'warn'}>{a.type}</Badge><span>{timeAgo(a.createdAt)}</span>
                     <ConfirmDialog title="Delete alert?" body="Delete this alert?" confirmLabel="Delete" onConfirm={() => removeAlert.mutate(a.id)}>
@@ -156,7 +156,7 @@ export function CommsPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-line bg-raised/70 p-4 space-y-3">
+          <div className="rounded-none border border-line bg-raised/70 p-4 space-y-3">
             <h2 className="text-sm font-semibold flex items-center gap-2"><MessageSquare className="size-4" /> Team Chat</h2>
             <div className="flex gap-2">
               <Input value={chatMsg} onChange={(e) => setChatMsg(e.target.value)} placeholder="Message event staff..." />
@@ -164,7 +164,7 @@ export function CommsPage() {
             </div>
             <div className="space-y-2 max-h-56 overflow-auto">
               {(chat.data ?? []).slice(0, 10).map((m) => (
-                <div key={m.id} className="rounded-lg border border-line/60 px-3 py-2">
+                <div key={m.id} className="rounded-none border border-line/60 px-3 py-2">
                   <div className="flex items-center gap-2 text-[11px] text-ink-3">
                     <span>{timeAgo(m.createdAt)}</span>
                     <ConfirmDialog title="Delete message?" body="Delete this chat message?" confirmLabel="Delete" onConfirm={() => removeChat.mutate(m.id)}>
@@ -196,8 +196,8 @@ export function CommsPage() {
                 onClick={() => setForm({ ...form, targetType: t })}
                 className={
                   form.targetType === t
-                    ? 'rounded-md bg-signal px-3 py-1.5 text-[12px] font-semibold text-black'
-                    : 'rounded-md border border-line px-3 py-1.5 text-[12px] text-ink-2 hover:bg-raised'
+                    ? 'rounded-none bg-signal px-3 py-1.5 text-[12px] font-semibold text-black'
+                    : 'rounded-none border border-line px-3 py-1.5 text-[12px] text-ink-2 hover:bg-raised'
                 }
               >
                 {t}
@@ -205,7 +205,7 @@ export function CommsPage() {
             ))}
           </div>
           {error && (
-            <p role="alert" className="rounded-md border border-danger/25 bg-danger/10 px-3 py-2 text-[13px] text-danger">
+            <p role="alert" className="rounded-none border border-danger/25 bg-danger/10 px-3 py-2 text-[13px] text-danger">
               {error}
             </p>
           )}

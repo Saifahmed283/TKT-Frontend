@@ -83,7 +83,7 @@ export function LiveActivityFeed({ activities }: { activities: FeedActivity[] })
             key={f}
             onClick={() => setResultFilter(f)}
             className={cn(
-              'rounded-md px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.15em] transition-colors',
+              'rounded-none px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.15em] transition-colors',
               resultFilter === f ? 'bg-signal-soft text-signal' : 'border border-line-soft text-ink-2 hover:bg-raised hover:text-ink',
             )}
           >
@@ -136,7 +136,7 @@ export function LiveActivityFeed({ activities }: { activities: FeedActivity[] })
                       <div
                         key={a.id}
                         className={cn(
-                          'flex items-start gap-3 rounded-lg border bg-raised/70 p-3 transition-colors hover:bg-raised',
+                          'flex items-start gap-3 rounded-none border bg-raised/70 p-3 transition-colors hover:bg-raised',
                           valid ? 'border-ok/20' : 'border-danger/20',
                         )}
                       >

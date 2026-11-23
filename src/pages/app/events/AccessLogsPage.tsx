@@ -69,13 +69,13 @@ export function AccessLogsPage() {
           <>
             <button
               onClick={() => void exportAll('csv')}
-              className="inline-flex h-10 items-center gap-2 rounded-md border border-line-soft bg-raised px-4 font-mono text-[12px] font-semibold uppercase tracking-[0.12em] text-ink-2 transition-colors hover:border-signal/40 hover:text-ink"
+              className="inline-flex h-10 items-center gap-2 rounded-none border border-line-soft bg-raised px-4 font-mono text-[12px] font-semibold uppercase tracking-[0.12em] text-ink-2 transition-colors hover:border-signal/40 hover:text-ink"
             >
               <FileSpreadsheet className="size-4" /> CSV
             </button>
             <button
               onClick={() => void exportAll('pdf')}
-              className="inline-flex h-10 items-center gap-2 rounded-md border border-line-soft bg-raised px-4 font-mono text-[12px] font-semibold uppercase tracking-[0.12em] text-ink-2 transition-colors hover:border-signal/40 hover:text-ink"
+              className="inline-flex h-10 items-center gap-2 rounded-none border border-line-soft bg-raised px-4 font-mono text-[12px] font-semibold uppercase tracking-[0.12em] text-ink-2 transition-colors hover:border-signal/40 hover:text-ink"
             >
               <FileText className="size-4" /> PDF
             </button>

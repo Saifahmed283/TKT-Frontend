@@ -55,7 +55,7 @@ export function Modal({ open, onClose, title, children, wide }: { open: boolean;
         <Corners />
         <div className="flex items-center justify-between border-b border-line-soft px-5 py-4">
           <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-ink-0">{title}</h2>
-          <button onClick={onClose} className="rounded-md p-1.5 text-ink-3 transition-colors hover:bg-elevated hover:text-ink-0" aria-label="Close">
+          <button onClick={onClose} className="rounded-none p-1.5 text-ink-3 transition-colors hover:bg-elevated hover:text-ink-0" aria-label="Close">
             <X size={16} />
           </button>
         </div>

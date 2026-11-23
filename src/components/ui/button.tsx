@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react'
+﻿import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { Corners } from '../instruments'
 
@@ -15,9 +15,9 @@ const variants: Record<Variant, string> = {
 }
 
 const sizes: Record<Size, string> = {
-  sm: 'h-8 gap-1.5 rounded-md px-3 text-[11px]',
-  md: 'h-10 gap-2 rounded-md px-4 text-[12px]',
-  lg: 'h-12 gap-2 rounded-lg px-6 text-[13px]',
+  sm: 'h-8 gap-1.5 px-3 text-[11px]',
+  md: 'h-10 gap-2 px-4 text-[12px]',
+  lg: 'h-12 gap-2 px-6 text-[13px]',
 }
 
 export function Button({
@@ -47,7 +47,7 @@ export function Button({
     >
       {variant === 'default' && <Corners className="opacity-60" />}
       {loading ? (
-        <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+        <span className="size-3.5 animate-spin border-2 border-current border-t-transparent" />
       ) : (
         icon
       )}

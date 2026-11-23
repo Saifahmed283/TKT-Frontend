@@ -79,7 +79,7 @@ export function StatCard({
               </p>
             )}
           </div>
-          <div className={cn('grid shrink-0 place-items-center rounded-xl p-3 ring-1', chip[variant])}>
+          <div className={cn('grid shrink-0 place-items-center rounded-none p-3 ring-1', chip[variant])}>
             {icon}
           </div>
         </div>

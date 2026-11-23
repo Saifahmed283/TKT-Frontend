@@ -116,7 +116,7 @@ export function IncidentsPage() {
 
       <div className="grid gap-4 px-6 pb-6 pt-5 lg:grid-cols-2">
         {data.length === 0 && (
-          <div className="col-span-full rounded-xl border border-dashed border-line py-16 text-center">
+          <div className="col-span-full rounded-none border border-dashed border-line py-16 text-center">
             <Siren className="mx-auto size-7 text-ink-3" />
             <p className="mt-3 text-sm text-ink-2">All clear — no incidents</p>
           </div>
@@ -128,7 +128,7 @@ export function IncidentsPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-              'rounded-xl border p-5',
+              'rounded-none border p-5',
               i.priority === 'CRITICAL' && i.status === 'OPEN'
                 ? 'border-danger/30 bg-danger/5'
                 : 'border-line bg-raised/70',
@@ -137,7 +137,7 @@ export function IncidentsPage() {
             <div className="flex items-start gap-3">
               <span
                 className={cn(
-                  'mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md border',
+                  'mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-none border',
                   i.priority === 'CRITICAL' ? 'border-danger/30 bg-danger/10 text-danger' : 'border-warn/30 bg-warn/10 text-warn',
                 )}
               >
@@ -162,7 +162,7 @@ export function IncidentsPage() {
                 {/* Comments */}
                 <div className="mt-4 space-y-2">
                   {i.comments.map((c) => (
-                    <div key={c.id} className="rounded-md border border-line-soft bg-canvas/60 px-3 py-2">
+                    <div key={c.id} className="rounded-none border border-line-soft bg-canvas/60 px-3 py-2">
                       <p className="text-[13px] leading-snug">{c.body}</p>
                       <p className="mt-1 text-[10px] text-ink-3">
                         {c.author.name} · {timeAgo(c.createdAt)}
@@ -222,7 +222,7 @@ export function IncidentsPage() {
             </Field>
           </div>
           {error && (
-            <p role="alert" className="rounded-md border border-danger/25 bg-danger/10 px-3 py-2 text-[13px] text-danger">
+            <p role="alert" className="rounded-none border border-danger/25 bg-danger/10 px-3 py-2 text-[13px] text-danger">
               {error}
             </p>
           )}

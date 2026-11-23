@@ -38,12 +38,12 @@ export function Guide() {
       />
       <div className="space-y-3 px-6 pt-6">
         {sections.map((s) => (
-          <div key={s.title} className="rounded-xl border border-line bg-raised/70 p-5">
+          <div key={s.title} className="rounded-none border border-line bg-raised/70 p-5">
             <h3 className="text-[14px] font-semibold">{s.title}</h3>
             <p className="mt-2 text-[13px] leading-relaxed text-ink-2">{s.body}</p>
           </div>
         ))}
-        <div className="rounded-xl border border-line bg-elevated p-5">
+        <div className="rounded-none border border-line bg-elevated p-5">
           <h3 className="text-[14px] font-semibold">Keyboard</h3>
           <p className="mt-2 text-[13px] leading-relaxed text-ink-2">
             <kbd className="rounded border border-line bg-raised px-1.5 py-0.5 font-mono text-[11px]">Ctrl/⌘</kbd> +{' '}

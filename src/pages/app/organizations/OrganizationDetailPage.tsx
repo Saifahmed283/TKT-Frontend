@@ -58,7 +58,7 @@ function RoleEditor({ open, onClose, initial, catalog, onSave, saving, error }: 
               <div className="relative flex-1"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" /><Input className="pl-8" value={q} onChange={e => setQ(e.target.value)} placeholder="Search permissions..." /></div>
               <Badge tone="default">{permissions.length} selected</Badge>
             </div>
-            <div className="max-h-[50vh] overflow-auto rounded-xl border border-[--color-structure] p-3 space-y-4">
+            <div className="max-h-[50vh] overflow-auto rounded-none border border-[--color-structure] p-3 space-y-4">
               {groups.map(([group, perms]) => {
                 const codes = perms.map(p => p.code)
                 const allSelected = codes.every(c => permissions.includes(c))
@@ -74,7 +74,7 @@ function RoleEditor({ open, onClose, initial, catalog, onSave, saving, error }: 
                       {perms.map(p => {
                         const selected = permissions.includes(p.code)
                         return (
-                          <label key={p.code} className={`flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 text-[12px] ${selected ? 'border-signal/40 bg-signal/5' : 'border-[--color-structure]'}`}>
+                          <label key={p.code} className={`flex cursor-pointer items-start gap-2 rounded-none border px-3 py-2 text-[12px] ${selected ? 'border-signal/40 bg-signal/5' : 'border-[--color-structure]'}`}>
                             <input type="checkbox" className="mt-0.5" checked={selected} onChange={() => toggle(p.code)} />
                             <div><div className="font-mono text-[11px] text-ink">{p.code}</div><div className="text-ink-3">{p.description}</div></div>
                           </label>
@@ -222,7 +222,7 @@ export function OrganizationDetailPage() {
       {deleteRoleId && <Dialog open={!!deleteRoleId} onClose={() => setDeleteRoleId(null)} title="Delete custom role"><p className="text-sm text-ink-2">This role will be removed. It must not be assigned to staff.</p><div className="mt-4 flex justify-end gap-2"><Button variant="ghost" onClick={() => setDeleteRoleId(null)}>Cancel</Button><Button variant="danger" loading={deleteRole.isPending} onClick={() => { if (deleteRoleId) deleteRole.mutate(deleteRoleId) }}>Delete</Button></div></Dialog>}
       <Dialog open={deleteOrgOpen} onClose={() => setDeleteOrgOpen(false)} title="Delete organization">
         <div className="space-y-4">
-          <div className="rounded-xl border border-danger/30 bg-danger/10 p-4 text-[13px] text-ink-2">
+          <div className="rounded-none border border-danger/30 bg-danger/10 p-4 text-[13px] text-ink-2">
             <p className="font-semibold text-danger">Permanent action</p>
             <p className="mt-1">Delete <span className="font-semibold text-ink">{org.name}</span> and all its events, tickets, credentials, buses, payments, and staff data. This cannot be undone.</p>
           </div>

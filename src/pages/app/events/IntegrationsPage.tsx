@@ -102,7 +102,7 @@ export function IntegrationsPage() {
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-3">
             <h2 className="text-sm font-semibold flex items-center gap-2"><ShieldCheck className="size-4" /> Insurance</h2>
-            <form onSubmit={(e: FormEvent) => { e.preventDefault(); createIns.mutate() }} className="space-y-3 rounded-2xl border border-stroke/30 p-4">
+            <form onSubmit={(e: FormEvent) => { e.preventDefault(); createIns.mutate() }} className="space-y-3 rounded-none border border-stroke/30 p-4">
               <Field label="Provider"><Input value={ins.provider} onChange={e => setIns(v => ({ ...v, provider: e.target.value }))} required /></Field>
               <Field label="Policy number"><Input value={ins.policyNumber} onChange={e => setIns(v => ({ ...v, policyNumber: e.target.value }))} required /></Field>
               <Field label="Coverage details"><Input value={ins.coverageDetails} onChange={e => setIns(v => ({ ...v, coverageDetails: e.target.value }))} /></Field>
@@ -129,7 +129,7 @@ export function IntegrationsPage() {
 
           <div className="space-y-3">
             <h2 className="text-sm font-semibold flex items-center gap-2"><Map className="size-4" /> Event Map Assets</h2>
-            <form onSubmit={(e: FormEvent) => { e.preventDefault(); saveMap.mutate() }} className="space-y-3 rounded-2xl border border-stroke/30 p-4">
+            <form onSubmit={(e: FormEvent) => { e.preventDefault(); saveMap.mutate() }} className="space-y-3 rounded-none border border-stroke/30 p-4">
               <FileUploadField label="3D map / model" hint="Optional URL or upload" value={mapForm.map3dUrl} onChange={(url) => setMap(v => ({ ...v, map3dUrl: url }))} accept="image/*,application/pdf,.glb,.gltf,.obj,.zip" />
               <FileUploadField label="Map image" hint="Optional" value={mapForm.mapImageUrl} onChange={(url) => setMap(v => ({ ...v, mapImageUrl: url }))} accept="image/*" />
               <FileUploadField label="Map PDF" hint="Optional" value={mapForm.mapPdfUrl} onChange={(url) => setMap(v => ({ ...v, mapPdfUrl: url }))} accept="application/pdf,image/*" />

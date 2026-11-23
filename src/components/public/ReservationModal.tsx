@@ -156,7 +156,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
     <Modal open onClose={onClose} title={done ? (done.approval === 'APPROVED' ? t('reservationConfirmed') : t('reservationPending')) : `${t('reserveFor')} ${event.name}`} wide={!!done}>
       {done ? (
         <div className="space-y-5">
-          <div className={`flex items-start gap-3 rounded-xl border px-4 py-4 ${done.approval === 'APPROVED' ? 'border-ok/25 bg-ok/8' : 'border-signal/25 bg-signal/8'}`}>
+          <div className={`flex items-start gap-3 rounded-none border px-4 py-4 ${done.approval === 'APPROVED' ? 'border-ok/25 bg-ok/8' : 'border-signal/25 bg-signal/8'}`}>
             <CheckCircle2 className={`mt-0.5 size-5 shrink-0 ${done.approval === 'APPROVED' ? 'text-ok' : 'text-signal'}`} />
             <div>
               <p className="font-display text-xl font-semibold tracking-tight text-ink-0">
@@ -241,7 +241,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
         <form onSubmit={onSubmit} className="space-y-4">
           {reserve.error && <ErrorBanner error={reserve.error} />}
           {existingReservation && (
-            <div className="rounded-xl border border-signal/25 bg-signal/8 px-4 py-3 text-sm text-ink-1">
+            <div className="rounded-none border border-signal/25 bg-signal/8 px-4 py-3 text-sm text-ink-1">
               <p className="font-medium text-ink-0">A reservation already exists for this email.</p>
               <p className="mt-1 font-mono text-[12px] text-signal">{existingReservation.reservationCode}</p>
               <button
@@ -318,7 +318,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
                           else {
                             const selectedSeat = selectedSeatIds.includes(seat.id)
                             const cls = selectedSeat ? 'border-signal bg-signal text-black' : seat.state === 'AVAILABLE' ? 'border-ok/40 bg-ok/15 text-ok hover:bg-ok/25' : seat.state === 'HELD' ? 'border-amber/40 bg-amber/15 text-amber cursor-not-allowed' : seat.state === 'RESERVED' ? 'border-danger/40 bg-danger/15 text-danger cursor-not-allowed' : 'border-line bg-ink-3/20 text-ink-3 cursor-not-allowed'
-                            cells.push(<button key={seat.id} type="button" disabled={!(seat.state === 'AVAILABLE' || selectedSeat)} onClick={() => setSelectedSeatIds(prev => prev.includes(seat.id) ? prev.filter(x => x !== seat.id) : [...prev, seat.id])} className={`grid h-8 w-8 place-items-center rounded-md border text-[10px] font-semibold transition-colors ${cls}`} title={seat.holderName ? `${seat.label} · ${seat.holderName}` : seat.label}>{seat.label}</button>)
+                            cells.push(<button key={seat.id} type="button" disabled={!(seat.state === 'AVAILABLE' || selectedSeat)} onClick={() => setSelectedSeatIds(prev => prev.includes(seat.id) ? prev.filter(x => x !== seat.id) : [...prev, seat.id])} className={`grid h-8 w-8 place-items-center rounded-none border text-[10px] font-semibold transition-colors ${cls}`} title={seat.holderName ? `${seat.label} · ${seat.holderName}` : seat.label}>{seat.label}</button>)
                           }
                           if (aisleAfter === c && c < cols) cells.push(<div key={`a-${row}-${c}`} className="w-3" />)
                         }
@@ -334,7 +334,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
                           {holdError && <span className="text-danger">{holdError}</span>}
                         </div>
                         {bus.seats.filter(s => selectedSeatIds.includes(s.id)).map(s => (
-                          <div key={s.id} className="grid gap-2 rounded-lg border border-line-soft bg-panel/40 p-2 sm:grid-cols-3">
+                          <div key={s.id} className="grid gap-2 rounded-none border border-line-soft bg-panel/40 p-2 sm:grid-cols-3">
                             <div className="text-[11px] font-semibold text-signal sm:col-span-3">Seat {s.label} passenger</div>
                             <input className="input !py-1.5 text-[12px]" placeholder="Passenger name" value={seatPassengers[s.id]?.name ?? name} onChange={e => setSeatPassengers(prev => ({ ...prev, [s.id]: { name: e.target.value, email: prev[s.id]?.email ?? email, phone: prev[s.id]?.phone ?? phone } }))} />
                             <input className="input !py-1.5 text-[12px]" placeholder="Email" value={seatPassengers[s.id]?.email ?? email} onChange={e => setSeatPassengers(prev => ({ ...prev, [s.id]: { name: prev[s.id]?.name ?? name, email: e.target.value, phone: prev[s.id]?.phone ?? phone } }))} />

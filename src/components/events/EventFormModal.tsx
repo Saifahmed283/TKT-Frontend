@@ -62,7 +62,7 @@ export function EventFormModal({ open, onClose }: { open: boolean; onClose: () =
         {orgsQ.isLoading ? (
           <p className="text-sm text-ink-400">Loading organizations…</p>
         ) : (orgsQ.data ?? []).length === 0 ? (
-          <p className="rounded-xl border border-warn-400/25 bg-warn-400/10 px-3 py-2 text-sm text-warn-400">
+          <p className="rounded-none border border-warn-400/25 bg-warn-400/10 px-3 py-2 text-sm text-warn-400">
             You are not a member of any organization yet. Events are created inside an organization.
           </p>
         ) : (

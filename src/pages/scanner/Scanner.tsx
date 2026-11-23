@@ -439,7 +439,7 @@ export default function ScannerPage() {
           </form>
           {cameraOn ? (
             <div>
-              <div className="relative overflow-hidden rounded-xl border border-line bg-black">
+              <div className="relative overflow-hidden rounded-none border border-line bg-black">
                 <video ref={videoRef} className="aspect-video w-full object-cover" muted playsInline />
                 <div className="pointer-events-none absolute inset-0">
                   <div className="absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2">
@@ -476,14 +476,14 @@ export default function ScannerPage() {
             </button>
           )}
           {cameraError && (
-            <p className="flex items-center gap-2 rounded-lg border border-err-400/25 bg-err-400/10 px-3 py-2 text-xs text-err-400">
+            <p className="flex items-center gap-2 rounded-none border border-err-400/25 bg-err-400/10 px-3 py-2 text-xs text-err-400">
               <VideoOff size={12} /> {cameraError}
             </p>
           )}
 
           {decision && (
             <div
-              className={`rounded-2xl border p-6 text-center ${
+              className={`rounded-none border p-6 text-center ${
                 big ? 'border-ok-400/30 bg-ok-400/10' : 'border-err-400/30 bg-err-400/10'
               }`}
             >
@@ -523,7 +523,7 @@ export default function ScannerPage() {
           <div className="mt-4 space-y-2">
             {queue.length === 0 && <p className="py-8 text-center text-sm text-ink-400">Queue empty — all decisions synced.</p>}
             {[...queue].reverse().map((item) => (
-              <div key={item.localId} className="flex items-center justify-between rounded-xl border border-line bg-ink-850 px-3.5 py-2.5 text-sm">
+              <div key={item.localId} className="flex items-center justify-between rounded-none border border-line bg-ink-850 px-3.5 py-2.5 text-sm">
                 <span className="font-mono text-xs text-ink-300">{item.code.slice(0, 20)}…</span>
                 <span className={`text-xs ${item.decision === 'GRANTED' ? 'text-ok-400' : 'text-err-400'}`}>{item.decision}</span>
               </div>

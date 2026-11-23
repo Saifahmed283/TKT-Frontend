@@ -114,7 +114,7 @@ export function TasksPage() {
 
       <div className="flex gap-3 overflow-x-auto px-6 pb-6 pt-5">
         {grouped.map((col) => (
-          <div key={col.key} className="flex min-w-[280px] flex-1 flex-col rounded-xl border border-line bg-raised/50 p-3">
+          <div key={col.key} className="flex min-w-[280px] flex-1 flex-col rounded-none border border-line bg-raised/50 p-3">
             <div className="flex items-center gap-2 px-1 pb-3">
               <span className={cn('size-1.5 rounded-full', col.dot)} />
               <span className="text-[12px] font-semibold uppercase tracking-[0.12em] text-ink-2">{col.label}</span>
@@ -124,7 +124,7 @@ export function TasksPage() {
             </div>
             <div className="flex flex-1 flex-col gap-2">
               {col.tasks.length === 0 && (
-                <div className="rounded-lg border border-dashed border-line px-3 py-6 text-center text-[11px] text-ink-3">
+                <div className="rounded-none border border-dashed border-line px-3 py-6 text-center text-[11px] text-ink-3">
                   Drop zone
                 </div>
               )}
@@ -135,7 +135,7 @@ export function TasksPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.03 }}
                   layout
-                  className="group rounded-lg border border-line bg-elevated p-3.5 transition-colors hover:border-line/60"
+                  className="group rounded-none border border-line bg-elevated p-3.5 transition-colors hover:border-line/60"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <p className="text-[13px] font-medium leading-snug">{t.title}</p>
@@ -164,7 +164,7 @@ export function TasksPage() {
                   {col.key !== 'DONE' ? (
                     <button
                       onClick={() => setStatus.mutate({ id: t.id, status: col.key === 'TODO' ? 'IN_PROGRESS' : 'DONE' })}
-                      className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-md border border-line py-1.5 text-[11px] font-medium text-ink-2 opacity-0 transition-opacity hover:bg-raised group-hover:opacity-100"
+                      className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-none border border-line py-1.5 text-[11px] font-medium text-ink-2 opacity-0 transition-opacity hover:bg-raised group-hover:opacity-100"
                     >
                       <Check className="size-3" />
                       {col.key === 'TODO' ? 'Start' : 'Complete'}
@@ -172,7 +172,7 @@ export function TasksPage() {
                   ) : (
                     <button
                       onClick={() => setStatus.mutate({ id: t.id, status: 'TODO' })}
-                      className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-md border border-line py-1.5 text-[11px] font-medium text-ink-3 opacity-0 transition-opacity hover:bg-raised group-hover:opacity-100"
+                      className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-none border border-line py-1.5 text-[11px] font-medium text-ink-3 opacity-0 transition-opacity hover:bg-raised group-hover:opacity-100"
                     >
                       Reopen
                     </button>
@@ -216,7 +216,7 @@ export function TasksPage() {
             </Select>
           </Field>
           {error && (
-            <p role="alert" className="rounded-md border border-danger/25 bg-danger/10 px-3 py-2 text-[13px] text-danger">
+            <p role="alert" className="rounded-none border border-danger/25 bg-danger/10 px-3 py-2 text-[13px] text-danger">
               {error}
             </p>
           )}
