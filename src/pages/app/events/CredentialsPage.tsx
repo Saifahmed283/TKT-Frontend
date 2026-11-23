@@ -11,7 +11,7 @@ import { Dialog, ConfirmDialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { useState, type FormEvent } from 'react'
-import { BadgeCheck, QrCode, Ban, Download, CreditCard, Trash2 } from 'lucide-react'
+import { BadgeCheck, QrCode, Ban, Download, CreditCard, Send, Trash2 } from 'lucide-react'
 import { downloadTicketPdf, downloadIdCardPdf, type CardIdentity } from '@/lib/cards'
 
 type Credential = {
@@ -22,7 +22,7 @@ type Credential = {
   payloadVersion?: string
   issuedAt: string
   lastUsedAt?: string | null
-  attendee?: { id: string; name: string } | null
+  attendee?: { id: string; name: string; email?: string | null } | null
   ticket?: {
     id: string
     typeName?: string
@@ -50,6 +50,8 @@ export function CredentialsPage() {
   const [attendeeId, setAttendeeId] = useState('')
   const [showQr, setShowQr] = useState<string | null>(null)
   const [historyId, setHistoryId] = useState<string | null>(null)
+  const [resendTarget, setResendTarget] = useState<Credential | null>(null)
+  const [resendEmail, setResendEmail] = useState('')
 
   const history = useQuery({
     queryKey: ['credential-detail', eventId, historyId],
@@ -120,6 +122,12 @@ export function CredentialsPage() {
     onError: (e: any) => toast.error(e?.message ?? 'Could not delete credential'),
   })
 
+  const resend = useMutation({
+    mutationFn: ({ ticketId, toEmail }: { ticketId: string; toEmail: string }) => api.post(`/events/${eventId}/reservations/${ticketId}/resend`, { toEmail }),
+    onSuccess: () => { toast.success('Ticket email sent'); setResendTarget(null); setResendEmail(''); qc.invalidateQueries({ queryKey: ['credentials'] }) },
+    onError: (e: any) => toast.error(e?.message ?? 'Could not send ticket'),
+  })
+
   if (isLoading) return <FullPageSpinner />
   if (error || !data) return <InlineError message="Could not load credentials." onRetry={refetch} />
 
@@ -182,6 +190,11 @@ export function CredentialsPage() {
                   >
                     <QrCode className="size-4" />
                   </button>
+                  {c.ticket?.id && (
+                    <button className="rounded p-1.5 text-ink-2 hover:bg-raised" onClick={() => { setResendTarget(c); setResendEmail(c.attendee?.email ?? '') }} aria-label="Send ticket">
+                      <Send className="size-4" />
+                    </button>
+                  )}
                   <button
                     className="rounded p-1.5 text-ink-2 hover:bg-raised"
                     onClick={() => setHistoryId(c.id)}
@@ -269,6 +282,17 @@ export function CredentialsPage() {
               <p className="mt-1 font-mono text-[10px] text-ink-3">{d.recipient ?? '—'} · attempt {d.attempt}{d.provider ? ` · ${d.provider}` : ''}{d.error ? ` · ${d.error}` : ''}</p>
             </div>
           ))}
+        </div>
+      </Dialog>
+
+      <Dialog open={!!resendTarget} onClose={() => { if (!resend.isPending) { setResendTarget(null); setResendEmail('') } }} title="Send ticket email">
+        <div className="space-y-4">
+          <p className="text-[13px] text-ink-2">Send ticket for <span className="font-medium text-ink">{resendTarget?.attendee?.name ?? 'attendee'}</span>.</p>
+          <Field label="Recipient email"><input value={resendEmail} onChange={e => setResendEmail(e.target.value)} type="email" className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-[13px] text-ink outline-none transition focus:border-gold/40" /></Field>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => { setResendTarget(null); setResendEmail('') }} disabled={resend.isPending}>Cancel</Button>
+            <Button loading={resend.isPending} disabled={!resendEmail.trim() || !resendTarget?.ticket?.id} onClick={() => resendTarget?.ticket?.id && resend.mutate({ ticketId: resendTarget.ticket.id, toEmail: resendEmail.trim() })}>Send ticket</Button>
+          </div>
         </div>
       </Dialog>
     </div>

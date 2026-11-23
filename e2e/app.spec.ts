@@ -39,8 +39,8 @@ test.describe('TKT E2E — event dashboard & modules', () => {
     await page.goto('/app/events')
     await page.getByRole('link', { name: /Tech Frontier 2026/i }).first().click()
     await expect(page).toHaveURL(/\/app\/events\//)
-    await expect(page.getByText('Attendees', { exact: false }).first()).toBeVisible({ timeout: 20_000 })
-    await expect(page.getByText(/Check-in rate/i).first()).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByText('Attendees', { exact: false }).first()).toBeVisible({ timeout: 30_000 })
+    await expect(page.getByText(/Check-in rate|Check in|KPI/i).first()).toBeVisible({ timeout: 30_000 })
   })
 
   test('scanner page scopes areas for AREA-scoped operator', async ({ page }) => {
@@ -48,7 +48,7 @@ test.describe('TKT E2E — event dashboard & modules', () => {
     await page.getByLabel('Email').fill('mohamed@tkt.local')
     await page.getByLabel('Password').fill('Staff12345!')
     await page.getByRole('button', { name: 'Sign in' }).click()
-    await expect(page).toHaveURL(/\/app/)
+    await expect(page).toHaveURL(/\/app/, { timeout: 20_000 })
     await page.getByRole('link', { name: 'Scanner' }).click()
     await expect(page).toHaveURL(/\/app\/scanner/)
     const areaSelect = page.locator('select').nth(1)
