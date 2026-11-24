@@ -36,12 +36,13 @@ export function FileUploadField({
       fd.append('file', file)
       const headers: Record<string, string> = {}
       const token = getAccessToken()
-      if (token) headers.Authorization = `Bearer `
+      if (token) headers.Authorization = `Bearer ${token}`
       const res = await fetch(`${API_BASE}/uploads`, { method: 'POST', body: fd, headers, credentials: 'include' })
       const body = await res.json().catch(() => null)
       if (!res.ok) throw new Error(body?.error?.message ?? 'Upload failed')
       const data = body?.data as UploadResult
-      onChange(data.url)
+      const url = data.url.startsWith('http') ? new URL(data.url).pathname : data.url
+      onChange(url)
       toast.success('File uploaded')
     } catch (e: any) {
       toast.error(e?.message ?? 'Upload failed')

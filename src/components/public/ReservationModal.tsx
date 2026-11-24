@@ -306,13 +306,15 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
               {(() => {
                 const bus = buses.find(b => b.id === busId) ?? buses[0]
                 if (!bus) return null
-                const cols = bus.layout.cols
-                const aisleAfter = bus.layout.aisleAfterCol ?? 0
+                const layout = bus.layout ?? { rows: 0, cols: 0, aisleAfterCol: 0 }
+                const cols = layout.cols
+                const aisleAfter = layout.aisleAfterCol ?? 0
                 return (
                   <div>
                     <div className="mb-2 flex items-center gap-3 text-[10px] text-ink-3"><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-ok/40" />Available</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-amber/40" />Held</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-danger/40" />Reserved</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-ink-3/40" />Unavailable</span></div>
+                    <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">{layout.template === 'mect49' ? 'MECT 49-seat coach' : layout.template === 'coaster21' ? 'Coaster 21-seat' : 'Custom bus layout'}</div>
                     <div className="overflow-x-auto"><div className="grid w-fit gap-1.5" style={{ gridTemplateColumns: `repeat(${cols + (aisleAfter > 0 && aisleAfter < cols ? 1 : 0)}, minmax(0,1fr))` }}>
-                      {Array.from({ length: bus.layout.rows }).flatMap((_, r) => {
+                      {Array.from({ length: layout.rows }).flatMap((_, r) => {
                         const row = r + 1; const cells: any[] = []
                         for (let c = 1; c <= cols; c++) {
                           const seat = bus.seats.find(s => s.row === row && s.col === c)

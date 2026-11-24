@@ -3,23 +3,25 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, Html, RoundedBox } from '@react-three/drei'
 import type * as THREE from 'three'
 import type { PublicBus, PublicSeat } from '../../lib/public'
+import { normalizeBusLayout } from '../../lib/busLayouts'
 
 type SeatStatus = 'AVAILABLE' | 'HELD' | 'RESERVED' | 'UNAVAILABLE' | 'SELECTED'
 
-function colorFor(status: SeatStatus) {
+function colorFor(status: SeatStatus, look?: string) {
+  const premium = look === 'luxury' || look === 'coach'
   switch (status) {
     case 'SELECTED': return '#E8D08B'
-    case 'AVAILABLE': return '#2f9e6f'
+    case 'AVAILABLE': return premium ? '#3aa87a' : '#2f9e6f'
     case 'HELD': return '#d97706'
     case 'RESERVED': return '#dc4c4c'
     case 'UNAVAILABLE': return '#55585f'
   }
 }
 
-function SeatMesh({ seat, status, onClick }: { seat: PublicSeat; status: SeatStatus; onClick: () => void }) {
+function SeatMesh({ seat, status, look, onClick }: { seat: PublicSeat; status: SeatStatus; look?: string; onClick: () => void }) {
   const ref = useRef<THREE.Group>(null)
   const [hovered, setHovered] = useState(false)
-  const base = colorFor(status)
+  const base = colorFor(status, look)
   const interactive = status === 'AVAILABLE' || status === 'SELECTED'
 
   useFrame((_, delta) => {
@@ -49,13 +51,13 @@ function SeatMesh({ seat, status, onClick }: { seat: PublicSeat; status: SeatSta
   )
 }
 
-function BusFloor({ rows, cols, aisleAfter }: { rows: number; cols: number; aisleAfter: number }) {
+function BusFloor({ rows, cols, aisleAfter, look }: { rows: number; cols: number; aisleAfter: number; look?: string }) {
   const width = cols + (aisleAfter > 0 && aisleAfter < cols ? 0.6 : 0) + 0.8
   const depth = rows + 0.8
   return (
     <group position={[(cols - 1) / 2, -0.02, (rows - 1) / 2]}>
       <RoundedBox args={[width, 0.06, depth]} radius={0.08} smoothness={2} position={[0, -0.03, 0]}>
-        <meshStandardMaterial color="#1a1b1e" roughness={0.9} metalness={0.05} />
+        <meshStandardMaterial color={look === "luxury" || look === "coach" ? "#17181c" : "#1a1b1e"} roughness={0.9} metalness={look === "luxury" || look === "coach" ? 0.12 : 0.05} />
       </RoundedBox>
       <mesh position={[0, 0.001, -depth / 2 + 0.25]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[width - 0.3, 0.35]} />
@@ -76,8 +78,8 @@ export default function BusSeatMap3D({
   onSeatClick: (seat: PublicSeat) => void
   className?: string
 }) {
-  const { rows, cols } = bus.layout
-  const aisleAfter = bus.layout.aisleAfterCol ?? 0
+  const layout = normalizeBusLayout(bus.layout)
+  const { rows, cols, aisleAfterCol: aisleAfter, look } = layout
   const center = useMemo(() => [(cols - 1) / 2, 0.3, (rows - 1) / 2] as [number, number, number], [cols, rows])
 
   const seatStatuses = useMemo(() => {
@@ -103,12 +105,13 @@ export default function BusSeatMap3D({
           <directionalLight position={[4, 8, 6]} intensity={1.1} color="#fff6dd" />
           <directionalLight position={[-4, 5, -2]} intensity={0.35} color="#88aaff" />
           <Suspense fallback={null}>
-            <BusFloor rows={rows} cols={cols} aisleAfter={aisleAfter} />
+            <BusFloor rows={rows} cols={cols} aisleAfter={aisleAfter} look={look} />
             {bus.seats.map((seat) => (
               <SeatMesh
                 key={seat.id}
                 seat={seat}
                 status={seatStatuses.get(seat.id) ?? seat.state}
+                look={look}
                 onClick={() => onSeatClick(seat)}
               />
             ))}

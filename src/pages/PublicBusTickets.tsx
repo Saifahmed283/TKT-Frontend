@@ -7,6 +7,7 @@ import PublicNav from '../components/public/PublicNav'
 import { api } from '../lib/api'
 import { useLanguage } from '../lib/i18n'
 import { usePublicEvents, type PublicBus, type PublicSeat } from '../lib/public'
+import { normalizeBusLayout } from '../lib/busLayouts'
 import SpotlightCard from '../components/reactbits/SpotlightCard'
 import { Button } from '../components/ui/button'
 import { Corners, Blink } from '../components/instruments'
@@ -31,9 +32,10 @@ function SeatMap2D({ bus, selectedSeats, onSeatClick, heldSeats, reservedSeats, 
   className?: string
 }) {
   const reduce = useReducedMotion()
-  const cols = bus.layout.cols
-  const aisleAfter = bus.layout.aisleAfterCol ?? 0
-  const rows = bus.layout.rows
+  const layout = normalizeBusLayout(bus.layout)
+  const cols = layout.cols
+  const aisleAfter = layout.aisleAfterCol
+  const rows = layout.rows
 
   return (
     <div className={className}>

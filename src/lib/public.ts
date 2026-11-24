@@ -32,7 +32,8 @@ export interface PublicPaymentProvider {
 }
 
 export interface PublicSeat { id: string; label: string; row: number; col: number; state: 'AVAILABLE' | 'HELD' | 'RESERVED' | 'UNAVAILABLE'; holderName?: string | null; passengerName?: string | null; holdExpiresAt?: string | null }
-export interface PublicBus { id: string; name: string; seatPrice?: string; currency?: string; layout: { rows: number; cols: number; aisleAfterCol?: number }; totalSeats: number; availableSeats: number; seats: PublicSeat[] }
+export interface PublicBusLayout { template?: 'grid' | 'mect49' | 'coaster21' | 'custom'; look?: string; rows: number; cols: number; aisleAfterCol?: number; seats?: Array<{ label: string; row: number; col: number; state?: string }> }
+export interface PublicBus { id: string; name: string; seatPrice?: string; currency?: string; layout: PublicBusLayout; totalSeats: number; availableSeats: number; seats: PublicSeat[] }
 
 export interface PublicEvent {
   id: string

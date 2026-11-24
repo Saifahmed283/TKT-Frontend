@@ -12,9 +12,11 @@ import { Dialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { Panel } from '@/components/motion/primitives'
+import { BUS_TEMPLATES, getBusTemplate, normalizeBusLayout, type BusTemplateId } from '@/lib/busLayouts'
 
 type Seat = { id: string; label: string; row: number; col: number; state: 'AVAILABLE' | 'HELD' | 'RESERVED' | 'UNAVAILABLE'; holderName?: string | null; passengerName?: string | null; groupId?: string | null; ticketId?: string | null }
-type Bus = { id: string; name: string; isActive: boolean; seatPrice?: string | number; currency?: string; layout: { rows: number; cols: number; aisleAfterCol?: number }; seats?: Seat[]; _count?: { seats: number } }
+type BusLayout = { template?: BusTemplateId; look?: string; rows: number; cols: number; aisleAfterCol?: number; seats?: { label: string; row: number; col: number; state?: string }[] }
+type Bus = { id: string; name: string; isActive: boolean; seatPrice?: string | number; currency?: string; layout: BusLayout; seats?: Seat[]; _count?: { seats: number } }
 
 function seatClass(state: Seat['state'], selected: boolean) {
   if (selected) return 'border-signal bg-signal text-black'
@@ -32,14 +34,23 @@ export function BusesPage() {
   const [activeBusId, setActiveBusId] = useState<string | null>(null)
   const [selected, setSelected] = useState<string[]>([])
   const [holderName, setHolderName] = useState('')
-  const [form, setForm] = useState({ name: '', rows: 10, cols: 4, aisleAfterCol: 2, seatPrice: 0, currency: 'EGP' })
+  const [form, setForm] = useState({ name: '', template: 'grid' as BusTemplateId, rows: 10, cols: 4, aisleAfterCol: 2, seatPrice: 0, currency: 'EGP' })
 
   const busesQ = useQuery({ queryKey: ['events', eventId, 'buses'], queryFn: () => api.get<Bus[]>(`/events/${eventId}/buses`), enabled: !!eventId })
   const seatsQ = useQuery({ queryKey: ['events', eventId, 'buses', activeBusId, 'seats'], queryFn: () => api.get<Bus & { seats: Seat[] }>(`/events/${eventId}/buses/${activeBusId}/seats`), enabled: !!eventId && !!activeBusId })
 
   const refresh = () => { void qc.invalidateQueries({ queryKey: ['events', eventId, 'buses'] }) }
   const createBus = useMutation({
-    mutationFn: () => api.post(`/events/${eventId}/buses`, { name: form.name, seatPrice: form.seatPrice, currency: form.currency, layout: { rows: form.rows, cols: form.cols, aisleAfterCol: form.aisleAfterCol } }),
+    mutationFn: () => {
+      const tpl = getBusTemplate(form.template)
+      const layoutSeats = form.template === 'grid'
+        ? Array.from({ length: form.rows * form.cols }, (_, i) => { const r = Math.floor(i / form.cols) + 1; const c = (i % form.cols) + 1; return { label: String(i + 1), row: r, col: c, state: 'AVAILABLE' } })
+        : (tpl.seats.length ? tpl.seats.map(s => ({ label: s.label, row: s.row, col: s.col, state: s.state ?? 'AVAILABLE' })) : [])
+      return api.post(`/events/${eventId}/buses`, {
+        name: form.name, seatPrice: form.seatPrice, currency: form.currency,
+        layout: { template: form.template, look: tpl.look, rows: form.template === 'grid' ? form.rows : tpl.rows, cols: form.template === 'grid' ? form.cols : tpl.cols, aisleAfterCol: form.template === 'grid' ? form.aisleAfterCol : (tpl.aisleAfterCol ?? 0), seats: layoutSeats },
+      })
+    },
     onSuccess: (b: any) => { toast.success('Bus created'); setCreateOpen(false); setActiveBusId(b.id); refresh() },
     onError: (e) => toast.error(e instanceof ApiError ? e.message : 'Failed to create bus'),
   })
@@ -69,8 +80,12 @@ export function BusesPage() {
   const buses = busesQ.data ?? []
   const bus = seatsQ.data
   const seats = bus?.seats ?? []
-  const cols = bus?.layout?.cols ?? 4
-  const aisleAfter = bus?.layout?.aisleAfterCol ?? 0
+  const normLayout = normalizeBusLayout(bus?.layout ?? {})
+  const cols = normLayout.cols
+  const aisleAfter = normLayout.aisleAfterCol
+  const layoutRows = normLayout.rows
+  const busLook = normLayout.look
+  void layoutRows; void busLook
 
   const toggleSelect = (s: Seat) => {
     if (s.state === 'UNAVAILABLE') return
@@ -164,11 +179,27 @@ export function BusesPage() {
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)} title="Add bus">
         <form onSubmit={(e: FormEvent) => { e.preventDefault(); createBus.mutate() }} className="space-y-4">
           <Field label="Bus name"><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required /></Field>
-          <div className="grid grid-cols-3 gap-3">
-            <Field label="Rows"><Input type="number" min={1} max={60} value={form.rows} onChange={e => setForm({ ...form, rows: Number(e.target.value) })} /></Field>
-            <Field label="Cols"><Input type="number" min={1} max={8} value={form.cols} onChange={e => setForm({ ...form, cols: Number(e.target.value) })} /></Field>
-            <Field label="Aisle after col"><Input type="number" min={0} max={8} value={form.aisleAfterCol} onChange={e => setForm({ ...form, aisleAfterCol: Number(e.target.value) })} /></Field>
+          <Field label="Bus template / look">
+            <select className="input" value={form.template} onChange={e => {
+              const template = e.target.value as BusTemplateId
+              const tpl = getBusTemplate(template)
+              setForm(f => ({ ...f, template, rows: tpl.rows, cols: tpl.cols, aisleAfterCol: tpl.aisleAfterCol ?? 0 }))
+            }}>
+              {BUS_TEMPLATES.map(t => <option key={t.id} value={t.id}>{t.name} — {t.totalBookableSeats || 'custom'} seats</option>)}
+            </select>
+          </Field>
+          <div className="rounded-none border border-line-soft bg-elevated/20 p-3 text-[11px] text-ink-2">
+            {getBusTemplate(form.template).description}
+            {form.template === 'coaster21' && <div className="mt-1 text-amber-300">Confirm physical seat numbering with the bus operator before paid bookings.</div>}
+            {form.template === 'mect49' && <div className="mt-1 text-ink-3">1B/2B auxiliary positions are non-bookable and not exposed.</div>}
           </div>
+          {form.template === 'grid' && (
+            <div className="grid grid-cols-3 gap-3">
+              <Field label="Rows"><Input type="number" min={1} max={60} value={form.rows} onChange={e => setForm({ ...form, rows: Number(e.target.value) })} /></Field>
+              <Field label="Cols"><Input type="number" min={1} max={8} value={form.cols} onChange={e => setForm({ ...form, cols: Number(e.target.value) })} /></Field>
+              <Field label="Aisle after col"><Input type="number" min={0} max={8} value={form.aisleAfterCol} onChange={e => setForm({ ...form, aisleAfterCol: Number(e.target.value) })} /></Field>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <Field label="Seat price"><Input type="number" min={0} step="0.01" value={form.seatPrice} onChange={e => setForm({ ...form, seatPrice: Number(e.target.value) })} /></Field>
             <Field label="Currency"><Input value={form.currency} onChange={e => setForm({ ...form, currency: e.target.value })} /></Field>
