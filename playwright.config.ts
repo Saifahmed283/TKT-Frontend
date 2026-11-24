@@ -14,7 +14,7 @@ export default defineConfig({
   webServer: [
     {
       command: 'npm run dev',
-      cwd: '../Backend',
+      cwd: '../TKT-Backend',
       url: 'http://localhost:4000/health',
       reuseExistingServer: true,
       timeout: 60_000,

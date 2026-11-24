@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { ArrowUpRight, Bus, Calendar, Lock, MapPin, Ticket, Users } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import PublicNav from '../components/public/PublicNav'
@@ -262,9 +262,19 @@ export function EventCard({ e, i, onReserve, onBusTickets }: { e: PublicEvent; i
 
 export default function UpcomingEvents() {
   const [reserving, setReserving] = useState<PublicEvent | null>(null)
-  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { t } = useLanguage()
   const { data: events, isLoading, error } = usePublicEvents('upcoming')
+  const preselectedEventId = searchParams.get('event')
+
+  useEffect(() => {
+    if (!preselectedEventId || !events) return
+    const event = events.find((e) => e.id === preselectedEventId)
+    if (event) {
+      setReserving(event)
+      setSearchParams({}, { replace: true })
+    }
+  }, [preselectedEventId, events, setSearchParams])
 
   return (
     <div className="relative min-h-screen overflow-x-clip bg-paper text-ink">
@@ -330,7 +340,7 @@ export default function UpcomingEvents() {
                     e={e}
                     i={i}
                     onReserve={setReserving}
-                    onBusTickets={e.buses?.length ? (e) => navigate(`/events/${e.id}/bus-tickets`) : undefined}
+                    onBusTickets={e.buses?.length ? (e) => setReserving(e) : undefined}
                   />
                 ))
               )}

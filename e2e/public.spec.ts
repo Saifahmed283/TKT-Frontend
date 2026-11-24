@@ -1,18 +1,13 @@
 import { test, expect, type APIRequestContext } from '@playwright/test'
+import { getAdminCredentials } from './auth'
 
 const API = 'http://localhost:4000'
 
-/** Seed a real published future event with open registration through the admin API. */
 async function seedPublicEvent(request: APIRequestContext, name: string): Promise<string> {
-  const candidates = [
-    { email: 'admin@tkt.local', password: 'Admin12345!' },
-    { email: 'your.tkt.info@tkt.com', password: 'TKT@2026$$' },
-  ]
-  let token = ''
-  for (const cred of candidates) {
-    const login = await request.post(`${API}/auth/login`, { data: cred })
-    if (login.ok()) { token = (await login.json()).data?.token ?? ''; if (token) break }
-  }
+  const credentials = getAdminCredentials()
+  const login = await request.post(`${API}/auth/login`, { data: credentials })
+  expect(login.ok()).toBeTruthy()
+  const token = (await login.json()).data?.token ?? ''
   expect(token).toBeTruthy()
   const headers = { Authorization: `Bearer ${token}` }
   const orgs = await request.get(`${API}/organizations`, { headers })
@@ -25,6 +20,40 @@ async function seedPublicEvent(request: APIRequestContext, name: string): Promis
   expect(patch.ok()).toBeTruthy()
   const type = await request.post(`${API}/events/${eventId}/tickets/types`, { headers, data: { name: 'General Admission', price: 0, quota: 100, isPublic: true } })
   expect(type.ok()).toBeTruthy()
+  for (const status of ['READY', 'PUBLISHED']) {
+    const res = await request.post(`${API}/events/${eventId}/status`, { headers, data: { status } })
+    expect(res.ok()).toBeTruthy()
+  }
+  return eventId
+}
+
+async function seedPaidTransportEvent(request: APIRequestContext, name: string) {
+  const credentials = getAdminCredentials()
+  const login = await request.post(`${API}/auth/login`, { data: credentials })
+  expect(login.ok()).toBeTruthy()
+  const token = (await login.json()).data?.token ?? ''
+  expect(token).toBeTruthy()
+  const headers = { Authorization: `Bearer ${token}` }
+  const orgs = await request.get(`${API}/organizations`, { headers })
+  const orgId = (await orgs.json()).data[0].id
+  const created = await request.post(`${API}/events`, {
+    headers,
+    data: { organizationId: orgId, name, startAt: new Date(Date.now() + 30 * 86_400_000).toISOString(), venueName: 'E2E Venue' },
+  })
+  expect(created.ok()).toBeTruthy()
+  const eventId = (await created.json()).data.id
+  const patch = await request.patch(`${API}/events/${eventId}`, { headers, data: { settings: { registration: { enabled: true, open: true } } } })
+  expect(patch.ok()).toBeTruthy()
+  const type = await request.post(`${API}/events/${eventId}/tickets/types`, {
+    headers,
+    data: { name: 'Conference + Bus', price: 100, quota: 100, isPublic: true, transportIncluded: true },
+  })
+  expect(type.ok()).toBeTruthy()
+  const busRes = await request.post(`${API}/events/${eventId}/buses`, {
+    headers,
+    data: { name: 'E2E Shuttle', layout: { template: 'grid', rows: 2, cols: 2 }, seatPrice: 20, currency: 'EGP' },
+  })
+  expect(busRes.ok()).toBeTruthy()
   for (const status of ['READY', 'PUBLISHED']) {
     const res = await request.post(`${API}/events/${eventId}/status`, { headers, data: { status } })
     expect(res.ok()).toBeTruthy()
@@ -57,7 +86,7 @@ test.describe('TKT E2E — public site', () => {
     await expect(page.getByText(/Reservations open|الحجز مفتوح|Reserve|احجز/i).first()).toBeVisible({ timeout: 20_000 })
   })
 
-  test('reserve flow confirms a seat with a code', async ({ page, request }) => {
+  test('free reserve wizard requires phone, review, then confirms with a code', async ({ page, request }) => {
     const name = `E2E Film Nights ${Date.now()}`
     await seedPublicEvent(request, name)
     const email = `e2e.tester+${Date.now()}@example.com`
@@ -65,11 +94,61 @@ test.describe('TKT E2E — public site', () => {
     await page.getByText(name).first().waitFor({ timeout: 20_000 })
     const card = page.locator('article', { hasText: name }).first()
     await card.getByRole('button', { name: /Reserve|احجز/i }).first().click()
+    await expect(page.getByTestId('wizard-step-ticket')).toBeVisible()
+    await page.getByTestId('ticket-option').first().click()
+    await page.getByTestId('wizard-next').click()
+    await expect(page.getByTestId('wizard-step-details')).toBeVisible()
     await page.getByLabel(/Full name|الاسم/i).fill('E2E Tester')
     await page.getByLabel(/Email|البريد/i).fill(email)
-    await page.getByLabel(/Phone|الهاتف/i).fill('+20 100 000 0000')
-    await page.getByRole('button', { name: /Confirm reservation|تأكيد الحجز|Submit|إرسال/i }).click()
+    await page.getByTestId('reservation-phone').fill('123')
+    await expect(page.getByTestId('wizard-next')).toBeDisabled()
+    await page.getByTestId('reservation-phone').fill('+20 100 000 0000')
+    await page.getByTestId('reservation-notes').fill('Window seat if possible')
+    await page.getByTestId('wizard-next').click()
+    await expect(page.getByTestId('wizard-review')).toBeVisible()
+    await expect(page.getByTestId('wizard-review')).toContainText('E2E Tester')
+    await expect(page.getByTestId('wizard-review')).toContainText('+20 100 000 0000')
+    await page.getByTestId('wizard-back').click()
+    await expect(page.getByTestId('wizard-step-details')).toBeVisible()
+    await expect(page.getByTestId('reservation-phone')).toHaveValue('+20 100 000 0000')
+    await page.getByTestId('wizard-next').click()
+    await page.getByTestId('wizard-submit').click()
     await expect(page.getByText(/Reservation confirmed|Reservation pending|Ticket ready|تم تأكيد|قيد المراجعة/i).first()).toBeVisible({ timeout: 25_000 })
+    await expect(page.getByText(/Reservation code|رمز الحجز|TKT-/i).first()).toBeVisible({ timeout: 25_000 })
+  })
+
+  test('transport reserve wizard requires one seat and payment details', async ({ page, request }) => {
+    const name = `E2E Transport Summit ${Date.now()}`
+    await seedPaidTransportEvent(request, name)
+    const email = `e2e.transport+${Date.now()}@example.com`
+    await page.goto('/upcoming')
+    await page.getByText(name).first().waitFor({ timeout: 20_000 })
+    const card = page.locator('article', { hasText: name }).first()
+    await card.getByRole('button', { name: /Reserve|احجز/i }).first().click()
+    await expect(page.getByTestId('wizard-step-ticket')).toBeVisible()
+    await page.getByTestId('ticket-option').filter({ hasText: 'Conference + Bus' }).click()
+    await page.getByTestId('wizard-next').click()
+    await page.getByLabel(/Full name|الاسم/i).fill('E2E Transit')
+    await page.getByLabel(/Email|البريد/i).fill(email)
+    await page.getByTestId('reservation-phone').fill('+20 100 000 0001')
+    await page.getByTestId('wizard-next').click()
+    await expect(page.getByTestId('wizard-step-seats')).toBeVisible()
+    await expect(page.getByTestId('wizard-next')).toBeDisabled()
+    const seats = page.getByTestId('seat-option')
+    await seats.nth(0).click()
+    await seats.nth(1).click()
+    await expect(page.getByTestId('wizard-next')).toBeDisabled()
+    await seats.nth(0).click()
+    await page.getByTestId('wizard-next').click()
+    await expect(page.getByTestId('wizard-step-payment')).toBeVisible()
+    await expect(page.getByTestId('wizard-next')).toBeDisabled()
+    await page.getByTestId('payment-reference').fill('E2E-TRANSFER-REF')
+    await page.getByTestId('wizard-next').click()
+    await expect(page.getByTestId('wizard-review')).toBeVisible()
+    await expect(page.getByTestId('wizard-review')).toContainText('Conference + Bus')
+    await expect(page.getByTestId('wizard-review')).toContainText('120')
+    await page.getByTestId('wizard-submit').click()
+    await expect(page.getByText(/Reservation pending|قيد المراجعة/i).first()).toBeVisible({ timeout: 25_000 })
     await expect(page.getByText(/Reservation code|رمز الحجز|TKT-/i).first()).toBeVisible({ timeout: 25_000 })
   })
 

@@ -1,14 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
+import { loginAsAdmin, loginAsStaff } from './auth'
 
 type Issue = { kind: 'console' | 'pageerror' | 'http'; detail: string; path: string }
-
-async function login(page: Page, email: string, password: string) {
-  await page.goto('/login')
-  await page.getByLabel('Email').fill(email)
-  await page.getByLabel('Password').fill(password)
-  await page.getByRole('button', { name: 'Sign in' }).click()
-  await expect(page).toHaveURL(/\/app/, { timeout: 20_000 })
-}
 
 function attachCollectors(page: Page, issues: Issue[], getPath: () => string) {
   page.on('pageerror', (err) => issues.push({ kind: 'pageerror', detail: err.message, path: getPath() }))
@@ -46,7 +39,7 @@ test.describe('Dashboard audit', () => {
     const issues: Issue[] = []
     let current = ''
     attachCollectors(page, issues, () => current)
-    await login(page, 'admin@tkt.local', 'Admin12345!')
+    await loginAsAdmin(page)
 
     const core = ['/app', '/app/events', '/app/organizations', '/app/profile', '/app/guide', '/app/scanner']
     for (const p of core) await visit(page, p, issues, () => current, (v) => { current = v })
@@ -66,7 +59,7 @@ test.describe('Dashboard audit', () => {
     const issues: Issue[] = []
     let current = ''
     attachCollectors(page, issues, () => current)
-    await login(page, 'ahmed@tkt.local', 'Staff12345!')
+    await loginAsStaff(page)
     await page.goto('/app/events')
     await page.getByRole('link', { name: /Tech Frontier 2026/i }).first().click()
     await expect(page).toHaveURL(/\/app\/events\/([^/]+)/)
@@ -84,10 +77,9 @@ test.describe('Dashboard audit', () => {
     const issues: Issue[] = []
     let current = ''
     attachCollectors(page, issues, () => current)
-    await login(page, 'mohamed@tkt.local', 'Staff12345!')
+    await loginAsStaff(page)
     await visit(page, '/app/scanner', issues, () => current, (v) => { current = v })
     await expect(page.locator('body')).toContainText(/Scanner|Scan/i, { timeout: 20_000 })
-    // scanner should not see org admin areas as healthy privileged pages; profile should work
     await visit(page, '/app/profile', issues, () => current, (v) => { current = v })
     const severe = issues.filter((i) => i.kind !== 'http' || / 5\d\d /.test(i.detail))
     expect(severe, formatIssues(severe)).toEqual([])

@@ -1,12 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-
-async function login(page: Page, email: string, password: string) {
-  await page.goto('/login')
-  await page.getByLabel('Email').fill(email)
-  await page.getByLabel('Password').fill(password)
-  await page.getByRole('button', { name: 'Sign in' }).click()
-  await expect(page).toHaveURL(/\/app/, { timeout: 20_000 })
-}
+import { loginAsAdmin } from './auth'
 
 async function openTechFrontier(page: Page) {
   await page.goto('/app/events')
@@ -17,7 +10,7 @@ async function openTechFrontier(page: Page) {
 
 test.describe('Dashboard actions', () => {
   test('admin can create and update ticket type', async ({ page }) => {
-    await login(page, 'admin@tkt.local', 'Admin12345!')
+    await loginAsAdmin(page)
     const eventId = await openTechFrontier(page)
     await page.goto(`/app/events/${eventId}/tickets`)
     await expect(page.getByRole('heading', { name: /Tickets/i })).toBeVisible({ timeout: 15_000 })
@@ -32,7 +25,7 @@ test.describe('Dashboard actions', () => {
   })
 
   test('admin can create access code and see it listed', async ({ page }) => {
-    await login(page, 'admin@tkt.local', 'Admin12345!')
+    await loginAsAdmin(page)
     const eventId = await openTechFrontier(page)
     await page.goto(`/app/events/${eventId}/access-codes`)
     await expect(page.getByRole('heading', { name: /Access Codes/i })).toBeVisible({ timeout: 15_000 })
@@ -44,7 +37,7 @@ test.describe('Dashboard actions', () => {
   })
 
   test('admin can view reservations and open decision controls', async ({ page }) => {
-    await login(page, 'admin@tkt.local', 'Admin12345!')
+    await loginAsAdmin(page)
     const eventId = await openTechFrontier(page)
     await page.goto(`/app/events/${eventId}/reservations`)
     await expect(page.getByRole('heading', { name: /Reservations/i })).toBeVisible({ timeout: 15_000 })
@@ -52,7 +45,7 @@ test.describe('Dashboard actions', () => {
   })
 
   test('admin can open staff/workforce/devices/integrations pages and see key controls', async ({ page }) => {
-    await login(page, 'admin@tkt.local', 'Admin12345!')
+    await loginAsAdmin(page)
     const eventId = await openTechFrontier(page)
     const checks = [
       { path: `/app/events/${eventId}/staff`, heading: /Staff/i, control: /Add Staff|No staff yet|Presence|Activity|Team/i },

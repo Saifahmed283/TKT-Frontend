@@ -23,6 +23,7 @@ type TicketTypeRow = {
   salesStartAt?: string | null
   salesEndAt?: string | null
   isPublic?: boolean
+  transportIncluded?: boolean
   sortOrder?: number
   active: boolean
   _count: { tickets: number }
@@ -57,8 +58,8 @@ export default function TicketsPage() {
   const [q, setQ] = useState('')
   const [showAdd, setShowAdd] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
-  const [form, setForm] = useState({ name: '', description: '', category: '', tier: 'STANDARD', price: '', currency: 'EGP', quota: '', salesStartAt: '', salesEndAt: '', isPublic: true, sortOrder: '0' })
-  const [editForm, setEditForm] = useState({ name: '', description: '', category: '', tier: 'STANDARD', price: '', currency: 'EGP', quota: '', salesStartAt: '', salesEndAt: '', isPublic: true, sortOrder: '0', active: true })
+  const [form, setForm] = useState({ name: '', description: '', category: '', tier: 'STANDARD', price: '', currency: 'EGP', quota: '', salesStartAt: '', salesEndAt: '', isPublic: true, transportIncluded: false, sortOrder: '0' })
+  const [editForm, setEditForm] = useState({ name: '', description: '', category: '', tier: 'STANDARD', price: '', currency: 'EGP', quota: '', salesStartAt: '', salesEndAt: '', isPublic: true, transportIncluded: false, sortOrder: '0', active: true })
 
   const typesQ = useQuery({
     queryKey: ['ticket-types', eventId, sse],
@@ -85,6 +86,7 @@ export default function TicketsPage() {
     salesStartAt: f.salesStartAt ? new Date(f.salesStartAt).toISOString() : null,
     salesEndAt: f.salesEndAt ? new Date(f.salesEndAt).toISOString() : null,
     isPublic: f.isPublic,
+    transportIncluded: f.transportIncluded,
     sortOrder: f.sortOrder === '' ? 0 : Number(f.sortOrder),
     ...(includeActive ? { active } : {}),
   })
@@ -93,7 +95,7 @@ export default function TicketsPage() {
     mutationFn: () => api.post(`/events/${eventId}/tickets/types`, payloadFrom(form)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['ticket-types'] })
-      setForm({ name: '', description: '', category: '', tier: 'STANDARD', price: '', currency: 'EGP', quota: '', salesStartAt: '', salesEndAt: '', isPublic: true, sortOrder: '0' })
+      setForm({ name: '', description: '', category: '', tier: 'STANDARD', price: '', currency: 'EGP', quota: '', salesStartAt: '', salesEndAt: '', isPublic: true, transportIncluded: false, sortOrder: '0' })
       setShowAdd(false)
     },
   })
@@ -153,6 +155,7 @@ export default function TicketsPage() {
             <label className="block"><span className="label mb-1.5 block text-ink-3">Sort</span><input className="input" type="number" min={0} value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: e.target.value })} /></label>
             <label className="block sm:col-span-2 lg:col-span-3"><span className="label mb-1.5 block text-ink-3">Description</span><input className="input" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
             <label className="flex items-center gap-2 pt-6 text-xs text-ink-2"><input type="checkbox" checked={form.isPublic} onChange={(e) => setForm({ ...form, isPublic: e.target.checked })} /> Public</label>
+            <label className="flex items-center gap-2 pt-6 text-xs text-ink-2"><input type="checkbox" checked={form.transportIncluded} onChange={(e) => setForm({ ...form, transportIncluded: e.target.checked })} /> Includes transport</label>
           </div>
           <div className="mt-4 flex justify-end"><button className="btn-primary" disabled={!form.name.trim() || createType.isPending} onClick={() => createType.mutate()}>{createType.isPending ? 'Creating…' : 'Create ticket type'}</button></div>
         </div>
@@ -175,6 +178,7 @@ export default function TicketsPage() {
                     <p className="truncate font-display text-sm font-semibold tracking-wide text-ink-0">{t.name}</p>
                     {t.category && <span className="border border-line px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-ink-3">{t.category}</span>}
                     {t.tier && <span className="border border-signal/30 bg-signal/10 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-signal">{t.tier}</span>}
+                    {t.transportIncluded && <span className="border border-ok/30 bg-ok/10 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-ok">Transport</span>}
                   </div>
                   <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.15em] text-ink-3">{Number(t.price) > 0 ? `${t.currency ?? 'EGP'} ${Number(t.price).toLocaleString()}` : 'FREE'} · {t.isPublic === false ? 'Private' : 'Public'}</p>
                 </div>
@@ -195,6 +199,7 @@ export default function TicketsPage() {
                   <input className="input !h-9 text-xs" type="datetime-local" value={editForm.salesEndAt} onChange={(e) => setEditForm({ ...editForm, salesEndAt: e.target.value })} />
                   <input className="input !h-9 text-xs sm:col-span-2" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} placeholder="Description" />
                   <label className="flex items-center gap-2 text-xs text-ink-2"><input type="checkbox" checked={editForm.isPublic} onChange={(e) => setEditForm({ ...editForm, isPublic: e.target.checked })} /> Public</label>
+                  <label className="flex items-center gap-2 text-xs text-ink-2"><input type="checkbox" checked={editForm.transportIncluded} onChange={(e) => setEditForm({ ...editForm, transportIncluded: e.target.checked })} /> Includes transport</label>
                   <label className="flex items-center gap-2 text-xs text-ink-2"><input type="checkbox" checked={editForm.active} onChange={(e) => setEditForm({ ...editForm, active: e.target.checked })} /> Active</label>
                   <div className="flex gap-2 sm:col-span-2">
                     <button className="btn-primary !py-1.5 text-xs" disabled={patchType.isPending} onClick={() => patchType.mutate({ id: t.id, patch: payloadFrom(editForm, true, editForm.active) })}><Check size={12} /> Save</button>
@@ -203,7 +208,7 @@ export default function TicketsPage() {
                 </div>
               ) : (
                 <div className="mt-3 flex items-center gap-2 border-t border-line-soft pt-3">
-                  <button className="btn-ghost !px-2.5 !py-1 text-[10px]" onClick={() => { setEditId(t.id); setEditForm({ name: t.name, description: t.description ?? '', category: t.category ?? '', tier: t.tier ?? 'STANDARD', price: t.price == null ? '' : String(t.price), currency: t.currency ?? 'EGP', quota: t.quota == null ? '' : String(t.quota), salesStartAt: toDateInput(t.salesStartAt), salesEndAt: toDateInput(t.salesEndAt), isPublic: t.isPublic !== false, sortOrder: String(t.sortOrder ?? 0), active: t.active }) }}><Pencil size={11} /> Edit</button>
+                  <button className="btn-ghost !px-2.5 !py-1 text-[10px]" onClick={() => { setEditId(t.id); setEditForm({ name: t.name, description: t.description ?? '', category: t.category ?? '', tier: t.tier ?? 'STANDARD', price: t.price == null ? '' : String(t.price), currency: t.currency ?? 'EGP', quota: t.quota == null ? '' : String(t.quota), salesStartAt: toDateInput(t.salesStartAt), salesEndAt: toDateInput(t.salesEndAt), isPublic: t.isPublic !== false, transportIncluded: t.transportIncluded === true, sortOrder: String(t.sortOrder ?? 0), active: t.active }) }}><Pencil size={11} /> Edit</button>
                   <button className="btn-ghost !px-2.5 !py-1 text-[10px]" disabled={patchType.isPending} onClick={() => patchType.mutate({ id: t.id, patch: { active: !t.active } })}>{t.active ? <><Lock size={11} /> Deactivate</> : <><Check size={11} /> Activate</>}</button>
                   {t._count.tickets === 0 && (
                     <ConfirmDialog title="Delete ticket type?" body={`Delete "${t.name}"? This cannot be undone.`} confirmLabel="Delete" onConfirm={() => deleteType.mutate(t.id)}>

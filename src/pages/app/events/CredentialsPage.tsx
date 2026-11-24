@@ -186,7 +186,7 @@ export function CredentialsPage() {
               <Td className="text-[12px] text-ink-3">{c.lastUsedAt ? c.lastUsedAt.split('T')[0] : '—'}</Td>
               <Td>
                 <div className="flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                  <button className="rounded-none p-1.5 text-ink-2 hover:bg-raised" onClick={() => setShowQr(c.id)} aria-label="Show QR"><QrCode className="size-4" /></button>
+                  <button data-testid="credential-reveal" className="rounded-none p-1.5 text-ink-2 hover:bg-raised" onClick={() => setShowQr(c.id)} aria-label="Show QR"><QrCode className="size-4" /></button>
                   {c.ticket?.id && <button className="rounded-none p-1.5 text-ink-2 hover:bg-raised" onClick={() => { setResendTarget(c); setResendEmail(c.attendee?.email ?? '') }} aria-label="Send ticket"><Send className="size-4" /></button>}
                   <button className="rounded-none p-1.5 text-ink-2 hover:bg-raised" onClick={() => setHistoryId(c.id)} aria-label="Delivery history"><span className="font-mono text-[10px]">LOG</span></button>
                   <button className="rounded-none p-1.5 text-ink-2 hover:bg-raised" onClick={() => void downloadTicketPdf(pdfIdentity(c))} aria-label="Download ticket PDF"><Download className="size-4" /></button>
@@ -306,7 +306,7 @@ function CredentialQrDialog({
               <p className="text-[10px] uppercase tracking-[0.2em] text-ink-3">Ticket code</p>
               <p className="mt-1 font-mono text-2xl font-bold tracking-[0.12em] text-signal">{data.shortCode ?? 'PENDING'}</p>
             </div>
-            <p className="max-w-full break-all rounded-none border border-line bg-canvas px-3 py-2 text-center font-mono text-[10px] leading-relaxed text-ink-3">
+            <p data-testid="qr-payload" className="max-w-full break-all rounded-none border border-line bg-canvas px-3 py-2 text-center font-mono text-[10px] leading-relaxed text-ink-3">
               Secure signed QR payload attached to this code
             </p>
             <div className="w-full rounded-none border border-line bg-raised px-4 py-3 text-center">

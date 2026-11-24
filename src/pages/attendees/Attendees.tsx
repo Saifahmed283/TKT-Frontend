@@ -37,6 +37,7 @@ export default function AttendeesPage() {
   const qc = useQueryClient()
   const taxonomyQ = useTaxonomy()
   const [q, setQ] = useState('')
+  const [scope, setScope] = useState<'approved' | 'pending' | 'all'>('approved')
   const [status, setStatus] = useState('')
   const [attendeeType, setAttendeeType] = useState('')
   const [page, setPage] = useState(1)
@@ -45,10 +46,10 @@ export default function AttendeesPage() {
     if (!code) return '—'
     return taxonomyQ.data.attendeeTypes.find((item) => item.code === code)?.label ?? code
   }
-  const filters = `${q ? `&q=${encodeURIComponent(q)}` : ''}${status ? `&status=${status}` : ''}${attendeeType ? `&attendeeType=${attendeeType}` : ''}`
+  const filters = `&scope=${scope}${q ? `&q=${encodeURIComponent(q)}` : ''}${status ? `&status=${status}` : ''}${attendeeType ? `&attendeeType=${attendeeType}` : ''}`
 
   const query = useQuery({
-    queryKey: ['attendees', eventId, q, status, attendeeType, page],
+    queryKey: ['attendees', eventId, scope, q, status, attendeeType, page],
     queryFn: () =>
       api<{ rows: AttendeeRow[]; total: number; page: number; pageSize: number }>(
         `/events/${eventId}/attendees?page=${page}&pageSize=25${filters}`,
@@ -62,7 +63,7 @@ export default function AttendeesPage() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title="Attendees" subtitle="Everyone registered for this event." />
+      <PageHeader title="Attendees" subtitle="Approved attendees are shown by default. Pending reservations stay available in the pending view." />
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <div className="relative w-full max-w-xs">
           <Search size={14} className="absolute start-3 top-1/2 -translate-y-1/2 text-ink-400" />
@@ -76,6 +77,11 @@ export default function AttendeesPage() {
             }}
           />
         </div>
+        <select className="input w-44" value={scope} onChange={(e) => { setScope(e.target.value as 'approved' | 'pending' | 'all'); setStatus(''); setPage(1) }}>
+          <option value="approved">Approved</option>
+          <option value="pending">Pending review</option>
+          <option value="all">All attendees</option>
+        </select>
         <select className="input w-40" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
           <option value="">All statuses</option>
           {Object.keys(statusClass).map((s) => (

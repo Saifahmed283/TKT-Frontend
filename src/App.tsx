@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { useAuth } from './lib/auth'
 import { useLanguage } from './lib/i18n'
 import BrandLogo from './components/public/BrandLogo'
@@ -10,7 +10,6 @@ import UpcomingEvents from './pages/UpcomingEvents'
 import PastWorks from './pages/PastWorks'
 import Contact from './pages/Contact'
 import About from './pages/About'
-import PublicBusTickets from './pages/PublicBusTickets'
 import ReservationStatusPage from './pages/ReservationStatus'
 import Shell from './components/shell/Shell'
 import Dashboard from './pages/Dashboard'
@@ -76,6 +75,11 @@ function ScrollToTop() {
   return null
 }
 
+function LegacyBusTicketsRedirect() {
+  const { eventId = '' } = useParams()
+  return <Navigate to={`/upcoming?event=${encodeURIComponent(eventId)}`} replace />
+}
+
 export default function App() {
   return (
     <>
@@ -88,7 +92,7 @@ export default function App() {
       <Route path="/contact" element={<Contact />} />
       <Route path="/about" element={<About />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/events/:eventId/bus-tickets" element={<PublicBusTickets />} />
+      <Route path="/events/:eventId/bus-tickets" element={<LegacyBusTicketsRedirect />} />
       <Route path="/reservation/:code" element={<ReservationStatusPage />} />
       <Route
         path="/app"

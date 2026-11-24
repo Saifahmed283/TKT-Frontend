@@ -208,32 +208,40 @@ export function ReservationsPage() {
               </Td>
               <Td className="text-[12px] text-ink-3">{timeAgo(r.issuedAt)}</Td>
               <Td className="text-end">
-                {r.approval === 'PENDING' ? (
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="!text-danger"
-                      disabled={decide.isPending}
-                      onClick={() => {
-                        setRejectTarget(r)
-                        setRejectReason('')
-                      }}
-                    >
-                      Reject
-                    </Button>
-                    <ConfirmDialog
-                      title="Approve reservation?"
-                      body={`Approving issues a signed QR ticket for ${r.attendee.name} and emails it immediately.`}
-                      confirmLabel="Approve"
-                      onConfirm={() => decide.mutate({ ticketId: r.id, approved: true })}
-                    >
-                      <Button size="sm" loading={decide.isPending && decide.variables?.ticketId === r.id && decide.variables?.approved}>
-                        Approve
-                      </Button>
-                    </ConfirmDialog>
-                  </div>
-                ) : r.credential && r.approval === 'APPROVED' ? (
+                 {r.approval === 'PENDING' ? (
+                   <div className="flex flex-col items-end gap-2">
+                     <div className="flex justify-end gap-2">
+                       <Button
+                         size="sm"
+                         variant="outline"
+                         className="!text-danger"
+                         disabled={decide.isPending}
+                         onClick={() => {
+                           setRejectTarget(r)
+                           setRejectReason('')
+                         }}
+                       >
+                         Reject
+                       </Button>
+                       <ConfirmDialog
+                         title="Approve reservation?"
+                         body={`Approving issues a signed QR ticket for ${r.attendee.name} and emails it immediately.`}
+                         confirmLabel="Approve"
+                         onConfirm={() => decide.mutate({ ticketId: r.id, approved: true })}
+                       >
+                         <Button
+                           size="sm"
+                           data-testid="manual-approve"
+                           disabled={r.paymentStatus === 'PENDING'}
+                           loading={decide.isPending && decide.variables?.ticketId === r.id && decide.variables?.approved}
+                         >
+                           Approve
+                         </Button>
+                       </ConfirmDialog>
+                     </div>
+                     {r.paymentStatus === 'PENDING' && <span className="font-mono text-[10px] text-ink-3">Confirm payment proof first</span>}
+                   </div>
+                 ) : r.credential && r.approval === 'APPROVED' ? (
                   <div className="flex justify-end gap-2">
                     <Button size="sm" variant="outline" onClick={() => setHistoryTicketId(r.id)}>
                       History

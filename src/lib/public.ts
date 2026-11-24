@@ -16,6 +16,7 @@ export interface PublicTicketType {
   salesStartAt?: string | null
   salesEndAt?: string | null
   isPublic?: boolean
+  transportIncluded?: boolean
 }
 
 export type ReservationAvailability = 'upcoming' | 'open' | 'sold_out' | 'locked' | 'closed'

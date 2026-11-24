@@ -1,12 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-
-async function login(page: Page, email: string, password: string) {
-  await page.goto('/login')
-  await page.getByLabel('Email').fill(email)
-  await page.getByLabel('Password').fill(password)
-  await page.getByRole('button', { name: 'Sign in' }).click()
-  await expect(page).toHaveURL(/\/app/, { timeout: 20_000 })
-}
+import { loginAsAdmin } from './auth'
 
 async function expectHealthy(page: Page) {
   await expect(page.locator('body')).not.toContainText(
@@ -17,7 +10,7 @@ async function expectHealthy(page: Page) {
 
 test.describe('TKT E2E — dashboard smoke', () => {
   test('admin can open core app pages and event modules', async ({ page }) => {
-    await login(page, 'admin@tkt.local', 'Admin12345!')
+    await loginAsAdmin(page)
 
     const core = ['/app', '/app/events', '/app/organizations', '/app/profile']
     for (const path of core) {
