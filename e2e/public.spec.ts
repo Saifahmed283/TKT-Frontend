@@ -49,6 +49,18 @@ async function seedPaidTransportEvent(request: APIRequestContext, name: string) 
     data: { name: 'Conference + Bus', price: 100, quota: 100, isPublic: true, transportIncluded: true },
   })
   expect(type.ok()).toBeTruthy()
+  const provider = await request.post(`${API}/events/${eventId}/payments/providers`, {
+    headers,
+    data: {
+      name: 'Bank Transfer',
+      accountName: 'TKT Events',
+      accountNumber: '123456789',
+      paymentPhone: '+20 100 000 0000',
+      instructions: 'Transfer the total to the account, then upload the receipt and enter the transaction reference.',
+      isActive: true,
+    },
+  })
+  expect(provider.ok()).toBeTruthy()
   const busRes = await request.post(`${API}/events/${eventId}/buses`, {
     headers,
     data: { name: 'E2E Shuttle', layout: { template: 'grid', rows: 2, cols: 2 }, seatPrice: 20, currency: 'EGP' },
@@ -141,6 +153,7 @@ test.describe('TKT E2E — public site', () => {
     await seats.nth(0).click()
     await page.getByTestId('wizard-next').click()
     await expect(page.getByTestId('wizard-step-payment')).toBeVisible()
+    await expect(page.getByTestId('payment-instructions')).toContainText('Transfer the total to the account')
     await expect(page.getByTestId('wizard-next')).toBeDisabled()
     await page.getByTestId('payment-reference').fill('E2E-TRANSFER-REF')
     await page.getByTestId('wizard-next').click()

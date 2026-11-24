@@ -22,7 +22,7 @@ type Provider = {
 }
 type PendingPayment = {
   id: string; reservationCode?: string | null; paymentReference?: string | null; paymentProofUrl?: string | null; paymentProvider?: string | null;
-  status: string; price: string; issuedAt: string; attendee?: { name: string; email?: string | null; phone?: string | null } | null;
+  status: string; paymentStatus?: string | null; price: string; issuedAt: string; attendee?: { name: string; email?: string | null; phone?: string | null } | null;
   ticketType?: { name: string; category: string } | null; metadata?: Record<string, unknown> | null
 }
 type Summary = {
@@ -170,7 +170,7 @@ export function PaymentsPage() {
             <Table headers={['Reference', 'Reservation', 'Attendee', 'Proof', 'Status']}>
               {(refQ.data ?? []).map(r => {
                 const meta = (r.metadata ?? {}) as Record<string, unknown>
-                return <tr key={r.id}><Td className="font-mono text-xs">{String(meta.paymentReference ?? '—')}</Td><Td>{r.reservationCode ?? r.id.slice(0, 8)}</Td><Td>{r.attendee?.name ?? '—'}</Td><Td>{meta.paymentProofUrl ? <a className="text-signal hover:underline" href={String(meta.paymentProofUrl)} target="_blank" rel="noreferrer">Open proof</a> : '—'}</Td><Td><Badge tone={String(meta.paymentStatus) === 'CONFIRMED' ? 'ok' : 'warn'}>{String(meta.paymentStatus ?? '—')}</Badge></Td></tr>
+                return <tr key={r.id}><Td className="font-mono text-xs">{String(meta.paymentReference ?? '—')}</Td><Td>{r.reservationCode ?? r.id.slice(0, 8)}</Td><Td>{r.attendee?.name ?? '—'}</Td><Td>{meta.paymentProofUrl ? <a className="text-signal hover:underline" href={String(meta.paymentProofUrl)} target="_blank" rel="noreferrer">Open proof</a> : '—'}</Td><Td><Badge tone={String(p.paymentStatus ?? meta.paymentStatus) === 'CONFIRMED' ? 'ok' : 'warn'}>{String(p.paymentStatus ?? meta.paymentStatus ?? '—')}</Badge></Td></tr>
               })}
               {(refQ.data ?? []).length === 0 && <tr><td colSpan={5}><EmptyState colSpan={5} title="No reference match" body="Check reference number and event scope." /></td></tr>}
             </Table>
@@ -178,22 +178,27 @@ export function PaymentsPage() {
         </Panel>
 
         <Panel>
-          <div className="mb-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-3">Pending payment reviews</div>
-          <Table headers={['Reservation', 'Attendee', 'Amount', 'Reference', 'Proof', 'Actions']}>
+          <div data-testid="pending-payments" className="mb-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-3">Pending payment reviews {pending.length > 0 && <span className="ml-1 text-signal">({pending.length})</span>}</div>
+          <Table headers={['Reservation', 'Attendee', 'Amount', 'Reference', 'Proof', 'Status', 'Actions']}>
             {pending.map(p => {
               const meta = (p.metadata ?? {}) as Record<string, unknown>
+              const paymentStatus = String(p.paymentStatus ?? meta.paymentStatus ?? 'PENDING')
               return (
-                <tr key={p.id}>
+                <tr key={p.id} data-testid="pending-payment-row">
                   <Td><div className="font-medium text-ink">{p.reservationCode ?? p.id.slice(0, 8)}</div><div className="text-[11px] text-ink-3">{p.ticketType?.name}</div></Td>
                   <Td><div>{p.attendee?.name}</div><div className="text-[11px] text-ink-3">{p.attendee?.email ?? p.attendee?.phone}</div></Td>
                   <Td>{p.price}</Td>
                   <Td className="font-mono text-xs">{String(meta.paymentReference ?? p.paymentReference ?? '—')}</Td>
                   <Td>{(meta.paymentProofUrl || p.paymentProofUrl) ? <a className="inline-flex items-center gap-1 text-signal hover:underline" href={String(meta.paymentProofUrl || p.paymentProofUrl)} target="_blank" rel="noreferrer"><ExternalLink size={12} /> Proof</a> : '—'}</Td>
-                  <Td><div className="flex gap-2"><Button size="sm" variant="ghost" onClick={() => review.mutate({ ticketId: p.id, action: 'CONFIRM' })}><Check size={14} /> Confirm</Button><Button size="sm" variant="ghost" className="text-danger" onClick={() => review.mutate({ ticketId: p.id, action: 'REJECT' })}><X size={14} /> Reject</Button></div></Td>
+                  <Td><Badge tone={paymentStatus === 'CONFIRMED' ? 'ok' : 'warn'}>{paymentStatus}</Badge></Td>
+                  <Td><div className="flex gap-2">
+                    <Button data-testid="payment-confirm" size="sm" variant="ghost" disabled={review.isPending} loading={review.isPending} onClick={() => review.mutate({ ticketId: p.id, action: 'CONFIRM' })}><Check size={14} /> Confirm</Button>
+                    <Button data-testid="payment-reject" size="sm" variant="ghost" className="text-danger" disabled={review.isPending} loading={review.isPending} onClick={() => review.mutate({ ticketId: p.id, action: 'REJECT' })}><X size={14} /> Reject</Button>
+                  </div></Td>
                 </tr>
               )
             })}
-            {pending.length === 0 && <tr><td colSpan={6}><EmptyState colSpan={6} title="No pending payments" body="Submitted payment proofs will appear here." /></td></tr>}
+            {pending.length === 0 && <tr><td colSpan={7}><EmptyState colSpan={7} title="No pending payments" body="Submitted payment proofs will appear here." /></td></tr>}
           </Table>
         </Panel>
 

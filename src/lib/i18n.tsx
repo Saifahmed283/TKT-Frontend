@@ -200,6 +200,7 @@ const dict = {
   seatRequired: { en: 'Select one available seat to continue.', ar: 'اختر مقعداً متاحاً واحداً للمتابعة.' },
   seatPassenger: { en: 'Passenger for seat', ar: 'المسافر للمقعد' },
   paymentDetails: { en: 'Payment details', ar: 'تفاصيل الدفع' },
+  paymentInstructions: { en: 'Payment instructions', ar: 'تعليمات الدفع' },
   selectPaymentMethod: { en: 'Select payment method', ar: 'اختر طريقة الدفع' },
   noPaymentMethods: { en: 'No payment methods configured yet. You can still submit a reference or proof for review.', ar: 'لا توجد طرق دفع مُعدّة بعد. يمكنك إرسال رقم مرجعي أو إثبات دفع للمراجعة.' },
   account: { en: 'Account', ar: 'الحساب' },

@@ -460,7 +460,7 @@ export default function PublicBusTickets() {
                                 </div>
                               )}
                               <input className="input" placeholder={isAr ? 'مرجع الدفع / رقم العملية' : 'Payment reference / transaction ID'} value={paymentReference} onChange={e => setPaymentReference(e.target.value)} />
-                              <FileUploadField label={isAr ? 'إثبات الدفع' : 'Payment proof'} value={paymentProofUrl} onChange={setPaymentProofUrl} accept="image/*,application/pdf" hint={isAr ? 'اختياري' : 'Optional'} />
+                              <FileUploadField uploadEndpoint="/uploads/proof" label={isAr ? 'إثبات الدفع' : 'Payment proof'} value={paymentProofUrl} onChange={setPaymentProofUrl} accept="image/*,application/pdf" hint={isAr ? 'اختياري' : 'Optional'} />
                             </div>
                           )}
 

@@ -16,6 +16,7 @@ export function FileUploadField({
   hint,
   preview = true,
   className,
+  uploadEndpoint = '/uploads',
 }: {
   label: string
   value: string
@@ -24,6 +25,7 @@ export function FileUploadField({
   hint?: string
   preview?: boolean
   className?: string
+  uploadEndpoint?: string
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
@@ -35,9 +37,10 @@ export function FileUploadField({
       const fd = new FormData()
       fd.append('file', file)
       const headers: Record<string, string> = {}
-      const token = getAccessToken()
+      const isPublicProof = uploadEndpoint === '/uploads/proof'
+      const token = isPublicProof ? null : getAccessToken()
       if (token) headers.Authorization = `Bearer ${token}`
-      const res = await fetch(`${API_BASE}/uploads`, { method: 'POST', body: fd, headers, credentials: 'include' })
+      const res = await fetch(`${API_BASE}${uploadEndpoint}`, { method: 'POST', body: fd, headers, credentials: 'include' })
       const body = await res.json().catch(() => null)
       if (!res.ok) throw new Error(body?.error?.message ?? 'Upload failed')
       const data = body?.data as UploadResult
@@ -88,7 +91,7 @@ export function FileUploadField({
             )}
             <div className="min-w-0 flex-1">
               <p className="truncate text-[12px] text-ink-2">{value}</p>
-              <p className="text-[11px] text-ink-3">Stored securely via authenticated upload</p>
+                <p className="text-[11px] text-ink-3">Stored securely on the server</p>
             </div>
           </div>
         ) : (
