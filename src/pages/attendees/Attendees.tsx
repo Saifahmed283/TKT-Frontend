@@ -3,9 +3,10 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Search, Users, Download, Trash2 } from 'lucide-react'
 import { api } from '../../lib/api'
+import { useTaxonomy } from '../../lib/taxonomy'
 import { EmptyState, ErrorBanner, PageHeader, Spinner, fmtDateTime } from '../../components/ui'
 import { ConfirmDialog } from '../../components/ui/dialog'
-import { exportCsv, exportPdf, downloadAuthFile } from '../../lib/export'
+import { exportPdf, downloadAuthFile } from '../../lib/export'
 
 interface AttendeeRow {
   id: string
@@ -34,44 +35,29 @@ const statusClass: Record<string, string> = {
 export default function AttendeesPage() {
   const { eventId = '' } = useParams()
   const qc = useQueryClient()
+  const taxonomyQ = useTaxonomy()
   const [q, setQ] = useState('')
   const [status, setStatus] = useState('')
+  const [attendeeType, setAttendeeType] = useState('')
   const [page, setPage] = useState(1)
 
+  const typeLabel = (code?: string | null) => {
+    if (!code) return '—'
+    return taxonomyQ.data.attendeeTypes.find((item) => item.code === code)?.label ?? code
+  }
+  const filters = `${q ? `&q=${encodeURIComponent(q)}` : ''}${status ? `&status=${status}` : ''}${attendeeType ? `&attendeeType=${attendeeType}` : ''}`
+
   const query = useQuery({
-    queryKey: ['attendees', eventId, q, status, page],
+    queryKey: ['attendees', eventId, q, status, attendeeType, page],
     queryFn: () =>
       api<{ rows: AttendeeRow[]; total: number; page: number; pageSize: number }>(
-        `/events/${eventId}/attendees?page=${page}&pageSize=25${q ? `&q=${encodeURIComponent(q)}` : ''}${status ? `&status=${status}` : ''}`,
+        `/events/${eventId}/attendees?page=${page}&pageSize=25${filters}`,
       ),
   })
 
   const remove = useMutation({
     mutationFn: (id: string) => api.delete(`/events/${eventId}/attendees/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['attendees'] }),
-  })
-
-  const exporting = useQuery({
-    queryKey: ['attendees-export', eventId],
-    queryFn: () =>
-      api<{ rows: AttendeeRow[] }>(`/events/${eventId}/attendees?page=1&pageSize=100000`).then((r) => {
-        exportCsv(
-          `attendees-${eventId.slice(0, 8)}`,
-          ['Name', 'Email', 'Phone', 'Category', 'Status', 'Tickets', 'Credentials', 'Scans', 'Registered'],
-          r.rows.map((a) => [
-            a.name,
-            a.email,
-            a.phone ?? '',
-            a.category ?? '',
-            a.status,
-            a._count.tickets,
-            a._count.credentials,
-            a._count.accessLogs,
-            fmtDateTime(a.createdAt),
-          ]),
-        )
-      }),
-    enabled: false,
   })
 
   return (
@@ -96,17 +82,22 @@ export default function AttendeesPage() {
             <option key={s}>{s}</option>
           ))}
         </select>
+        <select className="input w-44" value={attendeeType} onChange={(e) => { setAttendeeType(e.target.value); setPage(1) }}>
+          <option value="">All attendee types</option>
+          {taxonomyQ.data.attendeeTypes.map((item) => (
+            <option key={item.code} value={item.code}>{item.label}</option>
+          ))}
+        </select>
         <span className="text-xs text-ink-400">{query.data ? `${query.data.total} attendees` : ''}</span>
         <button
           className="btn-ghost py-1.5 text-xs"
-          onClick={() => exporting.refetch()}
-          disabled={exporting.isFetching}
+          onClick={() => void downloadAuthFile(`/events/${eventId}/attendees/export.csv${filters ? `?${filters.replace(/^&/, '')}` : ''}`, `attendees-${eventId.slice(0, 8)}.csv`).catch(() => {})}
         >
-          <Download size={12} /> {exporting.isFetching ? 'Exporting…' : 'Export CSV'}
+          <Download size={12} /> Export CSV
         </button>
         <button
           className="btn-ghost py-1.5 text-xs"
-          onClick={() => void downloadAuthFile(`/events/${eventId}/attendees/export.xlsx${q ? `?q=${encodeURIComponent(q)}` : ''}${status ? `${q ? '&' : '?'}status=${status}` : ''}`, `attendees-${eventId.slice(0, 8)}.xlsx`).catch(() => {})}
+          onClick={() => void downloadAuthFile(`/events/${eventId}/attendees/export.xlsx${filters ? `?${filters.replace(/^&/, '')}` : ''}`, `attendees-${eventId.slice(0, 8)}.xlsx`).catch(() => {})}
         >
           <Download size={12} /> Excel
         </button>
@@ -114,7 +105,7 @@ export default function AttendeesPage() {
           className="btn-ghost py-1.5 text-xs"
           onClick={() => {
             const rows = query.data?.rows ?? []
-            exportPdf(`attendees-${eventId.slice(0, 8)}`, 'Attendees', ['Name', 'Email', 'Phone', 'Category', 'Status', 'Tickets', 'Scans', 'Registered'], rows.map((a) => [a.name, a.email, a.phone ?? '', a.category ?? '', a.status, a._count.tickets, a._count.accessLogs, fmtDateTime(a.createdAt)]))
+            exportPdf(`attendees-${eventId.slice(0, 8)}`, 'Attendees', ['Name', 'Email', 'Phone', 'Category', 'Attendee type', 'Status', 'Tickets', 'Scans', 'Registered'], rows.map((a) => [a.name, a.email, a.phone ?? '', a.category ?? '', typeLabel(a.attendeeType), a.status, a._count.tickets, a._count.accessLogs, fmtDateTime(a.createdAt)]))
           }}
         >
           <Download size={12} /> PDF
@@ -134,6 +125,7 @@ export default function AttendeesPage() {
               <tr>
                 <th className="px-4 py-3 font-medium">Name</th>
                 <th className="px-4 py-3 font-medium">Contact</th>
+                <th className="px-4 py-3 font-medium">Attendee type</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Tickets</th>
                 <th className="px-4 py-3 font-medium">Scans</th>
@@ -149,6 +141,7 @@ export default function AttendeesPage() {
                     {a.email}
                     {a.phone ? <span className="ms-2 text-ink-400">{a.phone}</span> : null}
                   </td>
+                  <td className="px-4 py-3 text-ink-300">{typeLabel(a.attendeeType)}</td>
                   <td className="px-4 py-3">
                     <span className={statusClass[a.status] ?? 'badge-neutral'}>{a.status}</span>
                   </td>

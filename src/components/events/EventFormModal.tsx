@@ -1,11 +1,13 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
+import { useTaxonomy } from '../../lib/taxonomy'
 import type { Organization } from '../../lib/types'
 import { ErrorBanner, Modal } from '../ui'
 
 export function EventFormModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const qc = useQueryClient()
+  const taxonomyQ = useTaxonomy()
   const orgsQ = useQuery({
     queryKey: ['my-orgs'],
     queryFn: () => api<Organization[]>('/organizations'),
@@ -15,7 +17,8 @@ export function EventFormModal({ open, onClose }: { open: boolean; onClose: () =
   const [orgId, setOrgId] = useState('')
   const [name, setName] = useState('')
   const [type, setType] = useState('CONFERENCE')
-  const [category, setCategory] = useState('CONFERENCE')
+  const [category, setCategory] = useState('OTHER')
+  const [domain, setDomain] = useState('OTHER')
   const [startAt, setStartAt] = useState('')
   const [endAt, setEndAt] = useState('')
   const [venueName, setVenueName] = useState('')
@@ -39,6 +42,7 @@ export function EventFormModal({ open, onClose }: { open: boolean; onClose: () =
           name,
           type,
           category,
+          domain,
           startAt: new Date(startAt).toISOString(),
           ...(endAt ? { endAt: new Date(endAt).toISOString() } : {}),
           ...(venueName ? { venueName } : {}),
@@ -79,25 +83,29 @@ export function EventFormModal({ open, onClose }: { open: boolean; onClose: () =
               <label className="label mb-1.5 block">Name</label>
               <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Summer Summit 2026" required />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-3">
               <div>
-                <label className="label mb-1.5 block">Type</label>
-                <select className="input" value={type} onChange={(e) => { setType(e.target.value); setCategory(e.target.value) }}>
-                  <option>CONFERENCE</option>
-                  <option>CONCERT</option>
-                  <option>WEDDING</option>
-                  <option>SPORTS</option>
-                  <option>EXHIBITION</option>
-                  <option>CHARITY</option>
-                  <option>CORPORATE</option>
-                  <option>UNIVERSITY</option>
-                  <option>OTHER</option>
+                <label className="label mb-1.5 block">Event type</label>
+                <select className="input" value={type} onChange={(e) => setType(e.target.value)}>
+                  {taxonomyQ.data.eventFormats.map((item) => (
+                    <option key={item.code} value={item.code}>{item.label}</option>
+                  ))}
                 </select>
               </div>
               <div>
-                <label className="label mb-1.5 block">Category</label>
+                <label className="label mb-1.5 block">Event category</label>
                 <select className="input" value={category} onChange={(e) => setCategory(e.target.value)}>
-                  <option>CONFERENCE</option><option>EXHIBITION</option><option>CONCERT</option><option>FESTIVAL</option><option>SPORTS</option><option>CORPORATE</option><option>UNIVERSITY</option><option>COMMUNITY</option><option>PRIVATE</option><option>OTHER</option>
+                  {taxonomyQ.data.eventCategories.map((item) => (
+                    <option key={item.code} value={item.code}>{item.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label mb-1.5 block">Domain</label>
+                <select className="input" value={domain} onChange={(e) => setDomain(e.target.value)}>
+                  {taxonomyQ.data.eventDomains.map((item) => (
+                    <option key={item.code} value={item.code}>{item.label}</option>
+                  ))}
                 </select>
               </div>
             </div>

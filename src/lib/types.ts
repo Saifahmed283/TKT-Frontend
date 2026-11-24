@@ -1,14 +1,16 @@
 // Shared API types — mirror the backend responses.
 
+import type { AttendeeTypeCode, EventCategoryCode, EventFormatCode, EventDomainCode, TicketTierCode } from './taxonomy'
+
 export type EventStatus = 'DRAFT' | 'PLANNING' | 'READY' | 'PUBLISHED' | 'LIVE' | 'COMPLETED' | 'ARCHIVED'
-export type EventType = 'CONFERENCE' | 'CONCERT' | 'WEDDING' | 'SPORTS' | 'EXHIBITION' | 'CHARITY' | 'CORPORATE' | 'UNIVERSITY' | 'OTHER'
+export type EventType = EventFormatCode
 
 export type EventSummary = {
   id: string
   name: string
   description: string | null
   type: EventType
-  category?: string | null
+  category?: EventCategoryCode | string | null
   status: EventStatus
   startAt: string
   endAt: string | null
@@ -24,6 +26,12 @@ export type EventSummary = {
       startAt?: string | null
       endAt?: string | null
     }
+    taxonomy?: {
+      format?: EventFormatCode | string | null
+      category?: EventCategoryCode | string | null
+      domain?: EventDomainCode | string | null
+      source?: string | null
+    } | null
   }
 }
 
@@ -93,6 +101,7 @@ export type Attendee = {
   email: string | null
   phone: string | null
   category: string | null
+  attendeeType?: AttendeeTypeCode | null
   status: string
   notes: string | null
   createdAt: string
@@ -115,7 +124,7 @@ export type TicketType = {
   name: string
   description: string | null
   category?: string | null
-  tier?: 'STANDARD' | 'VIP' | 'PREMIUM' | 'EARLY_BIRD' | 'STUDENT' | 'COMPLIMENTARY' | 'STAFF' | 'SPEAKER' | 'SPONSOR' | 'OTHER' | null
+  tier?: TicketTierCode | null
   price: string | number | null
   currency?: string | null
   quota: number | null

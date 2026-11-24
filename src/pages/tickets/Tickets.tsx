@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Search, Plus, Lock, Check, Pencil, Trash2 } from 'lucide-react'
 import { api } from '../../lib/api'
+import { useTaxonomy } from '../../lib/taxonomy'
 import { ErrorBanner, PageHeader, Spinner, fmtDateTime } from '../../components/ui'
 import { Table, Td, EmptyState } from '../../components/ui/table'
 import { Badge } from '../../components/ui/badge'
@@ -50,6 +51,8 @@ const ticketTone: Record<string, 'ok' | 'live' | 'danger' | 'warn'> = {
 export default function TicketsPage() {
   const { eventId = '' } = useParams()
   const qc = useQueryClient()
+  const taxonomyQ = useTaxonomy()
+  const tierOptions = taxonomyQ.data.ticketTiers
   const sse = useSse(eventId, 'activity')
   const [q, setQ] = useState('')
   const [showAdd, setShowAdd] = useState(false)
@@ -141,7 +144,7 @@ export default function TicketsPage() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <label className="block"><span className="label mb-1.5 block text-ink-3">Name</span><input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
             <label className="block"><span className="label mb-1.5 block text-ink-3">Category</span><input className="input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="VIP / General" /></label>
-            <label className="block"><span className="label mb-1.5 block text-ink-3">Tier</span><select className="input" value={form.tier} onChange={(e) => setForm({ ...form, tier: e.target.value })}>{['STANDARD','VIP','PREMIUM','EARLY_BIRD','STUDENT','COMPLIMENTARY','STAFF','SPEAKER','SPONSOR','OTHER'].map(t => <option key={t} value={t}>{t}</option>)}</select></label>
+            <label className="block"><span className="label mb-1.5 block text-ink-3">Tier</span><select className="input" value={form.tier} onChange={(e) => setForm({ ...form, tier: e.target.value })}>{tierOptions.map(t => <option key={t.code} value={t.code}>{t.label}</option>)}</select></label>
             <label className="block"><span className="label mb-1.5 block text-ink-3">Price</span><input className="input" type="number" min={0} value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></label>
             <label className="block"><span className="label mb-1.5 block text-ink-3">Currency</span><input className="input" value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value.toUpperCase() })} /></label>
             <label className="block"><span className="label mb-1.5 block text-ink-3">Quota</span><input className="input" type="number" min={1} value={form.quota} onChange={(e) => setForm({ ...form, quota: e.target.value })} /></label>
@@ -183,7 +186,7 @@ export default function TicketsPage() {
                 <div className="mt-4 grid gap-2 border-t border-line-soft pt-4 sm:grid-cols-2">
                   <input className="input !h-9 text-xs" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} placeholder="Name" />
                   <input className="input !h-9 text-xs" value={editForm.category} onChange={(e) => setEditForm({ ...editForm, category: e.target.value })} placeholder="Category" />
-                  <select className="input !h-9 text-xs" value={editForm.tier} onChange={(e) => setEditForm({ ...editForm, tier: e.target.value })}>{['STANDARD','VIP','PREMIUM','EARLY_BIRD','STUDENT','COMPLIMENTARY','STAFF','SPEAKER','SPONSOR','OTHER'].map(t => <option key={t} value={t}>{t}</option>)}</select>
+                  <select className="input !h-9 text-xs" value={editForm.tier} onChange={(e) => setEditForm({ ...editForm, tier: e.target.value })}>{tierOptions.map(t => <option key={t.code} value={t.code}>{t.label}</option>)}</select>
                   <input className="input !h-9 text-xs" type="number" min={0} value={editForm.price} onChange={(e) => setEditForm({ ...editForm, price: e.target.value })} placeholder="Price" />
                   <input className="input !h-9 text-xs" value={editForm.currency} onChange={(e) => setEditForm({ ...editForm, currency: e.target.value.toUpperCase() })} placeholder="Currency" />
                   <input className="input !h-9 text-xs" type="number" min={1} value={editForm.quota} onChange={(e) => setEditForm({ ...editForm, quota: e.target.value })} placeholder="Quota" />

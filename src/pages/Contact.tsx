@@ -7,6 +7,7 @@ import PublicFooter from '../components/public/PublicFooter'
 import { Corners, Blink } from '../components/instruments'
 import { ErrorBanner } from '../components/ui'
 import { api } from '../lib/api'
+import { FALLBACK_TAXONOMY } from '../lib/taxonomy'
 import { useLanguage } from '../lib/i18n'
 import SpotlightCard from '../components/reactbits/SpotlightCard'
 import BlurText from '../components/reactbits/BlurText'
@@ -177,7 +178,7 @@ export default function Contact() {
                         <label className="label mb-1.5 block" htmlFor="ct-type">{t('eventType')}</label>
                         <select id="ct-type" className="input" value={eventType} onChange={(e) => setEventType(e.target.value)}>
                           <option value="">{t('selectOption')}</option>
-                          {['CONFERENCE', 'CONCERT', 'WEDDING', 'SPORTS', 'EXHIBITION', 'CHARITY', 'CORPORATE', 'UNIVERSITY', 'OTHER'].map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                          {FALLBACK_TAXONOMY.eventFormats.map((opt) => <option key={opt.code} value={opt.code}>{opt.label}</option>)}
                         </select>
                       </div>
                       <div className="sm:col-span-2">
