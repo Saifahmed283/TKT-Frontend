@@ -170,7 +170,7 @@ export function PaymentsPage() {
             <Table headers={['Reference', 'Reservation', 'Attendee', 'Proof', 'Status']}>
               {(refQ.data ?? []).map(r => {
                 const meta = (r.metadata ?? {}) as Record<string, unknown>
-                return <tr key={r.id}><Td className="font-mono text-xs">{String(meta.paymentReference ?? '—')}</Td><Td>{r.reservationCode ?? r.id.slice(0, 8)}</Td><Td>{r.attendee?.name ?? '—'}</Td><Td>{meta.paymentProofUrl ? <a className="text-signal hover:underline" href={String(meta.paymentProofUrl)} target="_blank" rel="noreferrer">Open proof</a> : '—'}</Td><Td><Badge tone={String(p.paymentStatus ?? meta.paymentStatus) === 'CONFIRMED' ? 'ok' : 'warn'}>{String(p.paymentStatus ?? meta.paymentStatus ?? '—')}</Badge></Td></tr>
+                return <tr key={r.id}><Td className="font-mono text-xs">{String(meta.paymentReference ?? '—')}</Td><Td>{r.reservationCode ?? r.id.slice(0, 8)}</Td><Td>{r.attendee?.name ?? '—'}</Td><Td>{meta.paymentProofUrl ? <a className="text-signal hover:underline" href={String(meta.paymentProofUrl)} target="_blank" rel="noreferrer">Open proof</a> : '—'}</Td><Td><Badge tone={String(r.paymentStatus ?? meta.paymentStatus) === 'CONFIRMED' ? 'ok' : 'warn'}>{String(r.paymentStatus ?? meta.paymentStatus ?? '—')}</Badge></Td></tr>
               })}
               {(refQ.data ?? []).length === 0 && <tr><td colSpan={5}><EmptyState colSpan={5} title="No reference match" body="Check reference number and event scope." /></td></tr>}
             </Table>
