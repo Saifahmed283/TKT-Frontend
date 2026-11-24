@@ -36,8 +36,10 @@ export function Button({
 }) {
   return (
     <button
+      aria-busy={loading || undefined}
       className={cn(
-        'relative inline-flex select-none items-center justify-center font-mono font-semibold uppercase tracking-[0.12em] transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-45',
+        'relative inline-flex select-none items-center justify-center font-mono font-semibold uppercase tracking-[0.12em] transition-all duration-150 disabled:cursor-not-allowed',
+        loading ? 'disabled:opacity-80 disabled:cursor-wait' : 'disabled:opacity-45',
         variants[variant],
         sizes[size],
         className,
@@ -47,11 +49,13 @@ export function Button({
     >
       {variant === 'default' && <Corners className="opacity-60" />}
       {loading ? (
-        <span className="size-3.5 animate-spin border-2 border-current border-t-transparent" />
+        <span className="inline-flex items-center gap-2" aria-hidden="true">
+          <span className="size-4 animate-spin rounded-full border-2 border-current/30 border-t-current" />
+        </span>
       ) : (
-        icon
+        icon ? <span className="inline-flex shrink-0 items-center">{icon}</span> : null
       )}
-      {children}
+      <span className={cn('inline-flex items-center', loading && 'opacity-90')}>{children}</span>
     </button>
   )
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Bus, Clock, ExternalLink, Loader2, XCircle, Box, Grid3X3 } from 'lucide-react'
+import { ArrowLeft, Bus, Clock, ExternalLink, XCircle, Box, Grid3X3 } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import PublicNav from '../components/public/PublicNav'
 import { api } from '../lib/api'
@@ -484,9 +484,7 @@ export default function PublicBusTickets() {
                           )}
                           <Button className="w-full !py-3.5" onClick={handleSubmit} disabled={reservationMutation.isPending || !selectedTicketType || !formData.name.trim() || !formData.email.trim() || selectedSeats.length === 0} loading={reservationMutation.isPending}>
                             {reservationMutation.isPending ? (
-                              <>
-                                <Loader2 className="size-4 animate-spin" /> {isPaid ? (isAr ? 'جارٍ إرسال الحجز...' : 'Submitting reservation…') : (isAr ? 'جارٍ تأكيد الحجز...' : 'Confirming reservation…')}
-                              </>
+                              isPaid ? (isAr ? 'جارٍ إرسال الحجز...' : 'Submitting reservation…') : (isAr ? 'جارٍ تأكيد الحجز...' : 'Confirming reservation…')
                             ) : (
                               isPaid ? (isAr ? 'إرسال الحجز للمراجعة' : 'Submit reservation for review') : (isAr ? 'تأكيد الحجز' : 'Confirm reservation')
                             )}

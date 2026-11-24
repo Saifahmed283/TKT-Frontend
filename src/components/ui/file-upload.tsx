@@ -1,5 +1,5 @@
 ﻿import { useRef, useState } from 'react'
-import { Upload, X, FileImage, Loader2 } from 'lucide-react'
+import { Upload, X, FileImage } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getAccessToken } from '@/lib/api'
 import { useToast } from './toast'
@@ -64,12 +64,13 @@ export function FileUploadField({
         <div className="flex items-center gap-2">
           <button
             type="button"
+            aria-busy={uploading || undefined}
             onClick={() => inputRef.current?.click()}
             disabled={uploading}
-            className="inline-flex items-center gap-2 border border-line-soft bg-raised px-3 py-2 text-[12px] font-medium text-ink-2 transition hover:border-signal/40 hover:text-ink disabled:opacity-60"
+            className="inline-flex items-center gap-2 border border-line-soft bg-raised px-3 py-2 text-[12px] font-medium text-ink-2 transition hover:border-signal/40 hover:text-ink disabled:cursor-wait disabled:opacity-80"
           >
-            {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
-            {uploading ? 'Uploading…' : value ? 'Replace file' : 'Upload file'}
+            {uploading ? <span className="size-4 animate-spin rounded-full border-2 border-current/30 border-t-current" /> : <Upload className="size-4" />}
+            <span>{uploading ? 'Uploading…' : value ? 'Replace file' : 'Upload file'}</span>
           </button>
           {value && (
             <button type="button" onClick={() => onChange('')} className="inline-flex items-center gap-1 px-2 py-2 text-[12px] text-ink-3 hover:text-danger">
