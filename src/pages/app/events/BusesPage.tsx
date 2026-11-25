@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { Panel } from '@/components/motion/primitives'
 import { BUS_TEMPLATES, getBusTemplate, normalizeBusLayout, type BusTemplateId } from '@/lib/busLayouts'
+import MECT49SeatMap from '@/components/public/MECT49SeatMap'
 
 type Seat = { id: string; label: string; row: number; col: number; state: 'AVAILABLE' | 'HELD' | 'RESERVED' | 'UNAVAILABLE'; holderName?: string | null; passengerName?: string | null; groupId?: string | null; ticketId?: string | null }
 type BusLayout = { template?: BusTemplateId; look?: string; rows: number; cols: number; aisleAfterCol?: number; seats?: { label: string; row: number; col: number; state?: string }[] }
@@ -45,7 +46,7 @@ export function BusesPage() {
       const tpl = getBusTemplate(form.template)
       const layoutSeats = form.template === 'grid'
         ? Array.from({ length: form.rows * form.cols }, (_, i) => { const r = Math.floor(i / form.cols) + 1; const c = (i % form.cols) + 1; return { label: String(i + 1), row: r, col: c, state: 'AVAILABLE' } })
-        : (tpl.seats.length ? tpl.seats.map(s => ({ label: s.label, row: s.row, col: s.col, state: s.state ?? 'AVAILABLE' })) : [])
+        : (tpl.seats.length ? tpl.seats.map(s => ({ ...s, state: s.state ?? 'AVAILABLE' })) : [])
       return api.post(`/events/${eventId}/buses`, {
         name: form.name, seatPrice: form.seatPrice, currency: form.currency,
         layout: { template: form.template, look: tpl.look, rows: form.template === 'grid' ? form.rows : tpl.rows, cols: form.template === 'grid' ? form.cols : tpl.cols, aisleAfterCol: form.template === 'grid' ? form.aisleAfterCol : (tpl.aisleAfterCol ?? 0), seats: layoutSeats },
@@ -127,8 +128,25 @@ export function BusesPage() {
                 </div>
               </div>
 
-              <div className="mx-auto w-fit rounded-none border-2 border-line bg-raised/60 p-4">
-                <div className="mb-3 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3">Front</div>
+              {normLayout.template === 'mect49' ? (
+                <MECT49SeatMap
+                  seats={seats}
+                  selectedSeatIds={selected}
+                  onSeatClick={toggleSelect}
+                  language="en"
+                  maxSelectable={49}
+                  allowStatusSelection
+                  onSeatContextMenu={(seat) => {
+                    if (seat.state !== 'AVAILABLE' && seat.state !== 'UNAVAILABLE') return
+                    toggleUnavailable.mutate({
+                      seatId: seat.id,
+                      state: seat.state === 'UNAVAILABLE' ? 'AVAILABLE' : 'UNAVAILABLE',
+                    })
+                  }}
+                />
+              ) : (
+                <div className="mx-auto w-fit rounded-none border-2 border-line bg-raised/60 p-4">
+                  <div className="mb-3 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3">Front</div>
                 <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${cols + (aisleAfter > 0 && aisleAfter < cols ? 1 : 0)}, minmax(0,1fr))` }}>
                   {Array.from({ length: bus?.layout?.rows ?? 0 }).flatMap((_, r) => {
                     const row = r + 1
@@ -152,9 +170,8 @@ export function BusesPage() {
                     return cells
                   })}
                 </div>
-              </div>
+              )}
 
-              <div className="flex flex-wrap items-end gap-3">
                 <Field label="Holder / group name"><Input value={holderName} onChange={e => setHolderName(e.target.value)} placeholder="Name shown on seat" /></Field>
                 <Button disabled={selected.length === 0 || holderName.trim().length < 2} loading={reserve.isPending} onClick={() => reserve.mutate()}><Users size={15} /> Reserve {selected.length || ''} seat(s)</Button>
                 <Button variant="ghost" disabled={selected.length === 0} loading={release.isPending} onClick={() => release.mutate(selected)}>Release selected</Button>
