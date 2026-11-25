@@ -92,7 +92,7 @@ try {
       }
     }
 
-    if (viewports.find((item) => item.name === viewport.name)?.width >= 1024 && !viewport.name.startsWith('tablet')) {
+    if (viewport.width >= 1024 && !viewport.name.startsWith('tablet')) {
       await page.goto(new URL('/', baseURL).toString(), { waitUntil: 'domcontentloaded', timeout: 30000 })
       const interactionSurface = page.locator('[data-testid="hero-emblem-interaction-surface"]')
       await interactionSurface.waitFor({ state: 'visible', timeout: 10000 })
