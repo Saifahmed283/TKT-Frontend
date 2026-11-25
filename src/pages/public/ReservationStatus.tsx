@@ -8,7 +8,7 @@ import { Corners, Blink } from '../../components/instruments'
 import SpotlightCard from '../../components/reactbits/SpotlightCard'
 import { Button } from '../../components/ui/button'
 import { useLanguage } from '../../lib/i18n'
-import { useReservationStatus } from '../../lib/public'
+import { getReservationAccessToken, useReservationStatus } from '../../lib/public'
 
 function useQrDataUrl(code: string | null) {
   const [url, setUrl] = useState<string | null>(null)
@@ -37,7 +37,10 @@ export default function ReservationStatusPage() {
   const { t, lang } = useLanguage()
   const isAr = lang === 'ar'
   const [copied, setCopied] = useState(false)
-  const status = useReservationStatus(eventId, code || null)
+  const [emailInput, setEmailInput] = useState('')
+  const [email, setEmail] = useState('')
+  const hasCapability = Boolean(code && (getReservationAccessToken(code) || email))
+  const status = useReservationStatus(eventId, code || null, { email })
   const data = status.data
   const qrUrl = useQrDataUrl(data?.approval === 'APPROVED' && data.qr ? data.qr : null)
 
@@ -71,10 +74,41 @@ export default function ReservationStatusPage() {
                 </div>
               </div>
 
-              {status.isLoading && <div className="py-12 text-center text-sm text-ink-3">{t('loading') ?? 'Loading...'}</div>}
-              {status.error && (
+              {!hasCapability && (
+                <form
+                  className="border border-line-soft bg-elevated/30 p-4"
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    if (emailInput.trim()) setEmail(emailInput.trim())
+                  }}
+                >
+                  <p className="text-sm text-ink-2">
+                    {isAr
+                      ? 'أدخل البريد المستخدم في الحجز لعرض هذه التذكرة على جهاز جديد.'
+                      : 'Enter the email used for this reservation to view it on a new device.'}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <input
+                      type="email"
+                      required
+                      value={emailInput}
+                      onChange={(e) => setEmailInput(e.target.value)}
+                      placeholder={isAr ? 'بريد الحجز' : 'Reservation email'}
+                      data-testid="reservation-email-input"
+                      className="input min-w-0 flex-1"
+                    />
+                    <Button type="submit" size="sm" data-testid="reservation-email-submit">
+                      {isAr ? 'عرض' : 'View'}
+                    </Button>
+                  </div>
+                </form>
+              )}
+              {hasCapability && status.isLoading && <div className="py-12 text-center text-sm text-ink-3">{t('loading') ?? 'Loading...'}</div>}
+              {hasCapability && status.error && (
                 <div className="border border-danger/25 bg-danger/8 p-4 text-sm text-danger">
-                  {(status.error as Error).message || 'Could not load reservation.'}
+                  {isAr
+                    ? 'تعذر تحميل الحجز. تحقق من رمز الحجز والبريد.'
+                    : 'Could not load reservation. Check the reservation code and email.'}
                 </div>
               )}
 

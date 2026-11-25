@@ -166,7 +166,9 @@ export function EventSettingsPage() {
           </div>
           <div className="border border-line-soft bg-elevated/30 p-4">
             <div className="text-ink-3 font-mono text-[11px] mb-2">Body:</div>
-            <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: emailTpl.body ?? DEFAULT_TEMPLATE.body ?? '' }} />
+            {/* Show stored template markup as text; rendering it would execute
+                author-controlled HTML in the authenticated dashboard origin. */}
+            <div className="prose prose-invert max-w-none whitespace-pre-wrap break-words">{emailTpl.body ?? DEFAULT_TEMPLATE.body ?? ''}</div>
           </div>
           <div className="border border-line-soft bg-elevated/30 p-4 font-mono text-[12px]">
             <div className="text-ink-3">Footer:</div>

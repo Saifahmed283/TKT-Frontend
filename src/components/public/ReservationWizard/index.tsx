@@ -66,22 +66,26 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
           {existingReservation && (
             <div data-testid="wizard-existing-reservation" className="rounded-none border border-signal/25 bg-signal/8 px-4 py-3 text-sm text-ink-1">
               <p className="font-medium text-ink-0">{t('reservationExists')}</p>
-              <p className="mt-1 font-mono text-[12px] text-signal">{existingReservation.reservationCode}</p>
+              {existingReservation.reservationCode && (
+                <p className="mt-1 font-mono text-[12px] text-signal">{existingReservation.reservationCode}</p>
+              )}
               <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  data-testid="view-existing-reservation"
-                  className="btn-ghost !px-3 !py-1.5 text-[11px]"
-                  disabled={duplicateLoading}
-                  onClick={() => void openExisting()}
-                >
-                  {duplicateLoading ? t('loadingReservation') : t('viewReservation')}
-                </button>
+                {existingReservation.reservationCode && (
+                  <button
+                    type="button"
+                    data-testid="view-existing-reservation"
+                    className="btn-ghost !px-3 !py-1.5 text-[11px]"
+                    disabled={duplicateLoading}
+                    onClick={() => void openExisting()}
+                  >
+                    {duplicateLoading ? t('loadingReservation') : t('viewReservation')}
+                  </button>
+                )}
                 <button
                   type="button"
                   data-testid="resend-ticket"
                   className="btn-ghost !px-3 !py-1.5 text-[11px]"
-                  disabled={resending}
+                  disabled={resending || !existingReservation.reservationCode}
                   onClick={() => void resendTicket()}
                 >
                   {resending ? t('resending') : t('resendTicket')}
@@ -90,7 +94,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
                   type="button"
                   data-testid="forgot-code"
                   className="btn-ghost !px-3 !py-1.5 text-[11px]"
-                  disabled={resending}
+                  disabled={resending || !existingReservation.reservationCode}
                   onClick={() => void resendTicket()}
                 >
                   {t('forgotCode')}

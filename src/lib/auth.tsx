@@ -75,6 +75,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await api<{ ok: boolean }>('/auth/logout', { method: 'POST' })
     } finally {
+      // Offline scanner identities and queues belong to the signed-in user.
+      // Leaving them behind lets a later browser user impersonate that device.
+      for (const key of ['tkt_device_keys', 'tkt_device_private_jwk', 'tkt_offline_queue']) {
+        localStorage.removeItem(key)
+      }
       setAccessToken(null)
       setUser(null)
     }

@@ -72,6 +72,8 @@ export interface ReservationResult {
   approval: ReservationApproval
   paymentStatus?: 'NOT_REQUIRED' | 'PENDING' | 'CONFIRMED' | 'FAILED' | 'REFUNDED'
   qr: string | null
+  // Secure access token for subsequent status lookups (replaces reservation code for sensitive operations)
+  accessToken?: string | null
   seats?: { id: string; label: string; busId: string; passengerName?: string | null; bus?: { name: string } | null }[]
 }
 
@@ -90,6 +92,8 @@ export interface ReservationStatus {
   ticketName: string
   attendeeName: string
   qr: string | null
+  // Secure access token (returned on creation, used for subsequent lookups)
+  accessToken?: string | null
   seats?: { id: string; label: string; busId: string; passengerName?: string | null; bus?: { name: string } | null }[]
 }
 
@@ -196,8 +200,37 @@ export function useWheelStatus() {
   })
 }
 
-export function fetchReservationStatus(eventId: string, code: string) {
-  return api.get<ReservationStatus>(`/public/events/${eventId}/reservations/status?code=${encodeURIComponent(code)}`)
+export interface ReservationStatusParams {
+  code: string
+  token?: string
+  email?: string
+}
+
+const RESERVATION_TOKEN_PREFIX = 'tkt_reservation_token_'
+
+/** Keep the status capability in this browser tab only; never in localStorage. */
+export function rememberReservationAccessToken(code: string, token?: string | null) {
+  if (!token) return
+  try {
+    sessionStorage.setItem(`${RESERVATION_TOKEN_PREFIX}${code}`, token)
+  } catch {}
+}
+
+export function getReservationAccessToken(code: string): string | null {
+  try {
+    return sessionStorage.getItem(`${RESERVATION_TOKEN_PREFIX}${code}`)
+  } catch {
+    return null
+  }
+}
+
+export function fetchReservationStatus(eventId: string, params: ReservationStatusParams) {
+  const { code } = params
+  const queryParams = new URLSearchParams({ code })
+  const token = params.token ?? getReservationAccessToken(code)
+  if (token) queryParams.set('token', token)
+  if (params.email) queryParams.set('email', params.email)
+  return api.get<ReservationStatus>(`/public/events/${eventId}/reservations/status?${queryParams.toString()}`)
 }
 
 export function resendReservationTicket(eventId: string, payload: { reservationCode: string; email: string }) {
@@ -207,13 +240,16 @@ export function resendReservationTicket(eventId: string, payload: { reservationC
 export function useReservationStatus(
   eventId: string,
   code: string | null,
-  options?: { enabled?: boolean; pollMs?: number | false; until?: number },
+  options?: { enabled?: boolean; pollMs?: number | false; until?: number; email?: string },
 ) {
   const pollMs = options?.pollMs === undefined ? 5_000 : options.pollMs
+  const token = getReservationAccessToken(code ?? '')
+  const email = options?.email
   return useQuery({
-    queryKey: ['reservation-status', eventId, code],
-    queryFn: () => fetchReservationStatus(eventId, code!),
-    enabled: !!code && options?.enabled !== false,
+    queryKey: ['reservation-status', eventId, code, email ?? null],
+    queryFn: () => fetchReservationStatus(eventId, { code: code!, token: token ?? undefined, email }),
+    // Code-only lookups are rejected by the API; require a real capability.
+    enabled: !!code && Boolean(token || email) && options?.enabled !== false,
     refetchInterval: (query) => {
       const data = query.state.data as ReservationStatus | undefined
       // Stop at a decision or at the hard cap — the status endpoint is

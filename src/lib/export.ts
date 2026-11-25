@@ -4,7 +4,9 @@ import { API_BASE, getAccessToken } from './api'
 
 const escape = (v: unknown): string => {
   const s = v == null ? '' : String(v)
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+  // Neutralize spreadsheet formula injection before CSV quoting.
+  const safe = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s
+  return /[",\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe
 }
 
 export function exportCsv(filename: string, headers: string[], rows: unknown[][]) {

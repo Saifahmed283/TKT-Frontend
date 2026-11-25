@@ -6,7 +6,7 @@ import { motion, useReducedMotion } from 'motion/react'
 import PublicNav from '../../components/public/PublicNav'
 import { api } from '../../lib/api'
 import { useLanguage } from '../../lib/i18n'
-import { usePublicEvents, type PublicBus, type PublicSeat } from '../../lib/public'
+import { rememberReservationAccessToken, usePublicEvents, type PublicBus, type PublicSeat } from '../../lib/public'
 import { normalizeBusLayout } from '../../lib/busLayouts'
 import SpotlightCard from '../../components/reactbits/SpotlightCard'
 import { Button } from '../../components/ui/button'
@@ -189,7 +189,8 @@ export default function PublicBusTickets() {
   const reservationMutation = useMutation({
     mutationFn: (body: any) => api.post<{ data: any }>(`/public/events/${eventId}/reservations`, body),
     onSuccess: (res) => {
-      const { reservationCode, approval } = res.data
+      const { reservationCode, approval, accessToken } = res.data
+      rememberReservationAccessToken(reservationCode, accessToken)
       setSubmitError(null)
       setExistingReservation(null)
       setSelectedSeats([])
@@ -204,12 +205,14 @@ export default function PublicBusTickets() {
     },
     onError: (e: any) => {
       if (e instanceof ApiError && e.code === 'RESERVATION_EXISTS') {
-        const d = (e.data ?? {}) as { reservationCode?: string; approval?: string; qr?: string | null }
-        if (d.reservationCode) {
-          setExistingReservation({ reservationCode: d.reservationCode, approval: d.approval, qr: d.qr ?? null })
-          setSubmitError(`A reservation for this email already exists: ${d.reservationCode}`)
-          return
-        }
+        // The server deliberately omits the existing code and credential.
+        const msg = isAr
+          ? 'يوجد حجز سابق لهذا البريد. تحقق من رسالة البريد أو استخدم بريدًا آخر.'
+          : 'A reservation for this email already exists. Check your email for the ticket; the code is not shown here.'
+        setExistingReservation(null)
+        setSubmitError(msg)
+        toast.error(msg)
+        return
       }
       const msg = e?.message ?? 'Reservation failed'
       setSubmitError(msg)

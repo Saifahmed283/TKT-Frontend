@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Bus, ClipboardList, CreditCard, Ticket, UserRound } from 'lucide-react'
 import { api, ApiError } from '../../../lib/api'
 import { useLanguage } from '../../../lib/i18n'
-import { fetchReservationStatus, resendReservationTicket, useReservationStatus, type PublicEvent, type ReservationResult } from '../../../lib/public'
+import { fetchReservationStatus, rememberReservationAccessToken, resendReservationTicket, useReservationStatus, type PublicEvent, type ReservationResult } from '../../../lib/public'
 import { useQrDataUrl } from './shared'
 
 /**
@@ -83,6 +83,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
     enabled: needsPolling && pollActive,
     pollMs: 5_000,
     until: pollUntil,
+    email: email.trim(),
   })
   const secondsLeft = holdExpiresAt ? Math.max(0, Math.floor((new Date(holdExpiresAt).getTime() - now) / 1000)) : null
   const holdExpiring = secondsLeft != null && secondsLeft < 120
@@ -189,6 +190,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
         seatPassengers: selected?.transportIncluded ? selectedSeatIds.map(id => ({ seatId: id, name: seatPassengers[id]?.name?.trim() || name.trim(), email: seatPassengers[id]?.email?.trim() || email.trim(), phone: seatPassengers[id]?.phone?.trim() || phone.trim() })) : undefined,
       }),
     onSuccess: (data) => {
+      rememberReservationAccessToken(data.reservationCode, data.accessToken)
       setDone(data)
       setExistingReservation(null)
       void qc.invalidateQueries({ queryKey: ['public-events'] })
@@ -196,14 +198,15 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
     onError: (error) => {
       if (error instanceof ApiError && error.code === 'RESERVATION_EXISTS') {
         const d = (error.data ?? {}) as { reservationCode?: string; approval?: string; qr?: string | null }
-        if (d.reservationCode) {
-          setExistingReservation({
-            reservationCode: d.reservationCode,
-            approval: d.approval,
-            qr: d.qr ?? null,
-          })
-          setCheckingCode(d.reservationCode)
-        }
+        // New responses omit the code and credential; older ones may still
+        // carry them. Never invent a code the server did not disclose.
+        setExistingReservation({
+          reservationCode: d.reservationCode ?? '',
+          approval: d.approval,
+          qr: d.qr ?? null,
+        })
+        if (d.reservationCode) setCheckingCode(d.reservationCode)
+        else setResendMessage(t('reservationExists'))
       }
     },
   })
@@ -229,10 +232,13 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   }
 
   const openExisting = async () => {
-    if (!existingReservation) return
+    if (!existingReservation?.reservationCode) return
     setDuplicateLoading(true)
     try {
-      const data = await fetchReservationStatus(event.id, existingReservation.reservationCode)
+      const data = await fetchReservationStatus(event.id, {
+        code: existingReservation.reservationCode,
+        email: email.trim(),
+      })
       setDone({
         attendeeId: data.attendeeId,
         ticketId: data.ticketId,
@@ -253,7 +259,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   }
 
   const resendTicket = async () => {
-    if (!existingReservation || resending) return
+    if (!existingReservation?.reservationCode || resending) return
     setResending(true)
     setResendMessage(null)
     try {

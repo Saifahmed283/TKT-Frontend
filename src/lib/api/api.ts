@@ -2,6 +2,7 @@ export interface ApiErrorBody {
   code: string
   message: string
   details?: { path: string; message: string }[]
+  correlationId?: string
 }
 
 export class ApiError extends Error {
@@ -9,6 +10,7 @@ export class ApiError extends Error {
   code: string
   details?: { path: string; message: string }[]
   data?: unknown
+  correlationId?: string
 
   constructor(status: number, body: { error: ApiErrorBody; data?: unknown }) {
     super(body.error.message)
@@ -16,6 +18,7 @@ export class ApiError extends Error {
     this.status = status
     this.code = body.error.code
     this.details = body.error.details
+    this.correlationId = body.error.correlationId
     this.data = body.data
   }
 }
