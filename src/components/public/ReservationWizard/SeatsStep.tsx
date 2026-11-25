@@ -1,5 +1,6 @@
 import { ArrowRight, Clock3 } from 'lucide-react'
 import type { ReservationWizard } from './useReservationWizard'
+import MECT49SeatMap from '../MECT49SeatMap'
 
 export function SeatsStep({ w }: { w: ReservationWizard }) {
   const {
@@ -29,28 +30,40 @@ export function SeatsStep({ w }: { w: ReservationWizard }) {
               <div>
                 <div className="mb-2 flex flex-wrap items-center gap-3 text-[10px] text-ink-3"><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-ok/40" />{t('available')}</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-amber/40" />{t('held')}</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-danger/40" />{t('reservedSeat')}</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-ink-3/40" />{t('unavailable')}</span></div>
                 <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">{layout.template === 'mect49' ? 'MECT 49-seat coach' : layout.template === 'coaster21' ? 'Coaster 21-seat' : t('customBusLayout')}</div>
-                <div
-                  ref={seatScrollRef}
-                  onScroll={(e) => setSeatScroll((prev) => ({ ...prev, atEnd: e.currentTarget.scrollLeft + e.currentTarget.clientWidth >= e.currentTarget.scrollWidth - 4 }))}
-                  className="relative overflow-x-auto"
-                ><div className="grid w-fit gap-1.5" style={{ gridTemplateColumns: `repeat(${cols + (aisleAfter > 0 && aisleAfter < cols ? 1 : 0)}, minmax(0,1fr))` }}>
-                  {Array.from({ length: layout.rows }).flatMap((_, r) => {
-                    const row = r + 1
-                    const cells: any[] = []
-                    for (let c = 1; c <= cols; c++) {
-                      const seat = bus.seats.find(s => s.row === row && s.col === c)
-                      if (!seat) { cells.push(<div key={`${row}-${c}`} />) }
-                      else {
-                        const selectedSeat = selectedSeatIds.includes(seat.id)
-                        const cls = selectedSeat ? 'border-signal bg-signal text-black' : seat.state === 'AVAILABLE' ? 'border-ok/40 bg-ok/15 text-ok hover:bg-ok/25' : seat.state === 'HELD' ? 'border-amber/40 bg-amber/15 text-amber cursor-not-allowed' : seat.state === 'RESERVED' ? 'border-danger/40 bg-danger/15 text-danger cursor-not-allowed' : 'border-line bg-ink-3/20 text-ink-3 cursor-not-allowed'
-                        cells.push(<button key={seat.id} type="button" data-testid="seat-option" aria-pressed={selectedSeat} disabled={!(seat.state === 'AVAILABLE' || selectedSeat)} onClick={() => setSelectedSeatIds(selectedSeat ? [] : [seat.id])} className={`grid h-8 w-8 place-items-center rounded-none border text-[10px] font-semibold transition-colors ${cls}`} title={seat.holderName ? `${seat.label} · ${seat.holderName}` : seat.label}>{seat.label}</button>)
+                {layout.template === 'mect49' ? (
+                  <MECT49SeatMap
+                    seats={bus.seats}
+                    selectedSeatIds={selectedSeatIds}
+                    onSeatClick={(seat) => setSelectedSeatIds((current) => current.includes(seat.id) ? [] : [seat.id])}
+                    language={w.lang}
+                    maxSelectable={1}
+                    disabled={holding}
+                  />
+                ) : (
+                  <div
+                    ref={seatScrollRef}
+                    onScroll={(e) => setSeatScroll((prev) => ({ ...prev, atEnd: e.currentTarget.scrollLeft + e.currentTarget.clientWidth >= e.currentTarget.scrollWidth - 4 }))}
+                    className="relative overflow-x-auto"
+                  ><div className="grid w-fit gap-1.5" style={{ gridTemplateColumns: `repeat(${cols + (aisleAfter > 0 && aisleAfter < cols ? 1 : 0)}, minmax(0,1fr))` }}>
+                    {Array.from({ length: layout.rows }).flatMap((_, r) => {
+                      const row = r + 1
+                      const cells: any[] = []
+                      for (let c = 1; c <= cols; c++) {
+                        const seat = bus.seats.find(s => s.row === row && s.col === c)
+                        if (!seat) { cells.push(<div key={`${row}-${c}`} />) }
+                        else {
+                          const selectedSeat = selectedSeatIds.includes(seat.id)
+                          const cls = selectedSeat ? 'border-signal bg-signal text-black' : seat.state === 'AVAILABLE' ? 'border-ok/40 bg-ok/15 text-ok hover:bg-ok/25' : seat.state === 'HELD' ? 'border-amber/40 bg-amber/15 text-amber cursor-not-allowed' : seat.state === 'RESERVED' ? 'border-danger/40 bg-danger/15 text-danger cursor-not-allowed' : 'border-line bg-ink-3/20 text-ink-3 cursor-not-allowed'
+                          cells.push(<button key={seat.id} type="button" data-testid="seat-option" aria-pressed={selectedSeat} disabled={!(seat.state === 'AVAILABLE' || selectedSeat)} onClick={() => setSelectedSeatIds(selectedSeat ? [] : [seat.id])} className={`grid h-8 w-8 place-items-center rounded-none border text-[10px] font-semibold transition-colors ${cls}`} title={seat.holderName ? `${seat.label} · ${seat.holderName}` : seat.label}>{seat.label}</button>)
+                        }
+                        if (aisleAfter === c && c < cols) cells.push(<div key={`a-${row}-${c}`} className="w-3" />)
                       }
-                      if (aisleAfter === c && c < cols) cells.push(<div key={`a-${row}-${c}`} className="w-3" />)
-                    }
-                    return cells
-                  })}
-                </div></div>
-                {seatScroll.overflow && !seatScroll.atEnd && (
+                      return cells
+                    })}
+                  </div></div>
+  
+                )}
+                {layout.template !== 'mect49' && seatScroll.overflow && !seatScroll.atEnd && (
                   <p className="mt-1 flex items-center gap-1 text-[10px] font-medium uppercase tracking-[0.14em] text-signal">
                     {t('swipeSeats')} <ArrowRight size={12} className="rtl:-scale-x-100" />
                   </p>
