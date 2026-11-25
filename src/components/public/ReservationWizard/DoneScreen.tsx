@@ -132,7 +132,7 @@ export function DoneScreen({ w, onClose }: { w: ReservationWizard; onClose: () =
         </div>
       )}
 
-      {done.approval === 'APPROVED' && done.qr && (
+      {done.approval === 'APPROVED' && done.qr && done.walletPassAvailable && (
         <div className="space-y-2">
           <button
             type="button"
