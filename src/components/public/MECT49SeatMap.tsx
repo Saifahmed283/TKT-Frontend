@@ -1,39 +1,10 @@
 import { memo, useMemo } from 'react'
 import type { PublicSeat } from '../../lib/public'
+import { MECT49_SEAT_PLACEMENTS } from '../../lib/domain/busLayouts'
 
 type Placement = { label: string; x: number; y: number }
-type Props = {
-  seats: PublicSeat[]
-  selectedSeatIds: string[]
-  onSeatClick: (seat: PublicSeat) => void
-  language?: 'ar' | 'en'
-  maxSelectable?: number
-  disabled?: boolean
-  className?: string
-}
 
-const placements: Placement[] = (() => {
-  const result: Placement[] = []
-  const left = [292, 365]
-  const right = [492, 565]
-  const four = [...left, ...right]
-  for (let row = 0; row < 5; row += 1) {
-    const y = 260 + row * 76
-    four.forEach((x, col) => result.push({ label: String(1 + row * 4 + col), x, y }))
-  }
-  result.push({ label: '21', x: left[0], y: 650 }, { label: '22', x: left[1], y: 650 })
-  result.push({ label: '23', x: left[0], y: 730 }, { label: '24', x: left[1], y: 730 })
-  result.push({ label: '25', x: left[0], y: 810 }, { label: '26', x: left[1], y: 810 })
-  result.push({ label: '27', x: right[0], y: 810 }, { label: '28', x: right[1], y: 810 })
-  for (let row = 0; row < 4; row += 1) {
-    const y = 890 + row * 76
-    four.forEach((x, col) => result.push({ label: String(29 + row * 4 + col), x, y }))
-  }
-  ;[45, 46, 47, 48, 49].forEach((n, i) => {
-    result.push({ label: String(n), x: [270, 345, 420, 495, 570][i], y: 1260 })
-  })
-  return result
-})()
+const placements: Placement[] = MECT49_SEAT_PLACEMENTS.map(({ label, x, y }) => ({ label, x, y }))
 
 const labels = {
   ar: { title: 'اختيار مقعدك', subtitle: 'MECT · مخطط 49 مقعدًا', available: 'متاح', selected: 'مختار', held: 'محجوز مؤقتًا', reserved: 'محجوز', unavailable: 'غير متاح', driver: 'السائق', front: 'مقدمة الباص', aisle: 'الممر', tv: 'شاشة', wc: 'دورة مياه', exit: 'مخرج', rear: 'الصف الخلفي · 5 مقاعد', chosen: 'المقاعد المختارة', remaining: 'المقاعد المتاحة' },
