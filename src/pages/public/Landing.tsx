@@ -22,12 +22,8 @@ export default function Landing() {
             .tkt-hero-vignette{background:radial-gradient(circle at 68% 45%,rgba(11,11,12,.08) 0%,rgba(11,11,12,.48) 48%,rgba(11,11,12,.78) 78%,var(--color-canvas) 100%)}
             :root[data-theme='light'] .tkt-hero-vignette{background:radial-gradient(circle at 68% 45%,rgba(247,244,238,0) 0%,rgba(247,244,238,.12) 42%,rgba(247,244,238,.42) 70%,var(--color-canvas) 100%)}
             .tkt-hero-copy{animation:tktHeroEnter .65s cubic-bezier(.22,1,.36,1) both}
-            .tkt-hero-seal{animation:tktSealFloat 8s ease-in-out infinite;transform-origin:center}
-            .tkt-hero-orbit{animation:tktSealRotate 48s linear infinite;transform-origin:center}
-            @keyframes tktHeroEnter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-            @keyframes tktSealFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-            @keyframes tktSealRotate{to{transform:rotate(360deg)}}
-            @media(prefers-reduced-motion:reduce){.tkt-hero-copy,.tkt-hero-seal,.tkt-hero-orbit{animation:none!important}}
+                                    @keyframes tktHeroEnter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+                                    @media(prefers-reduced-motion:reduce){.tkt-hero-copy{animation:none!important}}
           `}</style>
 
           <div aria-hidden="true" className="pointer-events-none absolute inset-0">
@@ -40,7 +36,7 @@ export default function Landing() {
           </div>
 
           <div aria-hidden="true" className="pointer-events-none absolute end-[-4%] top-[48%] z-[1] w-[58%] max-w-[560px] -translate-y-1/2 opacity-20 sm:end-0 sm:w-[48%] sm:opacity-35 lg:end-[3%] lg:w-[46%] lg:opacity-35 xl:opacity-90">
-            <svg viewBox="0 0 480 480" className="tkt-hero-seal h-auto w-full overflow-visible">
+            <svg viewBox="0 0 480 480" className="h-auto w-full overflow-visible">
               <defs>
                 <linearGradient id="tktHeroGold" gradientUnits="userSpaceOnUse" x1="72" y1="70" x2="410" y2="414">
                   <stop offset="0%" stopColor="#C8A25C" />
@@ -55,7 +51,7 @@ export default function Landing() {
               <circle cx="240" cy="240" r="226" fill="url(#tktHeroGlow)" />
               <circle cx="240" cy="240" r="190" fill="none" stroke="url(#tktHeroGold)" strokeWidth="2.5" opacity=".9" />
               <circle cx="240" cy="240" r="170" fill="none" stroke="url(#tktHeroGold)" strokeWidth="1.4" opacity=".7" />
-              <circle className="tkt-hero-orbit" cx="240" cy="240" r="209" fill="none" stroke="#C8A25C" strokeWidth="3" strokeDasharray="1 15" strokeLinecap="round" opacity=".9" />
+              <circle cx="240" cy="240" r="209" fill="none" stroke="#C8A25C" strokeWidth="3" strokeDasharray="1 15" strokeLinecap="round" opacity=".9" />
               <g stroke="url(#tktHeroGold)" strokeWidth="14" strokeLinecap="round" strokeLinejoin="round" fill="none">
                 <path d="M240 125V355M158 125H322M158 355H322M158 172L322 308M158 308L322 172" />
               </g>
