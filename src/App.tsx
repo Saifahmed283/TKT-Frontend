@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { useAuth } from './lib/auth'
 import { useLanguage } from './lib/i18n'
@@ -12,35 +12,39 @@ import Contact from './pages/Contact'
 import About from './pages/About'
 import ReservationStatusPage from './pages/ReservationStatus'
 import Shell from './components/shell/Shell'
-import Dashboard from './pages/Dashboard'
-import EventsPage from './pages/Events'
-import EventDetail from './pages/EventDetail'
-import AttendeesPage from './pages/attendees/Attendees'
-import TicketsPage from './pages/tickets/Tickets'
-import { AccessLogsPage } from './pages/app/events/AccessLogsPage'
-import { AreasPage } from './pages/app/events/AreasPage'
-import { AuditPage } from './pages/app/events/AuditPage'
-import { CommsPage } from './pages/app/events/CommsPage'
-import { CredentialsPage } from './pages/app/events/CredentialsPage'
-import { IncidentsPage } from './pages/app/events/IncidentsPage'
-import { PaymentsPage } from './pages/app/events/PaymentsPage'
-import { AccessCodesPage } from './pages/app/events/AccessCodesPage'
-import { DevicesPage } from './pages/app/events/DevicesPage'
-import { WorkforcePage } from './pages/app/events/WorkforcePage'
-import { BusesPage } from './pages/app/events/BusesPage'
-import { EventSettingsPage } from './pages/app/events/EventSettings'
-import { IntegrationsPage } from './pages/app/events/IntegrationsPage'
-import { ReportsPage } from './pages/app/events/ReportsPage'
-import { ReservationsPage } from './pages/app/events/ReservationsPage'
-import { StaffPage } from './pages/app/events/StaffPage'
-import { TasksPage } from './pages/app/events/TasksPage'
-import { TeamsPage } from './pages/app/events/TeamsPage'
-import { Guide } from './pages/app/Guide'
-import { ProfilePage } from './pages/app/ProfilePage'
-import { OrganizationsPage } from './pages/app/organizations/OrganizationsPage'
-import { OrganizationDetailPage } from './pages/app/organizations/OrganizationDetailPage'
 import { RequirePermission } from './components/auth/RequirePermission'
-import ScannerPage from './pages/scanner/Scanner'
+
+// App pages are loaded on demand. The old static import graph put every
+// operations page (and libraries such as three, recharts and jspdf) into the
+// first JS download, delaying data requests on the public site.
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const EventsPage = lazy(() => import('./pages/Events'))
+const EventDetail = lazy(() => import('./pages/EventDetail'))
+const AttendeesPage = lazy(() => import('./pages/attendees/Attendees'))
+const TicketsPage = lazy(() => import('./pages/tickets/Tickets'))
+const ScannerPage = lazy(() => import('./pages/scanner/Scanner'))
+const AccessLogsPage = lazy(() => import('./pages/app/events/AccessLogsPage').then((m) => ({ default: m.AccessLogsPage })))
+const AreasPage = lazy(() => import('./pages/app/events/AreasPage').then((m) => ({ default: m.AreasPage })))
+const AuditPage = lazy(() => import('./pages/app/events/AuditPage').then((m) => ({ default: m.AuditPage })))
+const CommsPage = lazy(() => import('./pages/app/events/CommsPage').then((m) => ({ default: m.CommsPage })))
+const CredentialsPage = lazy(() => import('./pages/app/events/CredentialsPage').then((m) => ({ default: m.CredentialsPage })))
+const IncidentsPage = lazy(() => import('./pages/app/events/IncidentsPage').then((m) => ({ default: m.IncidentsPage })))
+const PaymentsPage = lazy(() => import('./pages/app/events/PaymentsPage').then((m) => ({ default: m.PaymentsPage })))
+const AccessCodesPage = lazy(() => import('./pages/app/events/AccessCodesPage').then((m) => ({ default: m.AccessCodesPage })))
+const DevicesPage = lazy(() => import('./pages/app/events/DevicesPage').then((m) => ({ default: m.DevicesPage })))
+const WorkforcePage = lazy(() => import('./pages/app/events/WorkforcePage').then((m) => ({ default: m.WorkforcePage })))
+const BusesPage = lazy(() => import('./pages/app/events/BusesPage').then((m) => ({ default: m.BusesPage })))
+const EventSettingsPage = lazy(() => import('./pages/app/events/EventSettings').then((m) => ({ default: m.EventSettingsPage })))
+const IntegrationsPage = lazy(() => import('./pages/app/events/IntegrationsPage').then((m) => ({ default: m.IntegrationsPage })))
+const ReportsPage = lazy(() => import('./pages/app/events/ReportsPage').then((m) => ({ default: m.ReportsPage })))
+const ReservationsPage = lazy(() => import('./pages/app/events/ReservationsPage').then((m) => ({ default: m.ReservationsPage })))
+const StaffPage = lazy(() => import('./pages/app/events/StaffPage').then((m) => ({ default: m.StaffPage })))
+const TasksPage = lazy(() => import('./pages/app/events/TasksPage').then((m) => ({ default: m.TasksPage })))
+const TeamsPage = lazy(() => import('./pages/app/events/TeamsPage').then((m) => ({ default: m.TeamsPage })))
+const Guide = lazy(() => import('./pages/app/Guide').then((m) => ({ default: m.Guide })))
+const ProfilePage = lazy(() => import('./pages/app/ProfilePage').then((m) => ({ default: m.ProfilePage })))
+const OrganizationsPage = lazy(() => import('./pages/app/organizations/OrganizationsPage').then((m) => ({ default: m.OrganizationsPage })))
+const OrganizationDetailPage = lazy(() => import('./pages/app/organizations/OrganizationDetailPage').then((m) => ({ default: m.OrganizationDetailPage })))
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -85,54 +89,56 @@ export default function App() {
     <>
       <WebsiteIntro />
       <ScrollToTop />
-      <Routes>
-      <Route path="/" element={<Landing />} />
-      <Route path="/upcoming" element={<UpcomingEvents />} />
-      <Route path="/past" element={<PastWorks />} />
-      <Route path="/contact" element={<Contact />} />
-      <Route path="/about" element={<About />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/events/:eventId/bus-tickets" element={<LegacyBusTicketsRedirect />} />
-      <Route path="/reservation/:code" element={<ReservationStatusPage />} />
-      <Route
-        path="/app"
-        element={
-          <RequireAuth>
-            <Shell />
-          </RequireAuth>
-        }
-      >
-        <Route index element={<Dashboard />} />
-        <Route path="events" element={<EventsPage />} />
-        <Route path="events/:eventId" element={<EventDetail />} />
-        <Route path="events/:eventId/teams" element={<RequirePermission permission="team.view"><TeamsPage /></RequirePermission>} />
-        <Route path="events/:eventId/areas" element={<RequirePermission permission="area.view"><AreasPage /></RequirePermission>} />
-        <Route path="events/:eventId/staff" element={<RequirePermission permission="event.members.view"><StaffPage /></RequirePermission>} />
-        <Route path="events/:eventId/workforce" element={<RequirePermission permission="workforce.view"><WorkforcePage /></RequirePermission>} />
-        <Route path="events/:eventId/integrations" element={<RequirePermission permission="integration.view"><IntegrationsPage /></RequirePermission>} />
-        <Route path="events/:eventId/attendees" element={<RequirePermission permission="attendee.view"><AttendeesPage /></RequirePermission>} />
-        <Route path="events/:eventId/tickets" element={<RequirePermission permission="ticket.view"><TicketsPage /></RequirePermission>} />
-        <Route path="events/:eventId/reservations" element={<RequirePermission permission="ticket.view"><ReservationsPage /></RequirePermission>} />
-        <Route path="events/:eventId/payments" element={<RequirePermission permission="payment.view"><PaymentsPage /></RequirePermission>} />
-        <Route path="events/:eventId/buses" element={<RequirePermission permission="bus.view"><BusesPage /></RequirePermission>} />
-        <Route path="events/:eventId/access-codes" element={<RequirePermission permission="access_code.view"><AccessCodesPage /></RequirePermission>} />
-        <Route path="events/:eventId/credentials" element={<RequirePermission permission="credential.view"><CredentialsPage /></RequirePermission>} />
-        <Route path="events/:eventId/access" element={<RequirePermission permission="access.logs.view"><AccessLogsPage /></RequirePermission>} />
-        <Route path="events/:eventId/devices" element={<RequirePermission permission="device.view"><DevicesPage /></RequirePermission>} />
-        <Route path="events/:eventId/tasks" element={<RequirePermission permission="task.view"><TasksPage /></RequirePermission>} />
-        <Route path="events/:eventId/incidents" element={<RequirePermission permission="incident.view"><IncidentsPage /></RequirePermission>} />
-        <Route path="events/:eventId/comms" element={<RequirePermission permission="message.send"><CommsPage /></RequirePermission>} />
-        <Route path="events/:eventId/audit" element={<RequirePermission permission="audit.view"><AuditPage /></RequirePermission>} />
-        <Route path="events/:eventId/reports" element={<RequirePermission permission="report.view"><ReportsPage /></RequirePermission>} />
-        <Route path="events/:eventId/settings" element={<RequirePermission permission="event.settings"><EventSettingsPage /></RequirePermission>} />
-        <Route path="organizations" element={<OrganizationsPage />} />
-        <Route path="organizations/:orgId" element={<OrganizationDetailPage />} />
-        <Route path="guide" element={<Guide />} />
-        <Route path="profile" element={<ProfilePage />} />
-        <Route path="scanner" element={<ScannerPage />} />
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <Suspense fallback={<BootSplash />}>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/upcoming" element={<UpcomingEvents />} />
+          <Route path="/past" element={<PastWorks />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/events/:eventId/bus-tickets" element={<LegacyBusTicketsRedirect />} />
+          <Route path="/reservation/:code" element={<ReservationStatusPage />} />
+          <Route
+            path="/app"
+            element={
+              <RequireAuth>
+                <Shell />
+              </RequireAuth>
+            }
+          >
+            <Route index element={<Dashboard />} />
+            <Route path="events" element={<EventsPage />} />
+            <Route path="events/:eventId" element={<EventDetail />} />
+            <Route path="events/:eventId/teams" element={<RequirePermission permission="team.view"><TeamsPage /></RequirePermission>} />
+            <Route path="events/:eventId/areas" element={<RequirePermission permission="area.view"><AreasPage /></RequirePermission>} />
+            <Route path="events/:eventId/staff" element={<RequirePermission permission="event.members.view"><StaffPage /></RequirePermission>} />
+            <Route path="events/:eventId/workforce" element={<RequirePermission permission="workforce.view"><WorkforcePage /></RequirePermission>} />
+            <Route path="events/:eventId/integrations" element={<RequirePermission permission="integration.view"><IntegrationsPage /></RequirePermission>} />
+            <Route path="events/:eventId/attendees" element={<RequirePermission permission="attendee.view"><AttendeesPage /></RequirePermission>} />
+            <Route path="events/:eventId/tickets" element={<RequirePermission permission="ticket.view"><TicketsPage /></RequirePermission>} />
+            <Route path="events/:eventId/reservations" element={<RequirePermission permission="ticket.view"><ReservationsPage /></RequirePermission>} />
+            <Route path="events/:eventId/payments" element={<RequirePermission permission="payment.view"><PaymentsPage /></RequirePermission>} />
+            <Route path="events/:eventId/buses" element={<RequirePermission permission="bus.view"><BusesPage /></RequirePermission>} />
+            <Route path="events/:eventId/access-codes" element={<RequirePermission permission="access_code.view"><AccessCodesPage /></RequirePermission>} />
+            <Route path="events/:eventId/credentials" element={<RequirePermission permission="credential.view"><CredentialsPage /></RequirePermission>} />
+            <Route path="events/:eventId/access" element={<RequirePermission permission="access.logs.view"><AccessLogsPage /></RequirePermission>} />
+            <Route path="events/:eventId/devices" element={<RequirePermission permission="device.view"><DevicesPage /></RequirePermission>} />
+            <Route path="events/:eventId/tasks" element={<RequirePermission permission="task.view"><TasksPage /></RequirePermission>} />
+            <Route path="events/:eventId/incidents" element={<RequirePermission permission="incident.view"><IncidentsPage /></RequirePermission>} />
+            <Route path="events/:eventId/comms" element={<RequirePermission permission="message.send"><CommsPage /></RequirePermission>} />
+            <Route path="events/:eventId/audit" element={<RequirePermission permission="audit.view"><AuditPage /></RequirePermission>} />
+            <Route path="events/:eventId/reports" element={<RequirePermission permission="report.view"><ReportsPage /></RequirePermission>} />
+            <Route path="events/:eventId/settings" element={<RequirePermission permission="event.settings"><EventSettingsPage /></RequirePermission>} />
+            <Route path="organizations" element={<OrganizationsPage />} />
+            <Route path="organizations/:orgId" element={<OrganizationDetailPage />} />
+            <Route path="guide" element={<Guide />} />
+            <Route path="profile" element={<ProfilePage />} />
+            <Route path="scanner" element={<ScannerPage />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </>
   )
 }
