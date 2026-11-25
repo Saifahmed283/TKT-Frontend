@@ -20,6 +20,10 @@ export default function BrandLogo({ className, imageClassName, showWordmark = fa
       <img
         src={src}
         alt="TKT"
+        width={401}
+        height={345}
+        decoding="async"
+        fetchPriority="high"
         className={cn('h-9 w-auto object-contain', imageClassName)}
         draggable={false}
       />
