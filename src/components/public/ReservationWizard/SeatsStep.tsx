@@ -28,8 +28,8 @@ export function SeatsStep({ w }: { w: ReservationWizard }) {
             const aisleAfter = layout.aisleAfterCol ?? 0
             return (
               <div>
-                <div className="mb-2 flex flex-wrap items-center gap-3 text-[10px] text-ink-3"><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-ok/40" />{t('available')}</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-amber/40" />{t('held')}</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-danger/40" />{t('reservedSeat')}</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-ink-3/40" />{t('unavailable')}</span></div>
-                <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">{layout.template === 'mect49' ? 'MECT 49-seat coach' : layout.template === 'coaster21' ? 'Coaster 21-seat' : t('customBusLayout')}</div>
+                <div className={layout.template === 'mect49' ? 'hidden' : "mb-2 flex flex-wrap items-center gap-3 text-[10px] text-ink-3"}><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-ok/40" />{t('available')}</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-amber/40" />{t('held')}</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-danger/40" />{t('reservedSeat')}</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-ink-3/40" />{t('unavailable')}</span></div>
+                <div className={layout.template === 'mect49' ? 'hidden' : "mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3"}>{layout.template === 'coaster21' ? 'Coaster 21-seat' : t('customBusLayout')}</div>
                 {layout.template === 'mect49' ? (
                   <MECT49SeatMap
                     seats={bus.seats}
