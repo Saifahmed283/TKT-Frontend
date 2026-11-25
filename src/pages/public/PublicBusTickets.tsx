@@ -16,6 +16,7 @@ import { FileUploadField } from '../../components/ui/file-upload'
 import { ApiError } from '../../lib/api'
 
 const BusSeatMap3D = lazy(() => import('../../components/public/BusSeatMap3D'))
+const MECT49SeatMap = lazy(() => import('../../components/public/MECT49SeatMap'))
 
 function fmtMoney(value: number | string | null | undefined, currency = 'EGP'): string {
   const n = Number(value ?? 0)
@@ -32,7 +33,21 @@ function SeatMap2D({ bus, selectedSeats, onSeatClick, heldSeats, reservedSeats, 
   className?: string
 }) {
   const reduce = useReducedMotion()
+  const { lang } = useLanguage()
   const layout = normalizeBusLayout(bus.layout)
+  if (layout.template === 'mect49') {
+    return (
+      <div className={className}>
+        <MECT49SeatMap
+          seats={bus.seats}
+          selectedSeatIds={selectedSeats}
+          onSeatClick={onSeatClick}
+          language={lang}
+          maxSelectable={1}
+        />
+      </div>
+    )
+  }
   const cols = layout.cols
   const aisleAfter = layout.aisleAfterCol
   const rows = layout.rows
@@ -223,12 +238,18 @@ export default function PublicBusTickets() {
   const handleSeatClick = (seat: PublicSeat) => {
     if (seat.state === 'RESERVED' || seat.state === 'UNAVAILABLE') return
     if (seat.state === 'HELD' && !selectedSeats.includes(seat.id)) return
-    setSelectedSeats(prev => prev.includes(seat.id) ? prev.filter(x => x !== seat.id) : [...prev, seat.id])
-    if (!selectedSeats.includes(seat.id)) {
-      setSeatPassengers(prev => ({ ...prev, [seat.id]: { name: formData.name, email: formData.email, phone: formData.phone } }))
-    } else {
-      setSeatPassengers(prev => { const n = { ...prev }; delete n[seat.id]; return n })
-    }
+
+    const wasSelected = selectedSeats.includes(seat.id)
+    const previousSeatId = selectedSeats[0]
+    setSelectedSeats(wasSelected ? [] : [seat.id])
+    setSeatPassengers((current) => {
+      const next = { ...current }
+      if (previousSeatId) delete next[previousSeatId]
+      if (!wasSelected) {
+        next[seat.id] = { name: formData.name, email: formData.email, phone: formData.phone }
+      }
+      return next
+    })
   }
 
   const handleHold = () => {
@@ -244,7 +265,7 @@ export default function PublicBusTickets() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitError(null)
-    if (!activeBus || selectedSeats.length === 0) { setSubmitError(isAr ? 'اختر مقاعد أولاً' : 'Select seats first'); return }
+    if (!activeBus || selectedSeats.length !== 1) { setSubmitError(isAr ? 'اختر مقعدًا واحدًا' : 'Select exactly one seat'); return }
     if (!formData.name.trim() || !formData.email.trim()) { setSubmitError(isAr ? 'الاسم والبريد مطلوبان' : 'Name and email are required'); return }
     if (!selectedTicketType?.id) { setSubmitError(isAr ? 'اختر نوع التذكرة' : 'Select a ticket type'); return }
     if (isPaid && !paymentProviderId && !paymentReference.trim() && !paymentProofUrl) {
