@@ -259,13 +259,13 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   }
 
   const resendTicket = async () => {
-    if (!existingReservation?.reservationCode || resending) return
+    if (resending) return
     setResending(true)
     setResendMessage(null)
     try {
       await resendReservationTicket(event.id, {
-        reservationCode: existingReservation.reservationCode,
         email: email.trim(),
+        reservationCode: existingReservation?.reservationCode || undefined,
       })
       setResendMessage(t('ticketResent'))
     } catch {

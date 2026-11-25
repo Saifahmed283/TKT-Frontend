@@ -233,7 +233,7 @@ export function fetchReservationStatus(eventId: string, params: ReservationStatu
   return api.get<ReservationStatus>(`/public/events/${eventId}/reservations/status?${queryParams.toString()}`)
 }
 
-export function resendReservationTicket(eventId: string, payload: { reservationCode: string; email: string }) {
+export function resendReservationTicket(eventId: string, payload: { email: string; reservationCode?: string }) {
   return api.post<{ ok: boolean; deliveryStatus: string | null }>(`/public/events/${eventId}/reservations/resend`, payload)
 }
 
