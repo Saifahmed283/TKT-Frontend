@@ -1,0 +1,30 @@
+{
+  "id": "/my-ticket",
+  "name": "TKT — My Ticket",
+  "short_name": "TKT Ticket",
+  "description": "Your TKT event ticket and QR, available on your phone.",
+  "start_url": "/my-ticket",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "portrait",
+  "background_color": "#090B0E",
+  "theme_color": "#0B0B0C",
+  "icons": [
+    {
+      "src": "/tkt-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

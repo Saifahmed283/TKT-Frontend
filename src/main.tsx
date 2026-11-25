@@ -39,3 +39,13 @@ createRoot(document.getElementById('root')!).render(
     </QueryClientProvider>
   </StrictMode>,
 )
+
+// Cache the app shell for the installable ticket experience. API responses,
+// customer details and credential QR payloads are never cached by the worker.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    void navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {
+      // Service-worker failure must not block the normal ticket site.
+    })
+  })
+}
