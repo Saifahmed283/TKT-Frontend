@@ -44,6 +44,11 @@ async function seedPaidTransportEvent(request: APIRequestContext, name: string) 
   const eventId = (await created.json()).data.id
   const patch = await request.patch(`${API}/events/${eventId}`, { headers, data: { settings: { registration: { enabled: true, open: true } } } })
   expect(patch.ok()).toBeTruthy()
+  const programOnly = await request.post(`${API}/events/${eventId}/tickets/types`, {
+    headers,
+    data: { name: 'Program Only', price: 80, quota: 100, isPublic: true, transportIncluded: false },
+  })
+  expect(programOnly.ok()).toBeTruthy()
   const type = await request.post(`${API}/events/${eventId}/tickets/types`, {
     headers,
     data: { name: 'Conference + Bus', price: 100, quota: 100, isPublic: true, transportIncluded: true },
@@ -138,7 +143,18 @@ test.describe('TKT E2E — public site', () => {
     const card = page.locator('article', { hasText: name }).first()
     await card.getByRole('button', { name: /Reserve|احجز/i }).first().click()
     await expect(page.getByTestId('wizard-step-ticket')).toBeVisible()
-    await page.getByTestId('ticket-option').filter({ hasText: 'Conference + Bus' }).click()
+    await expect(page.getByTestId('ticket-filter-program')).toBeVisible()
+    await expect(page.getByTestId('ticket-filter-bus')).toBeVisible()
+    await page.getByTestId('ticket-filter-program').click()
+    await expect(page.getByTestId('ticket-option')).toHaveCount(1)
+    await expect(page.getByTestId('ticket-option').first()).toContainText('Program Only')
+    await page.getByTestId('ticket-filter-bus').click()
+    await expect(page.getByTestId('ticket-option').first()).toContainText('Conference + Bus')
+    await expect(page.getByTestId('ticket-designer')).toBeVisible()
+    await page.getByTestId('ticket-template-editorial-wide').click()
+    await expect(page.getByTestId('ticket-template-editorial-wide')).toHaveAttribute('aria-pressed', 'true')
+    await page.getByTestId('ticket-palette-rose-noir').click()
+    await expect(page.getByTestId('ticket-palette-rose-noir')).toHaveAttribute('aria-pressed', 'true')
     await page.getByTestId('wizard-next').click()
     await page.getByLabel(/Full name|الاسم/i).fill('E2E Transit')
     await page.getByLabel(/Email|البريد/i).fill(email)
@@ -159,7 +175,8 @@ test.describe('TKT E2E — public site', () => {
     await page.getByTestId('wizard-next').click()
     await expect(page.getByTestId('wizard-review')).toBeVisible()
     await expect(page.getByTestId('wizard-review')).toContainText('Conference + Bus')
-    await expect(page.getByTestId('wizard-review')).toContainText('120')
+    // Transport is included in the selected package; selecting a seat must not add another bus fee.
+    await expect(page.getByTestId('wizard-review')).toContainText('100')
     await page.getByTestId('wizard-submit').click()
     await expect(page.getByText(/Reservation pending|قيد المراجعة/i).first()).toBeVisible({ timeout: 25_000 })
     await expect(page.getByText(/Reservation code|رمز الحجز|TKT-/i).first()).toBeVisible({ timeout: 25_000 })
