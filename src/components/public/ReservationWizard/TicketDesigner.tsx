@@ -10,6 +10,7 @@ type TicketCardPreviewProps = {
   design: TicketDesignSelection
   lang: string
   compact?: boolean
+  qrUrl?: string | null
 }
 
 function dateTimeLabel(event: PublicEvent, lang: string) {
@@ -72,6 +73,7 @@ export function TicketCardPreview({
   design,
   lang,
   compact = false,
+  qrUrl,
 }: TicketCardPreviewProps) {
   const [tilt, setTilt] = useState({ x: 0, y: 0 })
   const [flipped, setFlipped] = useState(false)
@@ -146,7 +148,7 @@ export function TicketCardPreview({
                   <p className="mt-2 text-[5px] uppercase tracking-[.13em] opacity-60 sm:text-[8px]">LOCATION</p>
                   <p className="mt-1 line-clamp-2 text-[7px] font-semibold sm:text-[10px]">{event.venueName || 'Location pending'}</p>
                 </div>
-                <QrPreviewStub />
+                {qrUrl ? <img src={qrUrl} alt="Issued ticket QR code" className="h-[42px] w-[42px] shrink-0 rounded-sm border border-black/10 bg-white p-1 sm:h-[62px] sm:w-[62px]" /> : <QrPreviewStub />}
               </div>
             </div>
           </>
