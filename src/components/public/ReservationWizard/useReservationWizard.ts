@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Bus, ClipboardList, CreditCard, Ticket, UserRound } from 'lucide-react'
 import { api, ApiError } from '../../../lib/api'
@@ -44,6 +44,23 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   const [resending, setResending] = useState(false)
   const [resendMessage, setResendMessage] = useState<string | null>(null)
   const seatScrollRef = useRef<HTMLDivElement>(null)
+  const heldSeatRef = useRef<{ busId: string; seatId: string } | null>(null)
+  const sendHoldRelease = useCallback(async (hold: { busId: string; seatId: string }) => {
+    try {
+      await api.post<{ ok: boolean }>(`/public/events/${event.id}/buses/${hold.busId}/release-hold`, {
+        seatIds: [hold.seatId],
+        sessionId: holdToken,
+      })
+    } catch {
+      // The server-side expiry sweep remains the fallback if the network is unavailable.
+    }
+  }, [event.id, holdToken])
+  const releaseCurrentHold = useCallback(async () => {
+    const hold = heldSeatRef.current
+    if (!hold) return
+    heldSeatRef.current = null
+    await sendHoldRelease(hold)
+  }, [sendHoldRelease])
   const [seatScroll, setSeatScroll] = useState({ overflow: false, atEnd: false })
 
   const selected = availableTypes.find((x) => x.id === ticketTypeId)
@@ -154,22 +171,43 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   }, [selected?.transportIncluded])
 
   useEffect(() => {
-    if (!selected?.transportIncluded || !busId || selectedSeatIds.length !== 1) { setHoldExpiresAt(null); setHoldError(null); return }
+    if (!selected?.transportIncluded || !busId || selectedSeatIds.length !== 1) {
+      setHoldExpiresAt(null)
+      setHoldError(null)
+      return
+    }
+    const seatId = selectedSeatIds[0]
     let alive = true
     setHolding(true)
     setHoldError(null)
     const timer = setTimeout(async () => {
       try {
-        const res = await api.post<{ holdToken: string; holdExpiresAt: string }>(`/public/events/${event.id}/buses/${busId}/hold`, { seatIds: selectedSeatIds, sessionId: holdToken, holdMinutes: 10 })
-        if (alive) setHoldExpiresAt(res.holdExpiresAt)
+        const res = await api.post<{ holdToken: string; holdExpiresAt: string }>(`/public/events/${event.id}/buses/${busId}/hold`, { seatIds: [seatId], sessionId: holdToken, holdMinutes: 10 })
+        if (!alive) {
+          await sendHoldRelease({ busId, seatId })
+          return
+        }
+        heldSeatRef.current = { busId, seatId }
+        setHoldExpiresAt(res.holdExpiresAt)
       } catch (e: any) {
-        if (alive) { setHoldError(e?.message ?? 'Could not hold selected seats. Please reselect.'); setHoldExpiresAt(null) }
+        if (alive) {
+          setHoldError(e?.message ?? 'Could not hold selected seats. Please reselect.')
+          setHoldExpiresAt(null)
+        }
       } finally {
         if (alive) setHolding(false)
       }
     }, 350)
-    return () => { alive = false; clearTimeout(timer) }
-  }, [selected?.transportIncluded, busId, selectedSeatIds, holdToken, event.id, holdAttempt])
+    return () => {
+      alive = false
+      clearTimeout(timer)
+      const held = heldSeatRef.current
+      if (held?.busId === busId && held.seatId === seatId) {
+        heldSeatRef.current = null
+        void sendHoldRelease(held)
+      }
+    }
+  }, [selected?.transportIncluded, busId, selectedSeatIds, holdToken, event.id, holdAttempt, sendHoldRelease])
 
   const reserve = useMutation({
     mutationFn: () =>
@@ -189,6 +227,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
         seatPassengers: selected?.transportIncluded ? selectedSeatIds.map(id => ({ seatId: id, name: seatPassengers[id]?.name?.trim() || name.trim(), email: seatPassengers[id]?.email?.trim() || email.trim(), phone: seatPassengers[id]?.phone?.trim() || phone.trim() })) : undefined,
       }),
     onSuccess: (data) => {
+      heldSeatRef.current = null
       setDone(data)
       setExistingReservation(null)
       void qc.invalidateQueries({ queryKey: ['public-events'] })
@@ -223,9 +262,14 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
 
   const hasEnteredDetails = [name, email, phone, notes, paymentReference].some((value) => value.trim())
     || !!paymentProofUrl || selectedSeatIds.length > 0
+  const closeAndRelease = () => {
+    void releaseCurrentHold()
+    onClose()
+  }
+
   const requestClose = () => {
     if (!done && activeStep > 0 && hasEnteredDetails) setConfirmDiscard(true)
-    else onClose()
+    else closeAndRelease()
   }
 
   const openExisting = async () => {
@@ -292,7 +336,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
     selected, selectedProvider, selectedBus, seatUnitPrice, seatTotal, ticketPrice, totalPrice, isPaid,
     steps, activeStep, stepId, canGoBack, phoneValid, emailValid, canContinue,
     qrUrl, pending, awaitingQr, status, holdCountdown, holdExpiring,
-    reserve, onSubmit, goNext, goBack, requestClose, openExisting, resendTicket, copyCode,
+    reserve, onSubmit, goNext, goBack, requestClose, closeAndRelease, openExisting, resendTicket, copyCode,
   }
 }
 
