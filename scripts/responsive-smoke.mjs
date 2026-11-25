@@ -48,10 +48,18 @@ try {
         viewportWidth: document.documentElement.clientWidth,
         documentWidth: Math.max(document.documentElement.scrollWidth, document.body?.scrollWidth ?? 0),
         title: document.title,
+        canonical: document.querySelector('link[rel="canonical"]')?.getAttribute('href') ?? '',
+        robots: document.querySelector('meta[name="robots"]')?.getAttribute('content') ?? '',
         mainCount: document.querySelectorAll('main').length,
       }))
       if (metrics.documentWidth > metrics.viewportWidth + 1) {
         console.error(`FAIL ${viewport.name} ${route}: horizontal overflow ${metrics.documentWidth}px > ${metrics.viewportWidth}px`)
+        failures++
+      } else if (new URL(metrics.canonical, baseURL).pathname !== new URL(route, baseURL).pathname) {
+        console.error(`FAIL ${viewport.name} ${route}: canonical URL does not match current route (${metrics.canonical})`)
+        failures++
+      } else if ((route.startsWith('/app') || route.startsWith('/reservation/') || route === '/login') && metrics.robots !== 'noindex, nofollow') {
+        console.error(`FAIL ${viewport.name} ${route}: private route must be noindex, nofollow`)
         failures++
       } else if (route === '/' && metrics.mainCount !== 1) {
         console.error(`FAIL ${viewport.name} /: expected exactly one main landmark, found ${metrics.mainCount}`)

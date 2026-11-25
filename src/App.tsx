@@ -77,6 +77,27 @@ function ScrollToTop() {
   const { pathname } = useLocation()
   useEffect(() => {
     window.scrollTo(0, 0)
+
+    const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+    if (canonical) canonical.href = new URL(pathname, window.location.origin).toString()
+
+    const privateRoute = pathname.startsWith('/app') || pathname.startsWith('/reservation/') || pathname === '/login'
+    let robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]')
+    if (!robots) {
+      robots = document.createElement('meta')
+      robots.name = 'robots'
+      document.head.appendChild(robots)
+    }
+    robots.content = privateRoute ? 'noindex, nofollow' : 'index, follow'
+
+    const pageTitles: Record<string, string> = {
+      '/': 'TKT — Events & Experiences',
+      '/upcoming': 'Upcoming Events | TKT',
+      '/past': 'Past Experiences | TKT',
+      '/about': 'About TKT — Events & Experiences',
+      '/contact': 'Contact TKT',
+    }
+    document.title = pageTitles[pathname] ?? (privateRoute ? 'Private Ticket Area | TKT' : 'TKT — Events & Experiences')
   }, [pathname])
   return null
 }
