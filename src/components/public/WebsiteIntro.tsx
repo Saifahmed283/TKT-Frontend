@@ -23,7 +23,10 @@ export default function WebsiteIntro() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    if (reduce) return
+    // Mobile and tablet visitors should reach events and booking immediately.
+    // Keep the full brand intro for desktop, where it does not block the main
+    // action on the smaller viewports.
+    if (reduce || window.matchMedia('(max-width: 1279px)').matches) return
     if (!sessionStorage.getItem(SESSION_KEY)) setShow(true)
   }, [reduce])
 
