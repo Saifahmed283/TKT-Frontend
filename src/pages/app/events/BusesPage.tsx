@@ -170,6 +170,7 @@ export function BusesPage() {
                     return cells
                   })}
                 </div>
+                </div>
               )}
 
                 <Field label="Holder / group name"><Input value={holderName} onChange={e => setHolderName(e.target.value)} placeholder="Name shown on seat" /></Field>
