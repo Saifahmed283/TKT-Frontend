@@ -32,6 +32,18 @@ export const TICKET_DESIGN_PALETTES: Array<{
   { id: 'champagne', label: 'Champagne', panelColor: '#9B7A42', accentColor: '#E7C984', backgroundColor: '#FCF8F0', textColor: '#332918' },
 ]
 
+/** Whitelist the exact backend schema: palette UI labels/IDs never leak into a booking request. */
+export function normalizeTicketDesign(value: TicketDesignSelection): TicketDesignSelection {
+  return {
+    templateId: value.templateId,
+    paletteId: value.paletteId,
+    panelColor: value.panelColor,
+    accentColor: value.accentColor,
+    backgroundColor: value.backgroundColor,
+    textColor: value.textColor,
+  }
+}
+
 export interface PublicTicketType {
   id: string
   name: string
