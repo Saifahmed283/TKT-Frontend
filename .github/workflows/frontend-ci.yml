@@ -31,3 +31,56 @@ jobs:
         run: npm test
       - name: Production build
         run: npm run build
+      - name: Install Chromium for responsive and Lighthouse audits
+        run: npx playwright install --with-deps chromium
+      - name: Start production preview
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/tkt-preview.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/tkt-preview.log
+          exit 1
+      - name: Responsive viewport smoke test
+        run: node scripts/responsive-smoke.mjs
+      - name: Lighthouse mobile and desktop audits
+        run: |
+          mkdir -p artifacts
+          export CHROME_PATH="$(node -e "const { chromium } = require('@playwright/test'); process.stdout.write(chromium.executablePath())")"
+          npx --yes lighthouse@13.5.0 http://127.0.0.1:4173/ --only-categories=performance,accessibility,best-practices,seo --output=json --output-path=./artifacts/lighthouse-mobile.json --quiet --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage"
+          npx --yes lighthouse@13.5.0 http://127.0.0.1:4173/ --preset=desktop --only-categories=performance,accessibility,best-practices,seo --output=json --output-path=./artifacts/lighthouse-desktop.json --quiet --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage"
+      - name: Summarize Lighthouse scores
+        if: always()
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, appendFileSync } from 'node:fs'
+          const names = ['performance', 'accessibility', 'best-practices', 'seo']
+          for (const device of ['mobile', 'desktop']) {
+            try {
+              const report = JSON.parse(readFileSync(`artifacts/lighthouse-${device}.json`, 'utf8'))
+              const scores = Object.fromEntries(names.map(name => [name, Math.round((report.categories[name]?.score ?? 0) * 100)]))
+              const audits = report.audits
+              const metrics = {
+                FCP: audits['first-contentful-paint']?.displayValue,
+                LCP: audits['largest-contentful-paint']?.displayValue,
+                TBT: audits['total-blocking-time']?.displayValue,
+                CLS: audits['cumulative-layout-shift']?.displayValue,
+                SpeedIndex: audits['speed-index']?.displayValue,
+              }
+              const row = `| ${device} | ${scores.performance} | ${scores.accessibility} | ${scores['best-practices']} | ${scores.seo} | ${metrics.FCP ?? '-'} | ${metrics.LCP ?? '-'} | ${metrics.TBT ?? '-'} | ${metrics.CLS ?? '-'} |`
+              console.log(`Lighthouse ${device}: ${JSON.stringify({scores,metrics})}`)
+              appendFileSync(process.env.GITHUB_STEP_SUMMARY, row + '\\n')
+            } catch (error) {
+              console.error(`No Lighthouse ${device} report: ${error.message}`)
+              process.exitCode = 1
+            }
+          }
+          NODE
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tkt-lighthouse-reports
+          path: artifacts/lighthouse-*.json
+          if-no-files-found: warn
