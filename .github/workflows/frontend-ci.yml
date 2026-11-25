@@ -70,7 +70,16 @@ jobs:
               }
               const row = `| ${device} | ${scores.performance} | ${scores.accessibility} | ${scores['best-practices']} | ${scores.seo} | ${metrics.FCP ?? '-'} | ${metrics.LCP ?? '-'} | ${metrics.TBT ?? '-'} | ${metrics.CLS ?? '-'} |`
               console.log(`Lighthouse ${device}: ${JSON.stringify({scores,metrics})}`)
-              appendFileSync(process.env.GITHUB_STEP_SUMMARY, row + '\\n')
+              const minimums = device === 'mobile'
+                ? { performance: 80, accessibility: 95, 'best-practices': 90, seo: 95 }
+                : { performance: 90, accessibility: 95, 'best-practices': 90, seo: 95 }
+              for (const [category, minimum] of Object.entries(minimums)) {
+                if (scores[category] < minimum) {
+                  console.error(`Lighthouse ${device} ${category} score ${scores[category]} is below required ${minimum}`)
+                  process.exitCode = 1
+                }
+              }
+              appendFileSync(process.env.GITHUB_STEP_SUMMARY, row + String.fromCharCode(10))
             } catch (error) {
               console.error(`No Lighthouse ${device} report: ${error.message}`)
               process.exitCode = 1
