@@ -75,6 +75,7 @@ export default function PublicNav() {
             className="inline-flex border border-line-soft p-2 text-ink-2 transition-all duration-200 ease-out hover:border-signal/40 hover:text-signal active:scale-[0.95] lg:hidden"
             aria-label={t('menu')}
             aria-expanded={open}
+            aria-controls="tkt-mobile-nav"
           >
             <span className={`transition-transform duration-300 ${open ? 'rotate-90' : 'rotate-0'}`}>{open ? <X size={16} /> : <Menu size={16} />}</span>
           </button>
@@ -82,7 +83,7 @@ export default function PublicNav() {
       </div>
 
       {open && (
-        <div className="border-t border-line-soft bg-paper/96 backdrop-blur-xl lg:hidden">
+        <div id="tkt-mobile-nav" className="border-t border-line-soft bg-paper/96 backdrop-blur-xl lg:hidden">
           <div className="mx-auto max-w-7xl space-y-1 px-4 py-4 sm:px-6">
             {LINKS.map((l) => (
               <NavLink
