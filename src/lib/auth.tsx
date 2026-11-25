@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
-import { api, setAccessToken } from './api'
+import { api, refreshSession, setAccessToken } from './api'
 import type { User } from './types'
 
 interface AuthState {
@@ -8,8 +8,9 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>
   register: (name: string, email: string, password: string) => Promise<void>
   logout: () => Promise<void>
+  /** Reuses the refresh cookie to restore the session and user in one call. */
   refresh: () => Promise<void>
-  /** Alias of refresh — re-fetches the current user from /auth/me */
+  /** Alias of refresh. */
   loadMe: () => Promise<void>
 }
 
@@ -19,33 +20,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const refresh = useCallback(async () => {
-    const me = await api<User>('/auth/me')
-    setUser(me)
+  const applySession = useCallback((session: Awaited<ReturnType<typeof refreshSession>>) => {
+    if (session) {
+      setAccessToken(session.token)
+      setUser(session.user as User)
+    } else {
+      setAccessToken(null)
+      setUser(null)
+    }
   }, [])
 
+  const refresh = useCallback(async () => {
+    applySession(await refreshSession())
+  }, [applySession])
+
   useEffect(() => {
-    ;(async () => {
+    let alive = true
+    // /auth/refresh returns both a token and the user, so boot needs one
+    // request instead of refresh -> /auth/me. Guests simply get no session.
+    void (async () => {
       try {
-        // Try silent refresh first to avoid noisy 401 on /auth/me for guests.
-        const res = await fetch(`${import.meta.env.VITE_API_BASE ?? '/api'}/auth/refresh`, {
-          method: 'POST',
-          credentials: 'include',
-        })
-        if (res.ok) {
-          const body = (await res.json()) as { data?: { token?: string } }
-          if (body.data?.token) setAccessToken(body.data.token)
-          await refresh()
-        } else {
-          setUser(null)
-        }
+        const session = await refreshSession()
+        if (alive) applySession(session)
       } catch {
-        setUser(null)
+        if (alive) applySession(null)
       } finally {
-        setLoading(false)
+        if (alive) setLoading(false)
       }
     })()
-  }, [refresh])
+    return () => {
+      alive = false
+    }
+  }, [applySession])
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await api<{ token: string; user: User }>('/auth/login', {
@@ -53,8 +59,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ email, password }),
     })
     setAccessToken(res.token)
-    await refresh()
-  }, [refresh])
+    setUser(res.user)
+  }, [])
 
   const register = useCallback(async (name: string, email: string, password: string) => {
     const res = await api<{ token: string; user: User }>('/auth/register', {
@@ -62,8 +68,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ name, email, password }),
     })
     setAccessToken(res.token)
-    await refresh()
-  }, [refresh])
+    setUser(res.user)
+  }, [])
 
   const logout = useCallback(async () => {
     try {

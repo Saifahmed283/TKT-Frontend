@@ -26,7 +26,7 @@ type DashboardData = {
   recentActivity: FeedActivity[]
 }
 
-const REFRESH_MS = 10_000
+const REFRESH_MS = 30_000
 
 export default function Dashboard() {
   const { t } = useLanguage()
@@ -34,7 +34,7 @@ export default function Dashboard() {
 
   const q = useQuery({
     queryKey: ['dashboard'],
-    queryFn: () => api<DashboardData>('/dashboard'),
+    queryFn: ({ signal }) => api.get<DashboardData>('/dashboard', { signal }),
     refetchInterval: REFRESH_MS,
   })
 

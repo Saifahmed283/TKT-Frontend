@@ -81,14 +81,14 @@ export function StaffPage() {
 
   const presence = useQuery({
     queryKey: ['presence', eventId, sse],
-    queryFn: () => api.get<PresenceRow[]>(`/events/${eventId}/presence`),
-    refetchInterval: 10_000,
+    queryFn: ({ signal }) => api.get<PresenceRow[]>(`/events/${eventId}/presence`, { signal }),
+    refetchInterval: 20_000,
   })
 
+  // Activity is driven by the SSE tick; polling it as well doubled requests.
   const activity = useQuery({
     queryKey: ['activity', eventId, sse],
-    queryFn: () => api.get<ActivityItem[]>(`/events/${eventId}/activity?limit=40`),
-    refetchInterval: 10_000,
+    queryFn: ({ signal }) => api.get<ActivityItem[]>(`/events/${eventId}/activity?limit=40`, { signal }),
   })
 
   const roles = useQuery({

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Search, Users, Download, Trash2 } from 'lucide-react'
 import { api } from '../../lib/api'
+import { useDebouncedValue } from '../../lib/useDebouncedValue'
 import { useTaxonomy } from '../../lib/taxonomy'
 import { EmptyState, ErrorBanner, PageHeader, Spinner, fmtDateTime } from '../../components/ui'
 import { ConfirmDialog } from '../../components/ui/dialog'
@@ -37,6 +38,7 @@ export default function AttendeesPage() {
   const qc = useQueryClient()
   const taxonomyQ = useTaxonomy()
   const [q, setQ] = useState('')
+  const debouncedQ = useDebouncedValue(q)
   const [scope, setScope] = useState<'approved' | 'pending' | 'all'>('approved')
   const [status, setStatus] = useState('')
   const [attendeeType, setAttendeeType] = useState('')
@@ -46,14 +48,16 @@ export default function AttendeesPage() {
     if (!code) return '—'
     return taxonomyQ.data.attendeeTypes.find((item) => item.code === code)?.label ?? code
   }
-  const filters = `&scope=${scope}${q ? `&q=${encodeURIComponent(q)}` : ''}${status ? `&status=${status}` : ''}${attendeeType ? `&attendeeType=${attendeeType}` : ''}`
+  const filters = `&scope=${scope}${debouncedQ ? `&q=${encodeURIComponent(debouncedQ)}` : ''}${status ? `&status=${status}` : ''}${attendeeType ? `&attendeeType=${attendeeType}` : ''}`
 
   const query = useQuery({
-    queryKey: ['attendees', eventId, scope, q, status, attendeeType, page],
-    queryFn: () =>
-      api<{ rows: AttendeeRow[]; total: number; page: number; pageSize: number }>(
+    queryKey: ['attendees', eventId, scope, debouncedQ, status, attendeeType, page],
+    queryFn: ({ signal }) =>
+      api.get<{ rows: AttendeeRow[]; total: number; page: number; pageSize: number }>(
         `/events/${eventId}/attendees?page=${page}&pageSize=25${filters}`,
+        { signal },
       ),
+    placeholderData: (prev) => prev,
   })
 
   const remove = useMutation({

@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 import { api } from '@/lib/api'
-import { useSse } from '@/lib/sse'
+import { downloadAuthFile } from '@/lib/export'
+import { useDebouncedValue } from '@/lib/useDebouncedValue'
 import { useToast } from '@/components/ui/toast'
 import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
@@ -33,14 +34,6 @@ type Summary = {
 }
 
 const fmtMoney = (n: number, currency = 'EGP') => `${currency} ${n.toLocaleString()}`
-async function downloadBlob(path: string, filename: string) {
-  const token = localStorage.getItem('tkt_access_token')
-  const res = await fetch(`/api${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : undefined, credentials: 'include' })
-  if (!res.ok) throw new Error('Export failed')
-  const blob = await res.blob()
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a'); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url)
-}
 
 export function PaymentsPage() {
   const { eventId = '' } = useParams()
@@ -49,16 +42,16 @@ export function PaymentsPage() {
   const [providerOpen, setProviderOpen] = useState(false)
   const [deleteProviderId, setDeleteProviderId] = useState<string | null>(null)
   const [refLookup, setRefLookup] = useState('')
+  const debouncedRef = useDebouncedValue(refLookup)
   const [form, setForm] = useState({ name: '', accountName: '', accountNumber: '', paymentPhone: '', paymentLink: '', instructions: '', imageUrl: '', fetchUrlTemplate: '', fetchAuthHeader: '', fetchAuthValue: '' })
   const [fetchResult, setFetchResult] = useState<{ message: string; localMatchCount: number; external: any; providerName?: string } | null>(null)
 
   const providersQ = useQuery({ queryKey: ['events', eventId, 'payments', 'providers'], queryFn: () => api.get<Provider[]>(`/events/${eventId}/payments/providers`), enabled: !!eventId })
   const pendingQ = useQuery({ queryKey: ['events', eventId, 'payments', 'pending'], queryFn: () => api.get<PendingPayment[]>(`/events/${eventId}/payments/pending`), enabled: !!eventId })
   const summaryQ = useQuery({ queryKey: ['events', eventId, 'payments', 'summary'], queryFn: () => api.get<Summary>(`/events/${eventId}/payments/summary`), enabled: !!eventId })
-  const refQ = useQuery({ queryKey: ['events', eventId, 'payments', 'ref', refLookup], queryFn: () => api.get<PendingPayment[]>(`/events/${eventId}/payments/reference/${encodeURIComponent(refLookup)}`), enabled: !!eventId && refLookup.trim().length >= 3 })
+  const refQ = useQuery({ queryKey: ['events', eventId, 'payments', 'ref', debouncedRef], queryFn: ({ signal }) => api.get<PendingPayment[]>(`/events/${eventId}/payments/reference/${encodeURIComponent(debouncedRef)}`, { signal }), enabled: !!eventId && debouncedRef.trim().length >= 3 })
 
   const refresh = () => { void qc.invalidateQueries({ queryKey: ['events', eventId, 'payments'] }); void qc.invalidateQueries({ queryKey: ['events', eventId] }) }
-  useSse(eventId, 'reservation')
 
   const createProvider = useMutation({
     mutationFn: () => api.post(`/events/${eventId}/payments/providers`, form),
@@ -91,7 +84,7 @@ export function PaymentsPage() {
   })
 
   const exportPayments = async () => {
-    try { await downloadBlob(`/events/${eventId}/payments/export.xlsx`, `payments-${eventId}.xlsx`); toast.success('Export ready') }
+    try { await downloadAuthFile(`/events/${eventId}/payments/export.xlsx`, `payments-${eventId}.xlsx`); toast.success('Export ready') }
     catch (e: any) { toast.error(e?.message ?? 'Export failed') }
   }
 

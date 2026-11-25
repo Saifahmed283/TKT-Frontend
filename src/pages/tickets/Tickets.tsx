@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Search, Plus, Lock, Check, Pencil, Trash2 } from 'lucide-react'
 import { api } from '../../lib/api'
+import { useDebouncedValue } from '../../lib/useDebouncedValue'
 import { useTaxonomy } from '../../lib/taxonomy'
 import { ErrorBanner, PageHeader, Spinner, fmtDateTime } from '../../components/ui'
 import { Table, Td, EmptyState } from '../../components/ui/table'
@@ -56,6 +57,7 @@ export default function TicketsPage() {
   const tierOptions = taxonomyQ.data.ticketTiers
   const sse = useSse(eventId, 'activity')
   const [q, setQ] = useState('')
+  const debouncedQ = useDebouncedValue(q)
   const [showAdd, setShowAdd] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [form, setForm] = useState({ name: '', description: '', category: '', tier: 'STANDARD', price: '', currency: 'EGP', quota: '', salesStartAt: '', salesEndAt: '', isPublic: true, transportIncluded: false, sortOrder: '0' })
@@ -67,11 +69,13 @@ export default function TicketsPage() {
   })
 
   const query = useQuery({
-    queryKey: ['tickets', eventId, q],
-    queryFn: () =>
-      api<{ rows: TicketRow[]; total: number }>(
-        `/events/${eventId}/tickets?page=1&pageSize=50${q ? `&q=${encodeURIComponent(q)}` : ''}`,
+    queryKey: ['tickets', eventId, debouncedQ],
+    queryFn: ({ signal }) =>
+      api.get<{ rows: TicketRow[]; total: number }>(
+        `/events/${eventId}/tickets?page=1&pageSize=50${debouncedQ ? `&q=${encodeURIComponent(debouncedQ)}` : ''}`,
+        { signal },
       ),
+    placeholderData: (prev) => prev,
   })
 
   const toDateInput = (v?: string | null) => (v ? new Date(v).toISOString().slice(0, 16) : '')
