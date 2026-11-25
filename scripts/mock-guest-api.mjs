@@ -4,7 +4,7 @@ const host = '127.0.0.1'
 const port = Number(process.env.TKT_MOCK_API_PORT ?? 4174)
 
 const server = http.createServer((req, res) => {
-  res.writeHead(401, {
+  res.writeHead(200, {
     'content-type': 'application/json; charset=utf-8',
     'cache-control': 'no-store',
     'x-content-type-options': 'nosniff',
