@@ -277,6 +277,43 @@ test.describe('TKT E2E — public site', () => {
     await expect(page.getByText(/Ticket ready|تذكرتك جاهزة/i).first()).toBeVisible({ timeout: 15_000 })
   })
 
+  test('releases a held seat when the user deselects it or discards the wizard', async ({ page, request }) => {
+    const name = `E2E Hold Release ${Date.now()}`
+    await seedPaidTransportEvent(request, name)
+    const released: { seatIds: string[]; sessionId: string }[] = []
+    page.on('request', (requestEvent) => {
+      if (requestEvent.url().includes('/release-hold') && requestEvent.method() === 'POST') {
+        try { released.push(requestEvent.postDataJSON()) } catch {}
+      }
+    })
+
+    await page.goto('/upcoming')
+    await page.getByText(name).first().waitFor({ timeout: 20_000 })
+    await page.locator('article', { hasText: name }).first().getByRole('button', { name: /Reserve|احجز/i }).first().click()
+    await page.getByTestId('ticket-option').filter({ hasText: 'Conference + Bus' }).click()
+    await page.getByTestId('wizard-next').click()
+    await page.getByLabel(/Full name|الاسم/i).fill('E2E Hold Release')
+    await page.getByLabel(/Email|البريد/i).fill(`e2e.release+${Date.now()}@example.com`)
+    await page.getByTestId('reservation-phone').fill('+20 100 000 0004')
+    await page.getByTestId('wizard-next').click()
+
+    const seat = page.getByTestId('seat-option').first()
+    await seat.click()
+    await expect(page.getByTestId('wizard-next')).toBeEnabled({ timeout: 10_000 })
+    await seat.click()
+    await expect.poll(() => released.length).toBeGreaterThanOrEqual(1)
+    expect(released[0].seatIds).toHaveLength(1)
+    expect(released[0].sessionId).toBeTruthy()
+
+    await seat.click()
+    await expect(page.getByTestId('wizard-next')).toBeEnabled({ timeout: 10_000 })
+    await page.keyboard.press('Escape')
+    await expect(page.getByTestId('wizard-discard-confirm')).toBeVisible()
+    await page.getByTestId('wizard-discard-accept').click()
+    await expect(page.getByRole('dialog')).toBeHidden()
+    await expect.poll(() => released.length).toBeGreaterThanOrEqual(2)
+  })
+
   test('seat hold failure offers a retry that enables the wizard', async ({ page, request }) => {
     const name = `E2E Hold Retry ${Date.now()}`
     await seedPaidTransportEvent(request, name)
