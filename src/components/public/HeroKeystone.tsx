@@ -173,59 +173,79 @@ export default function HeroKeystone() {
       camera.updateProjectionMatrix()
       renderer.setSize(w, h, false)
       sealGroup.position.x = w > 900 ? 1.4 : w > 700 ? 0.8 : 0
-      sealGroup.position.y = 0
       sealGroup.scale.setScalar(w < 900 ? 0.88 : 1)
-      draw()
     }
 
-    const onDown = (clientX: number, clientY: number) => { isDragging = true; prevX = clientX; prevY = clientY }
-    const draw = () => {
-      if (raf) return
-      raf = window.requestAnimationFrame(() => {
-        raf = 0
-        sealGroup.rotation.y = targetRotY
-        sealGroup.rotation.x = targetRotX
-        renderer.render(scene, camera)
-      })
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) return
+      isDragging = true
+      prevX = event.clientX
+      prevY = event.clientY
+      container.dataset.dragging = 'true'
+      container.setPointerCapture(event.pointerId)
     }
 
-    const onMove = (clientX: number, clientY: number) => {
+    const onPointerMove = (event: PointerEvent) => {
       if (!isDragging) return
-      targetRotY += (clientX - prevX) * 0.007
-      targetRotX += (clientY - prevY) * 0.007
-      prevX = clientX
-      prevY = clientY
-      draw()
+      targetRotY += (event.clientX - prevX) * 0.007
+      targetRotX += (event.clientY - prevY) * 0.007
+      prevX = event.clientX
+      prevY = event.clientY
     }
-    const onUp = () => { isDragging = false }
 
-    const onMouseDown = (e: MouseEvent) => onDown(e.clientX, e.clientY)
-    const onMouseMove = (e: MouseEvent) => onMove(e.clientX, e.clientY)
-    const onTouchStart = (e: TouchEvent) => { if (e.touches[0]) onDown(e.touches[0].clientX, e.touches[0].clientY) }
-    const onTouchMove = (e: TouchEvent) => { if (e.touches[0]) onMove(e.touches[0].clientX, e.touches[0].clientY) }
+    const onPointerUp = (event: PointerEvent) => {
+      if (!isDragging) return
+      isDragging = false
+      delete container.dataset.dragging
+      if (container.hasPointerCapture(event.pointerId)) {
+        container.releasePointerCapture(event.pointerId)
+      }
+    }
 
-    container.addEventListener('mousedown', onMouseDown)
-    window.addEventListener('mouseup', onUp)
-    window.addEventListener('mousemove', onMouseMove)
-    container.addEventListener('touchstart', onTouchStart, { passive: true })
-    window.addEventListener('touchend', onUp)
-    window.addEventListener('touchmove', onTouchMove, { passive: true })
+    const onPointerCancel = () => {
+      isDragging = false
+      delete container.dataset.dragging
+    }
+
+    container.addEventListener('pointerdown', onPointerDown)
+    container.addEventListener('pointermove', onPointerMove)
+    container.addEventListener('pointerup', onPointerUp)
+    container.addEventListener('pointercancel', onPointerCancel)
+
+    const clock = new THREE.Clock()
+    const animate = () => {
+      raf = window.requestAnimationFrame(animate)
+      const elapsed = clock.getElapsedTime()
+
+      haloOrbitGroup.rotation.z = elapsed * 0.22
+      innerRing.rotation.z = -elapsed * 0.14
+      outerRing.rotation.z = elapsed * 0.05
+      sealGroup.position.y = Math.sin(elapsed * 0.8) * 0.08
+      shadowPlane.scale.setScalar(1 + Math.sin(elapsed * 0.8) * 0.03)
+      shadowMat.opacity = 0.72 - Math.sin(elapsed * 0.8) * 0.05
+
+      if (!isDragging) {
+        targetRotY = -0.28 + Math.sin(elapsed * 0.55) * 0.38
+        targetRotX = 0.08 + Math.cos(elapsed * 0.4) * 0.12
+      }
+
+      sealGroup.rotation.y += (targetRotY - sealGroup.rotation.y) * 0.08
+      sealGroup.rotation.x += (targetRotX - sealGroup.rotation.x) * 0.08
+      renderer.render(scene, camera)
+    }
 
     const ro = new ResizeObserver(size)
     ro.observe(container)
     size()
-
-    draw()
+    animate()
 
     return () => {
       window.cancelAnimationFrame(raf)
       ro.disconnect()
-      container.removeEventListener('mousedown', onMouseDown)
-      window.removeEventListener('mouseup', onUp)
-      window.removeEventListener('mousemove', onMouseMove)
-      container.removeEventListener('touchstart', onTouchStart)
-      window.removeEventListener('touchend', onUp)
-      window.removeEventListener('touchmove', onTouchMove)
+      container.removeEventListener('pointerdown', onPointerDown)
+      container.removeEventListener('pointermove', onPointerMove)
+      container.removeEventListener('pointerup', onPointerUp)
+      container.removeEventListener('pointercancel', onPointerCancel)
       renderer.domElement.removeEventListener('webglcontextlost', onContextLost)
       renderer.dispose()
       renderer.forceContextLoss()
@@ -240,7 +260,7 @@ export default function HeroKeystone() {
   }, [])
 
   return (
-    <div ref={containerRef} className="pointer-events-auto absolute inset-0 cursor-grab touch-pan-y active:cursor-grabbing" aria-label="Interactive 3D TKT Keystone Sculpture">
+    <div ref={containerRef} data-testid="hero-emblem-interaction-surface" className="pointer-events-auto absolute inset-0 cursor-grab touch-pan-y select-none active:cursor-grabbing" aria-label="Interactive 3D TKT Keystone Sculpture">
       {reduced ? <StaticEmblem /> : null}
     </div>
   )
