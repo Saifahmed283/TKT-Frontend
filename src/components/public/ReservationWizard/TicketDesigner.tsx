@@ -250,6 +250,7 @@ export function TicketDesigner({
           <button
             key={template.id}
             type="button"
+            data-testid={`ticket-template-${template.id}`}
             aria-pressed={design.templateId === template.id}
             onClick={() => onChange({ ...design, templateId: template.id })}
             className={`border px-3 py-2 text-[11px] font-medium transition-colors ${design.templateId === template.id ? 'border-signal/60 bg-signal/10 text-signal' : 'border-line-soft bg-paper text-ink-2 hover:border-signal/30'}`}
@@ -264,6 +265,7 @@ export function TicketDesigner({
           <button
             key={palette.id}
             type="button"
+            data-testid={`ticket-palette-${palette.id}`}
             aria-pressed={design.paletteId === palette.id}
             onClick={() => onChange({
               ...design,
@@ -296,6 +298,7 @@ export function TicketDesigner({
           <label key={key} className="flex min-w-0 items-center gap-2 border border-line-soft bg-paper px-2 py-2">
             <input
               type="color"
+              data-testid={`ticket-color-${key}`}
               aria-label={label}
               value={design[key]}
               onChange={(e) => onChange({ ...design, paletteId: 'custom', [key]: e.target.value.toUpperCase() })}
