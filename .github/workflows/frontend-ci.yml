@@ -33,6 +33,15 @@ jobs:
         run: npm run build
       - name: Install Chromium for responsive and Lighthouse audits
         run: npx playwright install --with-deps chromium
+      - name: Start guest-only API mock for Lighthouse
+        run: |
+          node scripts/mock-guest-api.mjs > /tmp/tkt-guest-api.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS -X POST http://127.0.0.1:4174/auth/refresh -o /dev/null -w "%{http_code}" | grep -q 401; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/tkt-guest-api.log
+          exit 1
       - name: Start production preview
         run: |
           npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/tkt-preview.log 2>&1 &
