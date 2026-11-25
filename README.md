@@ -30,3 +30,11 @@ If you are developing a production application, we recommend enabling type-aware
 ```
 
 See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+
+## Vercel deployment
+
+`vercel.json` sends unknown paths to `/index.html` so deep links such as
+`/upcoming` survive a reload. It deliberately does not rewrite `/api/*`: keep
+that prefix routed to the backend (same-project rewrite or an absolute
+`VITE_API_BASE` build variable), otherwise uploads and API calls will return the
+SPA shell.
