@@ -15,7 +15,9 @@ type EmailTemplate = {
   subject?: string
   preheader?: string
   title?: string
+  titleAr?: string
   body?: string
+  bodyAr?: string
   footer?: string
 }
 
@@ -32,9 +34,11 @@ type EventSettingsData = {
 const DEFAULT_TEMPLATE: EmailTemplate = {
   subject: 'Your ticket — {event}',
   preheader: 'Ticket for {event} — present your QR at check-in',
-  title: 'You\'re in, {event}',
-  body: 'Your reservation for <strong>{event}</strong> is confirmed. Show this QR at the gate — it is signed, single-use and cannot be forged.',
-  footer: 'TKT · Control center for live events',
+  title: 'Booking Confirmation & Ticket Issuance',
+  titleAr: 'تأكيد الحجز وإصدار التذكرة',
+  body: 'Hello, thank you for booking with TKT. Your ticket details are below.',
+  bodyAr: 'مرحباً، شكراً لحجزك معنا. يسعدنا تأكيد مشاركتك في الحدث التالي.',
+  footer: 'Your Partner in Travel, Events & Special Occasions',
 }
 
 export function EventSettingsPage() {
