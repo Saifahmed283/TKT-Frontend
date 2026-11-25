@@ -44,8 +44,9 @@ export function FileUploadField({
       const body = await res.json().catch(() => null)
       if (!res.ok) throw new Error(body?.error?.message ?? 'Upload failed')
       const data = body?.data as UploadResult
-      const url = data.url.startsWith('http') ? new URL(data.url).pathname : data.url
-      onChange(url)
+      // Blob URLs are absolute and must be kept intact; only local uploads
+      // return a same-origin path.
+      onChange(data.url)
       toast.success('File uploaded')
     } catch (e: any) {
       toast.error(e?.message ?? 'Upload failed')
