@@ -1,13 +1,53 @@
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import PublicNav from '../../components/public/PublicNav'
 import { useLanguage } from '../../lib/i18n'
 import { useTheme } from '../../lib/theme'
 
+const HeroKeystone = lazy(() => import('../../components/public/HeroKeystone'))
+
+function HeroEmblemFallback() {
+  return (
+    <svg viewBox="0 0 480 480" className="h-auto w-full overflow-visible">
+      <defs>
+        <linearGradient id="tktHeroGold" gradientUnits="userSpaceOnUse" x1="72" y1="70" x2="410" y2="414">
+          <stop offset="0%" stopColor="#C8A25C" />
+          <stop offset="50%" stopColor="#E8D08B" />
+          <stop offset="100%" stopColor="#A77B38" />
+        </linearGradient>
+        <radialGradient id="tktHeroGlow">
+          <stop offset="0%" stopColor="#C8A25C" stopOpacity=".16" />
+          <stop offset="100%" stopColor="#C8A25C" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <circle cx="240" cy="240" r="226" fill="url(#tktHeroGlow)" />
+      <circle cx="240" cy="240" r="190" fill="none" stroke="url(#tktHeroGold)" strokeWidth="2.5" opacity=".9" />
+      <circle cx="240" cy="240" r="170" fill="none" stroke="url(#tktHeroGold)" strokeWidth="1.4" opacity=".7" />
+      <circle cx="240" cy="240" r="209" fill="none" stroke="#C8A25C" strokeWidth="3" strokeDasharray="1 15" strokeLinecap="round" opacity=".9" />
+      <g stroke="url(#tktHeroGold)" strokeWidth="14" strokeLinecap="round" strokeLinejoin="round" fill="none">
+        <path d="M240 125V355M158 125H322M158 355H322M158 172L322 308M158 308L322 172" />
+      </g>
+      <circle cx="240" cy="240" r="8" fill="#E8D08B" />
+    </svg>
+  )
+}
+
 export default function Landing() {
   const { t, lang } = useLanguage()
   const { theme } = useTheme()
   const isLight = theme === 'light'
+  const [desktop3D, setDesktop3D] = useState(false)
+
+  useEffect(() => {
+    // Keep WebGL off phones and tablets; only request the 3D model on large
+    // screens that have not asked the browser to reduce motion.
+    const media = window.matchMedia('(min-width: 1280px) and (prefers-reduced-motion: no-preference)')
+    const update = () => setDesktop3D(media.matches)
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
 
   return (
     <div className="min-h-[100svh] overflow-x-hidden bg-paper text-ink">
@@ -35,28 +75,19 @@ export default function Landing() {
             <div className="absolute inset-x-0 top-[4.5rem] h-px bg-gradient-to-r from-transparent via-signal/30 to-transparent" />
           </div>
 
-          <div aria-hidden="true" className="pointer-events-none absolute end-[-4%] top-[48%] z-[1] w-[58%] max-w-[560px] -translate-y-1/2 opacity-20 sm:end-0 sm:w-[48%] sm:opacity-35 lg:end-[3%] lg:w-[46%] lg:opacity-35 xl:opacity-90">
-            <svg viewBox="0 0 480 480" className="h-auto w-full overflow-visible">
-              <defs>
-                <linearGradient id="tktHeroGold" gradientUnits="userSpaceOnUse" x1="72" y1="70" x2="410" y2="414">
-                  <stop offset="0%" stopColor="#C8A25C" />
-                  <stop offset="50%" stopColor="#E8D08B" />
-                  <stop offset="100%" stopColor="#A77B38" />
-                </linearGradient>
-                <radialGradient id="tktHeroGlow">
-                  <stop offset="0%" stopColor="#C8A25C" stopOpacity=".16" />
-                  <stop offset="100%" stopColor="#C8A25C" stopOpacity="0" />
-                </radialGradient>
-              </defs>
-              <circle cx="240" cy="240" r="226" fill="url(#tktHeroGlow)" />
-              <circle cx="240" cy="240" r="190" fill="none" stroke="url(#tktHeroGold)" strokeWidth="2.5" opacity=".9" />
-              <circle cx="240" cy="240" r="170" fill="none" stroke="url(#tktHeroGold)" strokeWidth="1.4" opacity=".7" />
-              <circle cx="240" cy="240" r="209" fill="none" stroke="#C8A25C" strokeWidth="3" strokeDasharray="1 15" strokeLinecap="round" opacity=".9" />
-              <g stroke="url(#tktHeroGold)" strokeWidth="14" strokeLinecap="round" strokeLinejoin="round" fill="none">
-                <path d="M240 125V355M158 125H322M158 355H322M158 172L322 308M158 308L322 172" />
-              </g>
-              <circle cx="240" cy="240" r="8" fill="#E8D08B" />
-            </svg>
+          <div
+            aria-hidden="true"
+            data-testid="hero-emblem"
+            data-renderer={desktop3D ? '3d' : 'static'}
+            className="pointer-events-none absolute end-[-4%] top-[48%] z-[1] aspect-square w-[58%] max-w-[560px] -translate-y-1/2 opacity-20 sm:end-0 sm:w-[48%] sm:opacity-35 lg:end-[3%] lg:w-[46%] lg:opacity-35 xl:opacity-90"
+          >
+            {desktop3D ? (
+              <Suspense fallback={<HeroEmblemFallback />}>
+                <HeroKeystone />
+              </Suspense>
+            ) : (
+              <HeroEmblemFallback />
+            )}
           </div>
 
           <div className="relative z-10 mx-auto grid w-full max-w-7xl items-center gap-8 lg:grid-cols-[minmax(0,620px)_1fr] lg:gap-6">
