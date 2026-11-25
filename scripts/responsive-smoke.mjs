@@ -29,8 +29,12 @@ try {
         viewportWidth: document.documentElement.clientWidth,
         documentWidth: Math.max(document.documentElement.scrollWidth, document.body?.scrollWidth ?? 0),
         title: document.title,
+        heroRenderer: document.querySelector('[data-testid="hero-emblem"]')?.getAttribute('data-renderer') ?? null,
       }))
-      if (metrics.documentWidth > metrics.viewportWidth + 1) {
+      if (route === '/' && metrics.heroRenderer !== (viewport.width >= 1280 ? '3d' : 'static')) {
+        console.error(`FAIL ${viewport.name} /: expected ${viewport.width >= 1280 ? '3D' : 'static'} hero emblem, found ${metrics.heroRenderer ?? 'missing'}`)
+        failures++
+      } else if (metrics.documentWidth > metrics.viewportWidth + 1) {
         console.error(`FAIL ${viewport.name} ${route}: horizontal overflow ${metrics.documentWidth}px > ${metrics.viewportWidth}px`)
         failures++
       } else {
