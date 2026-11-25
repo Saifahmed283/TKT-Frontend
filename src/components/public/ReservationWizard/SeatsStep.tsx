@@ -1,12 +1,15 @@
-import { ArrowRight, Clock3 } from 'lucide-react'
+import { ArrowRight, Box, Clock3, Grid3X3 } from 'lucide-react'
+import { lazy, Suspense } from 'react'
 import type { ReservationWizard } from './useReservationWizard'
 import MECT49SeatMap from '../MECT49SeatMap'
+
+const BusSeatMap3D = lazy(() => import('../BusSeatMap3D'))
 
 export function SeatsStep({ w }: { w: ReservationWizard }) {
   const {
     t, buses, busId, setBusId, selectedSeatIds, setSelectedSeatIds,
     seatScrollRef, seatScroll, setSeatScroll, holding, holdExpiresAt, holdError,
-    setHoldAttempt, name, email, phone, seatPassengers, setSeatPassengers,
+    setHoldAttempt, name, email, phone, seatPassengers, setSeatPassengers, seatView3d, setSeatView3d,
   } = w
   return (
     <div data-testid="wizard-step-seats" className="space-y-3 border border-line-soft bg-elevated/20 p-4">
@@ -29,8 +32,22 @@ export function SeatsStep({ w }: { w: ReservationWizard }) {
             return (
               <div>
                 <div className={layout.template === 'mect49' ? 'hidden' : "mb-2 flex flex-wrap items-center gap-3 text-[10px] text-ink-3"}><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-ok/40" />{t('available')}</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-amber/40" />{t('held')}</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-danger/40" />{t('reservedSeat')}</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-ink-3/40" />{t('unavailable')}</span></div>
-                <div className={layout.template === 'mect49' ? 'hidden' : "mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3"}>{layout.template === 'coaster21' ? 'Coaster 21-seat' : t('customBusLayout')}</div>
-                {layout.template === 'mect49' ? (
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <div className={layout.template === 'mect49' ? 'hidden' : "font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3"}>{layout.template === 'coaster21' ? 'Coaster 21-seat' : t('customBusLayout')}</div>
+                  <div className="inline-flex items-center gap-1 rounded-lg border border-line-soft bg-panel/50 p-1">
+                    <button type="button" aria-pressed={!seatView3d} onClick={() => setSeatView3d(false)} className={`inline-flex items-center gap-1 rounded px-2 py-1.5 text-[10px] ${!seatView3d ? 'bg-signal text-black' : 'text-ink-3'}`}><Grid3X3 size={12} /> 2D</button>
+                    <button type="button" aria-pressed={seatView3d} onClick={() => setSeatView3d(true)} className={`inline-flex items-center gap-1 rounded px-2 py-1.5 text-[10px] ${seatView3d ? 'bg-signal text-black' : 'text-ink-3'}`}><Box size={12} /> 3D</button>
+                  </div>
+                </div>
+                {seatView3d ? (
+                  <Suspense fallback={<div className="grid h-[320px] place-items-center text-xs text-ink-3">{w.lang === 'ar' ? 'جارٍ تحميل العرض ثلاثي الأبعاد…' : 'Loading 3D view…'}</div>}>
+                    <BusSeatMap3D
+                      bus={bus}
+                      selectedSeats={selectedSeatIds}
+                      onSeatClick={(seat) => setSelectedSeatIds((current) => current.includes(seat.id) ? [] : [seat.id])}
+                    />
+                  </Suspense>
+                ) : layout.template === 'mect49' ? (
                   <MECT49SeatMap
                     seats={bus.seats}
                     selectedSeatIds={selectedSeatIds}
