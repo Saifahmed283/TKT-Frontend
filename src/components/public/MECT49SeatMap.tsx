@@ -11,7 +11,7 @@ const labels = {
   en: { title: 'Choose your seat', subtitle: 'MECT · 49-seat coach layout', available: 'Available', selected: 'Selected', held: 'On hold', reserved: 'Reserved', unavailable: 'Unavailable', driver: 'Driver', front: 'Front', aisle: 'Aisle', tv: 'TV', wc: 'WC', exit: 'Exit', rear: 'Rear row · 5 seats', chosen: 'Selected seats', remaining: 'Seats available' },
 } as const
 
-function MECT49SeatMap({ seats, selectedSeatIds, onSeatClick, language = 'ar', maxSelectable = 1, disabled = false, className = '' }: Props) {
+function MECT49SeatMap({ seats, selectedSeatIds, onSeatClick, language = 'ar', maxSelectable = 1, disabled = false, allowStatusSelection = false, onSeatContextMenu, className = '' }: Props) {
   const copy = labels[language]
   const byLabel = useMemo(() => new Map(seats.map((seat) => [seat.label, seat])), [seats])
   const selected = useMemo(() => new Set(selectedSeatIds), [selectedSeatIds])
@@ -22,7 +22,7 @@ function MECT49SeatMap({ seats, selectedSeatIds, onSeatClick, language = 'ar', m
   const hasFullLayout = placements.length === 49 && seats.length === 49 && placements.every((p) => byLabel.has(p.label))
 
   const activate = (seat: PublicSeat) => {
-    if (disabled || (seat.state !== 'AVAILABLE' && !selected.has(seat.id))) return
+    if (disabled || (!allowStatusSelection && seat.state !== 'AVAILABLE' && !selected.has(seat.id))) return
     if (!selected.has(seat.id) && selectedSeatIds.length >= maxSelectable) return
     onSeatClick(seat)
   }
@@ -65,7 +65,7 @@ function MECT49SeatMap({ seats, selectedSeatIds, onSeatClick, language = 'ar', m
             if (!seat) return null
             const isSelected = selected.has(seat.id)
             const state = isSelected ? 'SELECTED' : seat.state
-            const interactive = seat.state === 'AVAILABLE' || isSelected
+            const interactive = allowStatusSelection || seat.state === 'AVAILABLE' || isSelected
             const fill = state === 'SELECTED' ? '#e8d08b' : state === 'AVAILABLE' ? '#faf8f4' : state === 'HELD' ? '#6e6a62' : state === 'RESERVED' ? '#1c1b1b' : '#d8d4cc'
             const stroke = state === 'SELECTED' ? '#0b0b0c' : state === 'AVAILABLE' ? '#c8a25c' : state === 'HELD' ? '#1c1b1b' : state === 'RESERVED' ? '#6e6a62' : '#8f8a80'
             const textColor = state === 'HELD' || state === 'RESERVED' ? '#faf8f4' : '#0b0b0c'
@@ -73,6 +73,7 @@ function MECT49SeatMap({ seats, selectedSeatIds, onSeatClick, language = 'ar', m
             return (
               <g key={seat.id} role="button" tabIndex={interactive && !disabled ? 0 : -1} aria-label={accessible} aria-disabled={!interactive || disabled} aria-pressed={isSelected} data-seat-label={seat.label}
                 onClick={() => activate(seat)}
+                onContextMenu={(event) => { if (onSeatContextMenu) { event.preventDefault(); onSeatContextMenu(seat) } }}
                 onKeyDown={(event) => { if ((event.key === 'Enter' || event.key === ' ') && interactive && !disabled) { event.preventDefault(); activate(seat) } }}>
                 <title>{accessible}</title>
                 <rect x={placement.x + 3} y={placement.y + 5} width="58" height="68" rx="13" fill="#0b0b0c" opacity=".12" />
