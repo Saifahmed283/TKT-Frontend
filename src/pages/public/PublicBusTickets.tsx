@@ -83,7 +83,7 @@ function SeatMap2D({ bus, selectedSeats, onSeatClick, heldSeats, reservedSeats, 
                     disabled={!isAvailable && !isSelected}
                     onClick={() => onSeatClick(seat)}
                     className={cls}
-                    title={isHeld ? `Held${seat.holderName ? ` · ${seat.holderName}` : ''}` : seat.label}
+                    title={isHeld ? `Held · ${seat.label}` : seat.label}
                     whileTap={reduce ? undefined : { scale: 0.95 }}
                   >
                     {seat.label}
