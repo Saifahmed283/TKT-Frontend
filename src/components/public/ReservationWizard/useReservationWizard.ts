@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Bus, ClipboardList, CreditCard, Ticket, UserRound } from 'lucide-react'
 import { api, ApiError } from '../../../lib/api'
 import { useLanguage } from '../../../lib/i18n'
-import { DEFAULT_TICKET_DESIGN, fetchReservationStatus, rememberReservationAccessToken, resendReservationTicket, useReservationStatus, type PublicEvent, type ReservationResult, type TicketDesignSelection } from '../../../lib/public'
+import { DEFAULT_TICKET_DESIGN, fetchReservationStatus, normalizeTicketDesign, rememberReservationAccessToken, resendReservationTicket, useReservationStatus, type PublicEvent, type ReservationResult, type TicketDesignSelection } from '../../../lib/public'
 import { useQrDataUrl } from './shared'
 
 /**
@@ -232,7 +232,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
         phone: phone.trim(),
         notes: notes.trim() || undefined,
         ticketTypeId,
-        ticketDesign,
+        ticketDesign: normalizeTicketDesign(ticketDesign),
         paymentProviderId: isPaid && paymentProviderId ? paymentProviderId : undefined,
         paymentReference: isPaid && paymentReference.trim() ? paymentReference.trim() : undefined,
         paymentProofUrl: isPaid && paymentProofUrl ? paymentProofUrl : undefined,
