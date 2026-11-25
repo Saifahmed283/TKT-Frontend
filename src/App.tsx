@@ -3,7 +3,7 @@ import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-do
 import { useAuth } from './lib/auth'
 import { useLanguage } from './lib/i18n'
 import BrandLogo from './components/public/BrandLogo'
-import Shell from './components/shell/Shell'
+import { RequirePermission } from './components/auth/RequirePermission'
 
 const Landing = lazy(() => import('./pages/public/Landing'))
 const Login = lazy(() => import('./pages/auth/Login'))
@@ -12,7 +12,7 @@ const PastWorks = lazy(() => import('./pages/public/PastWorks'))
 const Contact = lazy(() => import('./pages/public/Contact'))
 const About = lazy(() => import('./pages/public/About'))
 const ReservationStatusPage = lazy(() => import('./pages/public/ReservationStatus'))
-import { RequirePermission } from './components/auth/RequirePermission'
+const Shell = lazy(() => import('./components/shell/Shell'))
 
 // App pages are loaded on demand. The old static import graph put every
 // operations page (and libraries such as three, recharts and jspdf) into the
