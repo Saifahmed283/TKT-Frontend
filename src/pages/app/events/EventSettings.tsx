@@ -10,6 +10,7 @@ import { Panel } from '@/components/motion/primitives'
 import { Save, Mail, Eye } from 'lucide-react'
 import { useState, useEffect, type FormEvent } from 'react'
 import { Dialog } from '@/components/ui/dialog'
+import { TicketEmailDesigner, type TicketEmailDesign } from '@/components/events/TicketEmailDesigner'
 
 type EmailTemplate = {
   subject?: string
@@ -19,6 +20,7 @@ type EmailTemplate = {
   body?: string
   bodyAr?: string
   footer?: string
+  design?: TicketEmailDesign
 }
 
 type EventSettingsData = {
@@ -143,6 +145,7 @@ export function EventSettingsPage() {
               <Textarea dir="rtl" rows={4} value={emailTpl.bodyAr ?? ''} onChange={e => setEmailTpl({ ...emailTpl, bodyAr: e.target.value })} placeholder={DEFAULT_TEMPLATE.bodyAr} />
             </Field>
             <Field label="Footer"><Input value={emailTpl.footer ?? ''} onChange={e => setEmailTpl({ ...emailTpl, footer: e.target.value })} placeholder={DEFAULT_TEMPLATE.footer} /></Field>
+            <TicketEmailDesigner value={emailTpl.design ?? {}} onChange={(design) => setEmailTpl({ ...emailTpl, design })} />
           </form>
         </Panel>
 
