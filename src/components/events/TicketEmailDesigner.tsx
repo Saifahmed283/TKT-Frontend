@@ -86,6 +86,7 @@ export function TicketEmailDesigner({
       case 'legal':
         return <p className="text-center text-[10px] opacity-50">تم إرسال هذا البريد لتأكيد تفاصيل حجزك مع TKT.</p>
     }
+    return null
   }
 
   return (
@@ -114,7 +115,7 @@ export function TicketEmailDesigner({
                   aria-label={label + ' color'}
                   type="color"
                   value={safeColor(design[key], DEFAULTS[key])}
-                  onChange={(event) => patch({ [key]: event.target.value })}
+                  onChange={(event) => patch({ [key]: event.target.value } as Partial<TicketEmailDesign>)}
                   className="size-8 shrink-0 cursor-pointer rounded border-0 bg-transparent p-0"
                 />
                 <span className="min-w-0"><span className="block text-xs text-ink">{label}</span><span className="block font-mono text-[10px] text-ink-3">{design[key]}</span></span>
@@ -147,7 +148,7 @@ export function TicketEmailDesigner({
                   <div
                     key={id}
                     draggable
-                    onDragStart={() => setDragging(id)}
+                    onDragStart={(event) => { setDragging(id); event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', id) }}
                     onDragEnd={() => setDragging(null)}
                     onDragOver={(event) => event.preventDefault()}
                     onDrop={(event) => drop(event, id)}
