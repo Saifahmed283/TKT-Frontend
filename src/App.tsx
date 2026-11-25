@@ -1,9 +1,8 @@
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { useAuth } from './lib/auth'
 import { useLanguage } from './lib/i18n'
 import BrandLogo from './components/public/BrandLogo'
-import WebsiteIntro from './components/public/WebsiteIntro'
 const Shell = lazy(() => import('./components/shell/Shell'))
 const RequirePermission = lazy(() => import('./components/auth/RequirePermission').then((m) => ({ default: m.RequirePermission })))
 
@@ -14,6 +13,27 @@ const PastWorks = lazy(() => import('./pages/public/PastWorks'))
 const Contact = lazy(() => import('./pages/public/Contact'))
 const About = lazy(() => import('./pages/public/About'))
 const ReservationStatusPage = lazy(() => import('./pages/public/ReservationStatus'))
+const WebsiteIntro = lazy(() => import('./components/public/WebsiteIntro'))
+
+function DesktopWebsiteIntroGate() {
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(min-width: 1280px)').matches,
+  )
+
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 1280px)')
+    const update = () => setIsDesktop(media.matches)
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
+
+  return isDesktop ? (
+    <Suspense fallback={null}>
+      <WebsiteIntro />
+    </Suspense>
+  ) : null
+}
 
 // App pages are loaded on demand. The old static import graph put every
 // operations page (and libraries such as three, recharts and jspdf) into the
@@ -110,7 +130,7 @@ function LegacyBusTicketsRedirect() {
 export default function App() {
   return (
     <>
-      <WebsiteIntro />
+      <DesktopWebsiteIntroGate />
       <ScrollToTop />
       <Suspense fallback={<BootSplash />}>
         <Routes>
