@@ -5,12 +5,15 @@ import { useLanguage } from '../../lib/i18n'
 import { useTheme } from '../../lib/theme'
 
 export default function Landing() {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const { theme } = useTheme()
   const isLight = theme === 'light'
 
   return (
     <div className="min-h-[100svh] overflow-x-hidden bg-paper text-ink">
+      <a href="#main-content" className="sr-only z-[100] bg-paper px-4 py-3 text-ink focus:fixed focus:left-4 focus:top-4 focus:not-sr-only">
+        {lang === 'ar' ? 'تخطي إلى المحتوى الرئيسي' : 'Skip to main content'}
+      </a>
       <PublicNav />
 
       <main id="main-content" className="relative min-h-[100svh]">
