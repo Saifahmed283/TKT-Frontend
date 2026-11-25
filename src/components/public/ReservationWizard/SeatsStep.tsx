@@ -71,7 +71,7 @@ export function SeatsStep({ w }: { w: ReservationWizard }) {
                         else {
                           const selectedSeat = selectedSeatIds.includes(seat.id)
                           const cls = selectedSeat ? 'border-signal bg-signal text-black' : seat.state === 'AVAILABLE' ? 'border-ok/40 bg-ok/15 text-ok hover:bg-ok/25' : seat.state === 'HELD' ? 'border-amber/40 bg-amber/15 text-amber cursor-not-allowed' : seat.state === 'RESERVED' ? 'border-danger/40 bg-danger/15 text-danger cursor-not-allowed' : 'border-line bg-ink-3/20 text-ink-3 cursor-not-allowed'
-                          cells.push(<button key={seat.id} type="button" data-testid="seat-option" aria-pressed={selectedSeat} disabled={!(seat.state === 'AVAILABLE' || selectedSeat)} onClick={() => setSelectedSeatIds(selectedSeat ? [] : [seat.id])} className={`grid h-8 w-8 place-items-center rounded-none border text-[10px] font-semibold transition-colors ${cls}`} title={seat.holderName ? `${seat.label} · ${seat.holderName}` : seat.label}>{seat.label}</button>)
+                          cells.push(<button key={seat.id} type="button" data-testid="seat-option" aria-pressed={selectedSeat} disabled={!(seat.state === 'AVAILABLE' || selectedSeat)} onClick={() => setSelectedSeatIds(selectedSeat ? [] : [seat.id])} className={`grid h-8 w-8 place-items-center rounded-none border text-[10px] font-semibold transition-colors ${cls}`} title={seat.label}>{seat.label}</button>)
                         }
                         if (aisleAfter === c && c < cols) cells.push(<div key={`a-${row}-${c}`} className="w-3" />)
                       }
