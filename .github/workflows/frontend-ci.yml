@@ -37,7 +37,8 @@ jobs:
         run: |
           node scripts/mock-guest-api.mjs > /tmp/tkt-guest-api.log 2>&1 &
           for i in $(seq 1 30); do
-            if curl -fsS -X POST http://127.0.0.1:4174/auth/refresh -o /dev/null -w "%{http_code}" | grep -q 401; then exit 0; fi
+            status=$(curl -sS -X POST http://127.0.0.1:4174/auth/refresh -o /dev/null -w "%{http_code}" || true)
+            if [ "$status" = "401" ]; then exit 0; fi
             sleep 1
           done
           cat /tmp/tkt-guest-api.log
