@@ -12,7 +12,7 @@ import { DoneScreen } from './DoneScreen'
 
 export default function ReservationModal({ event, onClose }: { event: PublicEvent; onClose: () => void }) {
   const w = useReservationWizard(event, onClose)
-  const { t, lang, done, stepId, activeStep, steps, selected, totalPrice, selectedSeatIds, selectedBus, holdExpiresAt, holdExpiring, holdCountdown, confirmDiscard, setConfirmDiscard, reserve, existingReservation, duplicateLoading, resending, resendMessage, openExisting, resendTicket, canGoBack, goBack, goNext, canContinue, onSubmit, requestClose } = w
+  const { t, lang, done, stepId, activeStep, steps, selected, totalPrice, selectedSeatIds, selectedBus, holdExpiresAt, holdExpiring, holdCountdown, confirmDiscard, setConfirmDiscard, reserve, existingReservation, duplicateLoading, resending, resendMessage, openExisting, resendTicket, canGoBack, goBack, goNext, canContinue, onSubmit, requestClose, closeAndRelease } = w
 
   return (
     <Modal open onClose={requestClose} title={done ? (done.approval === 'APPROVED' ? t('reservationConfirmed') : t('reservationPending')) : `${t('reserveFor')} ${event.name}`} wide={!!done || stepId === 'seats' || stepId === 'review'}>
@@ -26,7 +26,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
               <p className="mt-1 text-[12px] text-ink-2">{t('discardBody')}</p>
               <div className="mt-3 flex gap-2">
                 <button type="button" data-testid="wizard-discard-cancel" className="btn-ghost !px-3 !py-1.5 text-[11px]" onClick={() => setConfirmDiscard(false)}>{t('discardCancel')}</button>
-                <button type="button" data-testid="wizard-discard-accept" className="btn-primary !px-3 !py-1.5 text-[11px]" onClick={onClose}>{t('discardConfirm')}</button>
+                <button type="button" data-testid="wizard-discard-accept" className="btn-primary !px-3 !py-1.5 text-[11px]" onClick={closeAndRelease}>{t('discardConfirm')}</button>
               </div>
             </div>
           )}
