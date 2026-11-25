@@ -1,7 +1,7 @@
 import { chromium } from '@playwright/test'
 
 const baseURL = process.env.TKT_PREVIEW_URL ?? 'http://127.0.0.1:4173'
-const routes = ['/', '/upcoming', '/past', '/about', '/contact', '/reservation/TKT-RESPONSIVE-CHECK']
+const routes = ['/', '/upcoming', '/past', '/about', '/contact', '/login', '/app', '/reservation/TKT-RESPONSIVE-CHECK']
 const viewports = [
   { name: 'small-mobile', width: 360, height: 800 },
   { name: 'mobile', width: 390, height: 844 },
@@ -50,13 +50,15 @@ try {
         title: document.title,
         canonical: document.querySelector('link[rel="canonical"]')?.getAttribute('href') ?? '',
         robots: document.querySelector('meta[name="robots"]')?.getAttribute('content') ?? '',
+        pathname: window.location.pathname,
         mainCount: document.querySelectorAll('main').length,
       }))
+      const expectedPath = route === '/app' ? '/login' : route
       if (metrics.documentWidth > metrics.viewportWidth + 1) {
         console.error(`FAIL ${viewport.name} ${route}: horizontal overflow ${metrics.documentWidth}px > ${metrics.viewportWidth}px`)
         failures++
-      } else if (new URL(metrics.canonical, baseURL).pathname !== new URL(route, baseURL).pathname) {
-        console.error(`FAIL ${viewport.name} ${route}: canonical URL does not match current route (${metrics.canonical})`)
+      } else if (metrics.pathname !== expectedPath || new URL(metrics.canonical, baseURL).pathname !== expectedPath) {
+        console.error(`FAIL ${viewport.name} ${route}: current route or canonical URL is incorrect (path=${metrics.pathname}, canonical=${metrics.canonical})`)
         failures++
       } else if ((route.startsWith('/app') || route.startsWith('/reservation/') || route === '/login') && metrics.robots !== 'noindex, nofollow') {
         console.error(`FAIL ${viewport.name} ${route}: private route must be noindex, nofollow`)
