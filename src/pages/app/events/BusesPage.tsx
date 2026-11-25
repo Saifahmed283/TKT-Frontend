@@ -89,10 +89,15 @@ export function BusesPage() {
   void layoutRows; void busLook
 
   const toggleSelect = (s: Seat) => {
-    if (s.state === 'UNAVAILABLE') return
-    if (s.state === 'RESERVED') { setSelected(prev => prev.includes(s.id) ? prev.filter(x => x !== s.id) : [...prev, s.id]); return }
+    if (s.state === 'UNAVAILABLE' || s.ticketId) return
     setSelected(prev => prev.includes(s.id) ? prev.filter(x => x !== s.id) : [...prev, s.id])
   }
+
+  const selectedSeatRecords = seats.filter((seat) => selected.includes(seat.id))
+  const canReserveSelected = selectedSeatRecords.length > 0 && selectedSeatRecords.every((seat) => seat.state === 'AVAILABLE')
+  const canReleaseSelected = selectedSeatRecords.length > 0 && selectedSeatRecords.every((seat) => (
+    (seat.state === 'RESERVED' || seat.state === 'HELD') && !seat.ticketId
+  ))
 
   return (
     <div>
@@ -120,12 +125,14 @@ export function BusesPage() {
             <div className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2"><Armchair size={16} className="text-signal" /><span className="font-display text-lg font-semibold">{bus?.name}</span></div>
-                <div className="flex items-center gap-3 text-[11px] text-ink-3">
-                  <span className="inline-flex items-center gap-1"><span className="size-3 rounded-none bg-ok/40" /> Available</span>
-                  <span className="inline-flex items-center gap-1"><span className="size-3 rounded-none bg-amber/40" /> Held</span>
-                  <span className="inline-flex items-center gap-1"><span className="size-3 rounded-none bg-danger/40" /> Reserved</span>
-                  <span className="inline-flex items-center gap-1"><span className="size-3 rounded-none bg-ink-3/40" /> Unavailable</span>
-                </div>
+                {normLayout.template !== 'mect49' && (
+                  <div className="flex items-center gap-3 text-[11px] text-ink-3">
+                    <span className="inline-flex items-center gap-1"><span className="size-3 rounded-none bg-ok/40" /> Available</span>
+                    <span className="inline-flex items-center gap-1"><span className="size-3 rounded-none bg-amber/40" /> Held</span>
+                    <span className="inline-flex items-center gap-1"><span className="size-3 rounded-none bg-danger/40" /> Reserved</span>
+                    <span className="inline-flex items-center gap-1"><span className="size-3 rounded-none bg-ink-3/40" /> Unavailable</span>
+                  </div>
+                )}
               </div>
 
               {normLayout.template === 'mect49' ? (
@@ -159,7 +166,7 @@ export function BusesPage() {
                         cells.push(
                           <button key={seat.id} type="button" title={seat.holderName ? `${seat.label} · ${seat.holderName}` : seat.label}
                             onClick={() => toggleSelect(seat)}
-                            onContextMenu={(e) => { e.preventDefault(); if (seat.state !== 'RESERVED') toggleUnavailable.mutate({ seatId: seat.id, state: seat.state === 'UNAVAILABLE' ? 'AVAILABLE' : 'UNAVAILABLE' }) }}
+                            onContextMenu={(e) => { e.preventDefault(); if (seat.state === 'AVAILABLE' || seat.state === 'UNAVAILABLE') toggleUnavailable.mutate({ seatId: seat.id, state: seat.state === 'UNAVAILABLE' ? 'AVAILABLE' : 'UNAVAILABLE' }) }}
                             className={`grid h-10 w-10 place-items-center rounded-none border text-[11px] font-semibold transition-colors ${seatClass(seat.state, isSelected)}`}>
                             {seat.label}
                           </button>
@@ -174,12 +181,12 @@ export function BusesPage() {
               )}
 
                 <Field label="Holder / group name"><Input value={holderName} onChange={e => setHolderName(e.target.value)} placeholder="Name shown on seat" /></Field>
-                <Button disabled={selected.length === 0 || holderName.trim().length < 2} loading={reserve.isPending} onClick={() => reserve.mutate()}><Users size={15} /> Reserve {selected.length || ''} seat(s)</Button>
-                <Button variant="ghost" disabled={selected.length === 0} loading={release.isPending} onClick={() => release.mutate(selected)}>Release selected</Button>
+                <Button disabled={!canReserveSelected || holderName.trim().length < 2} loading={reserve.isPending} onClick={() => reserve.mutate()}><Users size={15} /> Reserve {selected.length || ''} seat(s)</Button>
+                <Button variant="ghost" disabled={!canReleaseSelected} loading={release.isPending} onClick={() => release.mutate(selected)}>Release selected</Button>
                 <Button variant="ghost" onClick={() => void downloadAuthFile(`/events/${eventId}/buses/${activeBusId}/manifest.xlsx`, `bus-manifest.xlsx`).catch(() => toast.error('Export failed'))}><Download size={14} /> Seat manifest</Button>
                 <Badge tone="default">{selected.length} selected</Badge>
               </div>
-              <p className="text-[11px] text-ink-3">Tip: right-click a seat to mark unavailable/available. Reserved seats show holder name on hover.</p>
+              <p className="text-[11px] text-ink-3">Tip: right-click an available seat to mark it unavailable, or an unavailable seat to restore it. Ticket-linked seats must be released through ticket cancellation/refund.</p>
 
               {seats.some(s => s.state === 'RESERVED' || s.state === 'HELD') && (
                 <div className="rounded-none border border-line p-3">
