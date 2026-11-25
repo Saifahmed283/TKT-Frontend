@@ -22,6 +22,7 @@ export default function BrandLogo({ className, imageClassName, showWordmark = fa
         alt="TKT"
         width={120}
         height={104}
+        fetchPriority="high"
         className={cn('h-9 w-auto object-contain', imageClassName)}
         draggable={false}
       />

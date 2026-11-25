@@ -8,7 +8,6 @@ import { useLanguage } from '../../lib/i18n'
 import { useTheme } from '../../lib/theme'
 
 const HeroKeystone = lazy(() => import('../../components/public/HeroKeystone'))
-const LightRays = lazy(() => import('../../components/reactbits/LightRays'))
 
 export default function Landing() {
   const { t } = useLanguage()
@@ -37,25 +36,7 @@ export default function Landing() {
           :root[data-theme='light'] .tkt-hero-vignette{background:radial-gradient(circle at 68% 45%, rgba(247,244,238,0) 0%, rgba(247,244,238,0.22) 42%, rgba(247,244,238,0.56) 70%, var(--color-canvas) 100%);}
         `}</style>
 
-        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-          <Suspense fallback={null}>
-            <LightRays
-              raysOrigin="top-center"
-              raysColor={isLight ? '#B8892E' : '#C8A25C'}
-              raysSpeed={0}
-              lightSpread={0.95}
-              rayLength={isLight ? 1.55 : 1.4}
-              fadeDistance={1.1}
-              saturation={isLight ? 1.05 : 0.85}
-              followMouse={false}
-              noiseAmount={0.05}
-              distortion={0.06}
-              lightMode={isLight}
-              intensity={isLight ? 0.9 : 1}
-              className={isLight ? 'opacity-55 mix-blend-multiply' : 'opacity-45'}
-            />
-          </Suspense>
-        </div>
+        <div className={`pointer-events-none absolute inset-0 z-0 ${isLight ? 'bg-[radial-gradient(ellipse_at_72%_38%,rgba(184,137,46,0.12),transparent_45%),radial-gradient(ellipse_at_32%_72%,rgba(200,162,92,0.08),transparent_42%)]' : 'bg-[radial-gradient(ellipse_at_72%_38%,rgba(232,208,139,0.09),transparent_45%),radial-gradient(ellipse_at_32%_72%,rgba(200,162,92,0.06),transparent_42%)]'}`} aria-hidden="true" />
         <div className={`pointer-events-none absolute inset-0 z-[1] ${isLight ? 'bg-[radial-gradient(ellipse_at_28%_18%,rgba(184,137,46,0.14),transparent_32%),radial-gradient(ellipse_at_72%_58%,rgba(200,162,92,0.1),transparent_38%),linear-gradient(180deg,rgba(255,253,250,0.35),transparent_35%)]' : 'bg-[radial-gradient(ellipse_at_30%_20%,rgba(232,208,139,0.07),transparent_28%),radial-gradient(ellipse_at_70%_55%,rgba(200,162,92,0.05),transparent_34%),linear-gradient(180deg,rgba(250,248,244,0.015),transparent_30%)]'}`} />
         <div className="tkt-hero-vignette pointer-events-none absolute inset-0 z-[1]" />
         <div className={`pointer-events-none absolute inset-x-0 top-[4.5rem] z-[2] h-px bg-gradient-to-r from-transparent ${isLight ? 'via-signal/35' : 'via-signal/25'} to-transparent`} />
