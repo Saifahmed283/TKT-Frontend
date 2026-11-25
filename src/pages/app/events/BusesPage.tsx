@@ -143,6 +143,7 @@ export function BusesPage() {
                   language="en"
                   maxSelectable={49}
                   allowStatusSelection
+                  canInteract={(seat) => !seat.ticketId}
                   onSeatContextMenu={(seat) => {
                     if (seat.state !== 'AVAILABLE' && seat.state !== 'UNAVAILABLE') return
                     toggleUnavailable.mutate({
