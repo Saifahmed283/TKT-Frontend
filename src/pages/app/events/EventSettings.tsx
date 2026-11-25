@@ -134,9 +134,13 @@ export function EventSettingsPage() {
             <p className="text-[11px] text-ink-3">Use <code className="font-mono bg-elevated px-1.5 rounded-none">{'{'}</code>event<code className="font-mono bg-elevated px-1.5 rounded-none">{'}'}</code> placeholder for event name. Leave blank to use defaults.</p>
             <Field label="Subject"><Input value={emailTpl.subject ?? ''} onChange={e => setEmailTpl({ ...emailTpl, subject: e.target.value })} placeholder={DEFAULT_TEMPLATE.subject} /></Field>
             <Field label="Preheader"><Input value={emailTpl.preheader ?? ''} onChange={e => setEmailTpl({ ...emailTpl, preheader: e.target.value })} placeholder={DEFAULT_TEMPLATE.preheader} /></Field>
-            <Field label="Title"><Input value={emailTpl.title ?? ''} onChange={e => setEmailTpl({ ...emailTpl, title: e.target.value })} placeholder={DEFAULT_TEMPLATE.title} /></Field>
-            <Field label="Body (HTML)">
-              <Textarea rows={6} value={emailTpl.body ?? ''} onChange={e => setEmailTpl({ ...emailTpl, body: e.target.value })} placeholder={DEFAULT_TEMPLATE.body} />
+            <Field label="Title (English)"><Input value={emailTpl.title ?? ''} onChange={e => setEmailTpl({ ...emailTpl, title: e.target.value })} placeholder={DEFAULT_TEMPLATE.title} /></Field>
+            <Field label="العنوان بالعربية"><Input dir="rtl" value={emailTpl.titleAr ?? ''} onChange={e => setEmailTpl({ ...emailTpl, titleAr: e.target.value })} placeholder={DEFAULT_TEMPLATE.titleAr} /></Field>
+            <Field label="Body (English)">
+              <Textarea rows={4} value={emailTpl.body ?? ''} onChange={e => setEmailTpl({ ...emailTpl, body: e.target.value })} placeholder={DEFAULT_TEMPLATE.body} />
+            </Field>
+            <Field label="نص الرسالة بالعربية">
+              <Textarea dir="rtl" rows={4} value={emailTpl.bodyAr ?? ''} onChange={e => setEmailTpl({ ...emailTpl, bodyAr: e.target.value })} placeholder={DEFAULT_TEMPLATE.bodyAr} />
             </Field>
             <Field label="Footer"><Input value={emailTpl.footer ?? ''} onChange={e => setEmailTpl({ ...emailTpl, footer: e.target.value })} placeholder={DEFAULT_TEMPLATE.footer} /></Field>
           </form>
