@@ -1,9 +1,7 @@
 import { Suspense, lazy, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
-import { motion, useReducedMotion } from 'motion/react'
 import PublicNav from '../../components/public/PublicNav'
-import BlurText from '../../components/reactbits/BlurText'
 import { useLanguage } from '../../lib/i18n'
 import { useTheme } from '../../lib/theme'
 
@@ -13,7 +11,6 @@ export default function Landing() {
   const { t } = useLanguage()
   const { theme } = useTheme()
   const isLight = theme === 'light'
-  const reduce = useReducedMotion()
   const [desktop3D, setDesktop3D] = useState(false)
 
   useEffect(() => {
@@ -23,8 +20,6 @@ export default function Landing() {
     media.addEventListener('change', update)
     return () => media.removeEventListener('change', update)
   }, [])
-
-  const fadeUp = reduce ? {} : { initial: { opacity: 0, y: 18 }, animate: { opacity: 1, y: 0 } }
 
   return (
     <div className="h-[100dvh] overflow-hidden bg-paper text-ink">
@@ -61,31 +56,18 @@ export default function Landing() {
         </div>
 
         <div className="pointer-events-none relative z-10 mx-auto grid h-full max-w-7xl items-center gap-8 py-6 lg:grid-cols-[minmax(0,620px)_1fr] lg:gap-6">
-          <motion.div {...fadeUp} transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }} className="pointer-events-auto relative max-w-[620px]">
+          <div className="pointer-events-auto relative max-w-[620px]">
             <div className="mb-4 flex items-center gap-3 sm:mb-[18px]">
               <span className="h-px w-7 bg-signal-dim" aria-hidden="true" />
-              <BlurText
-                text={t('heroEyebrow')}
-                delay={35}
-                animateBy="words"
-                direction="top"
-                className="text-[11px] font-medium uppercase tracking-[0.22em] text-signal-dim"
-              />
+              <span className="text-[11px] font-medium uppercase tracking-[0.22em] text-signal-dim">{t('heroEyebrow')}</span>
             </div>
 
-            <div className="font-display text-[clamp(2.25rem,5.5vw,4.6rem)] font-normal leading-[1.12] tracking-[-0.01em] text-ink-0">
-              <BlurText text={t('heroTitleA')} delay={55} animateBy="words" direction="bottom" className="block" />
-              <BlurText text={t('heroTitleB')} delay={75} animateBy="words" direction="bottom" className="block text-signal" />
-            </div>
+            <h1 className="font-display text-[clamp(2.25rem,5.5vw,4.6rem)] font-normal leading-[1.12] tracking-[-0.01em] text-ink-0">
+              <span className="block">{t('heroTitleA')}</span>
+              <span className="block text-signal">{t('heroTitleB')}</span>
+            </h1>
 
-            <BlurText
-              text={t('heroBody')}
-              delay={18}
-              animateBy="words"
-              direction="bottom"
-              stepDuration={0.28}
-              className="mt-5 max-w-[500px] text-[14px] leading-[1.7] text-ink-2/90 sm:mt-6 sm:text-[15.5px] sm:leading-[1.75]"
-            />
+            <p className="mt-5 max-w-[500px] text-[14px] leading-[1.7] text-ink-2/90 sm:mt-6 sm:text-[15.5px] sm:leading-[1.75]">{t('heroBody')}</p>
 
             <div className="mt-7 sm:mt-9">
               <Link to="/upcoming" className="btn-primary !px-7 !py-3.5 text-[11px] sm:text-xs shadow-[0_10px_30px_-12px_color-mix(in_srgb,var(--color-signal)_45%,transparent)]">
@@ -93,7 +75,7 @@ export default function Landing() {
                 <ArrowRight size={15} className="rtl:rotate-180" />
               </Link>
             </div>
-          </motion.div>
+          </div>
 
           <div className="hidden lg:block" aria-hidden="true" />
         </div>

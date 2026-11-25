@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useLanguage } from '../../lib/i18n'
 
 const SESSION_KEY = 'tkt_intro_seen'
@@ -18,7 +17,7 @@ const HALO_DOTS = [
 ].map((d, i) => ({ ...d, id: i, delay: 0.5 + i * 0.022 }))
 
 export default function WebsiteIntro() {
-  const reduce = useReducedMotion()
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const { lang } = useLanguage()
   const [show, setShow] = useState(false)
 
@@ -38,7 +37,7 @@ export default function WebsiteIntro() {
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
 
-    const timeout = window.setTimeout(finish, 1950)
+    const timeout = window.setTimeout(finish, 1550)
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
         e.preventDefault()
@@ -59,13 +58,10 @@ export default function WebsiteIntro() {
     : { verifying: 'VERIFYING SEAL', enter: 'Enter Experience', hint: 'Press Enter to enter' }
 
   return (
-    <AnimatePresence>
+    <>
       {show && (
-        <motion.div
+        <div
           className="tkt-intro fixed inset-0 z-[120] flex flex-col items-center justify-center overflow-hidden bg-[#0B0B0C] text-[#FAF8F4]"
-          initial={{ opacity: 1 }}
-          exit={{ opacity: 0, visibility: 'hidden' as any }}
-          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
           role="dialog"
           aria-label="TKT Brand Introduction"
         >
@@ -81,7 +77,7 @@ export default function WebsiteIntro() {
             .tkt-intro .intro-hairline { width: 0; height: 1px; background: #C8A25C; margin: 14px 0 16px; opacity: 0; animation: tktLineGrow 0.8s 0.95s var(--ease-arch) forwards; }
             .tkt-intro .intro-descriptor { font-family: 'Poppins', 'Cairo', sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 0.42em; padding-left: 0.42em; color: #FAF8F4; opacity: 0; transform: translateY(10px); animation: tktFadeUp 0.8s 1.05s var(--ease-arch) forwards; }
             .tkt-intro .intro-progress-track { width: min(280px, 70vw); height: 2px; background: #1C1B1B; margin-top: 40px; position: relative; overflow: hidden; }
-            .tkt-intro .intro-progress-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #C8A25C, #E8D08B); box-shadow: 0 0 12px rgba(232,208,139,0.35); transform: scaleX(0); transform-origin: left center; animation: tktProgress 1.95s linear forwards; }
+            .tkt-intro .intro-progress-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #C8A25C, #E8D08B); box-shadow: 0 0 12px rgba(232,208,139,0.35); transform: scaleX(0); transform-origin: left center; animation: tktProgress 1.55s linear forwards; }
             .tkt-intro .intro-counter { margin-top: 14px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.28em; color: #6E6A62; text-transform: uppercase; }
             .tkt-intro .skip-btn { position: absolute; bottom: max(28px, env(safe-area-inset-bottom)); right: max(28px, env(safe-area-inset-right)); background: transparent; border: none; color: #6E6A62; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer; padding: 10px 0; transition: color 0.25s; }
             .tkt-intro .skip-btn:hover, .tkt-intro .skip-btn:focus-visible { color: #E8D08B; outline: none; }
@@ -154,8 +150,8 @@ export default function WebsiteIntro() {
           <button type="button" className="skip-btn" onClick={finish}>
             {copy.enter} →
           </button>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   )
 }

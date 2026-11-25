@@ -4,8 +4,8 @@ import { useAuth } from './lib/auth'
 import { useLanguage } from './lib/i18n'
 import BrandLogo from './components/public/BrandLogo'
 import WebsiteIntro from './components/public/WebsiteIntro'
-import Shell from './components/shell/Shell'
-import { RequirePermission } from './components/auth/RequirePermission'
+const Shell = lazy(() => import('./components/shell/Shell'))
+const RequirePermission = lazy(() => import('./components/auth/RequirePermission').then((m) => ({ default: m.RequirePermission })))
 
 const Landing = lazy(() => import('./pages/public/Landing'))
 const Login = lazy(() => import('./pages/auth/Login'))
