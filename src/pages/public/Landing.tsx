@@ -42,7 +42,7 @@ export default function Landing() {
   useEffect(() => {
     // Keep WebGL off phones and tablets; only request the 3D model on large
     // screens that have not asked the browser to reduce motion.
-    const media = window.matchMedia('(min-width: 1280px) and (prefers-reduced-motion: no-preference)')
+    const media = window.matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)')
     const update = () => setDesktop3D(media.matches)
     update()
     media.addEventListener('change', update)
@@ -79,7 +79,7 @@ export default function Landing() {
             aria-hidden="true"
             data-testid="hero-emblem"
             data-renderer={desktop3D ? '3d' : 'static'}
-            className="pointer-events-none absolute end-[-4%] top-[48%] z-[1] aspect-square w-[58%] max-w-[560px] -translate-y-1/2 opacity-20 sm:end-0 sm:w-[48%] sm:opacity-35 lg:end-[3%] lg:w-[46%] lg:opacity-35 xl:opacity-90"
+            className="pointer-events-none absolute end-[-4%] top-[48%] z-[1] aspect-square w-[58%] max-w-[560px] -translate-y-1/2 opacity-20 sm:end-0 sm:w-[48%] sm:opacity-35 lg:end-[3%] lg:w-[46%] lg:opacity-90"
           >
             {desktop3D ? (
               <Suspense fallback={<HeroEmblemFallback />}>
