@@ -54,12 +54,26 @@ try {
         pathname: window.location.pathname,
         mainCount: document.querySelectorAll('main').length,
         heroRenderer: document.querySelector('[data-testid="hero-emblem"]')?.getAttribute('data-renderer') ?? null,
+        heroPointerEvents: (() => {
+          const hero = document.querySelector('[data-testid="hero-emblem"]')
+          return hero ? getComputedStyle(hero).pointerEvents : 'missing'
+        })(),
+        heroHitInside: (() => {
+          const hero = document.querySelector('[data-testid="hero-emblem"]')
+          if (!hero) return false
+          const rect = hero.getBoundingClientRect()
+          const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)
+          return Boolean(hit && (hit === hero || hero.contains(hit)))
+        })(),
       }))
       const expectedPath = route === '/app' ? metrics.pathname : route
       const validAppPath = route !== '/app' || metrics.pathname === '/app' || metrics.pathname === '/login'
       const expects3D = viewport.width >= 1024 && !viewport.name.startsWith('tablet')
       if (route === '/' && metrics.heroRenderer !== (expects3D ? '3d' : 'static')) {
         console.error(`FAIL ${viewport.name} /: expected ${expects3D ? '3D' : 'static'} hero emblem, found ${metrics.heroRenderer ?? 'missing'}`)
+        failures++
+      } else if (route === '/' && expects3D && (metrics.heroPointerEvents !== 'auto' || !metrics.heroHitInside)) {
+        console.error(`FAIL ${viewport.name} /: 3D hero is not reachable by pointer (pointer-events=${metrics.heroPointerEvents}, hitInside=${metrics.heroHitInside})`)
         failures++
       } else if (metrics.documentWidth > metrics.viewportWidth + 1) {
         console.error(`FAIL ${viewport.name} ${route}: horizontal overflow ${metrics.documentWidth}px > ${metrics.viewportWidth}px`)
@@ -77,6 +91,28 @@ try {
         console.log(`PASS ${viewport.name} ${route} (${metrics.viewportWidth}px)`)
       }
     }
+
+    if (viewports.find((item) => item.name === viewport.name)?.width >= 1024 && !viewport.name.startsWith('tablet')) {
+      await page.goto(new URL('/', baseURL).toString(), { waitUntil: 'domcontentloaded', timeout: 30000 })
+      const interactionSurface = page.locator('[data-testid="hero-emblem-interaction-surface"]')
+      await interactionSurface.waitFor({ state: 'visible', timeout: 10000 })
+      const center = await interactionSurface.evaluate((element) => {
+        const rect = element.getBoundingClientRect()
+        return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
+      })
+      await page.mouse.move(center.x, center.y)
+      await page.mouse.down()
+      await page.mouse.move(center.x + 36, center.y + 22, { steps: 4 })
+      const dragging = await interactionSurface.getAttribute('data-dragging')
+      await page.mouse.up()
+      if (dragging !== 'true') {
+        console.error(`FAIL ${viewport.name} /: mouse drag did not reach the 3D hero model`)
+        failures++
+      } else {
+        console.log(`PASS ${viewport.name} /: 3D hero accepts mouse drag`)
+      }
+    }
+
     await context.close()
   }
 
