@@ -45,6 +45,11 @@ try {
         continue
       }
       await page.waitForTimeout(350)
+      if (route === '/') {
+        // The first-visit intro intentionally covers the site; test the hero
+        // after the intro has finished and relinquished pointer input.
+        await page.locator('.tkt-intro').waitFor({ state: 'detached', timeout: 5000 })
+      }
       const metrics = await page.evaluate(() => ({
         viewportWidth: document.documentElement.clientWidth,
         documentWidth: Math.max(document.documentElement.scrollWidth, document.body?.scrollWidth ?? 0),
@@ -108,6 +113,7 @@ try {
 
     if (viewport.width >= 1024 && !viewport.name.startsWith('tablet')) {
       await page.goto(new URL('/', baseURL).toString(), { waitUntil: 'domcontentloaded', timeout: 30000 })
+      await page.locator('.tkt-intro').waitFor({ state: 'detached', timeout: 5000 })
       const interactionSurface = page.locator('[data-testid="hero-emblem-interaction-surface"]')
       await interactionSurface.waitFor({ state: 'visible', timeout: 10000 })
       const center = await interactionSurface.evaluate((element) => {
