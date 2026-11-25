@@ -79,7 +79,7 @@ export default function Landing() {
             aria-hidden="true"
             data-testid="hero-emblem"
             data-renderer={desktop3D ? '3d' : 'static'}
-            className="pointer-events-none absolute end-[-4%] top-[48%] z-[1] aspect-square w-[58%] max-w-[560px] -translate-y-1/2 opacity-20 sm:end-0 sm:w-[48%] sm:opacity-35 lg:end-[3%] lg:w-[46%] lg:opacity-90"
+            className={`${desktop3D ? 'pointer-events-auto' : 'pointer-events-none'} absolute end-[-4%] top-[48%] z-[1] aspect-square w-[58%] max-w-[560px] -translate-y-1/2 opacity-20 sm:end-0 sm:w-[48%] sm:opacity-35 lg:end-[3%] lg:w-[46%] lg:opacity-90`}
           >
             {desktop3D ? (
               <Suspense fallback={<HeroEmblemFallback />}>
@@ -90,8 +90,8 @@ export default function Landing() {
             )}
           </div>
 
-          <div className="relative z-10 mx-auto grid w-full max-w-7xl items-center gap-8 lg:grid-cols-[minmax(0,620px)_1fr] lg:gap-6">
-            <div className="tkt-hero-copy relative max-w-[620px]">
+          <div className="pointer-events-none relative z-10 mx-auto grid w-full max-w-7xl items-center gap-8 lg:grid-cols-[minmax(0,620px)_1fr] lg:gap-6">
+            <div className="tkt-hero-copy pointer-events-auto relative max-w-[620px]">
               <div className="mb-4 flex items-center gap-3 sm:mb-[18px]">
                 <span className="h-px w-7 bg-signal-dim" aria-hidden="true" />
                 <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-signal-dim">{t('heroEyebrow')}</p>
