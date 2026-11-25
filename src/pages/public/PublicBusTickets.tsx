@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Bus, Clock, ExternalLink, XCircle, Box, Grid3X3 } from 'lucide-react'
@@ -147,6 +147,7 @@ export default function PublicBusTickets() {
   const [selectedSeats, setSelectedSeats] = useState<string[]>([])
   const [seatPassengers, setSeatPassengers] = useState<Record<string, { name: string; email: string; phone: string }>>({})
   const [holdToken, setHoldToken] = useState<string | null>(null)
+  const activeSeatHoldRef = useRef<{ busId: string; seatIds: string[]; sessionId: string } | null>(null)
   const [holdExpiresAt, setHoldExpiresAt] = useState<string | null>(null)
   const [holding, setHolding] = useState(false)
   const [holdError, setHoldError] = useState<string | null>(null)
@@ -160,8 +161,14 @@ export default function PublicBusTickets() {
     mutationFn: ({ busId, seatIds }: { busId: string; seatIds: string[] }) =>
       api.post<{ data: { holdToken: string; holdExpiresAt: string; seats: PublicSeat[] } }>(`/public/events/${eventId}/buses/${busId}/hold`, { seatIds, sessionId: holdToken || crypto.randomUUID(), holdMinutes: 10 }),
     onMutate: () => { setHolding(true); setHoldError(null) },
-    onSuccess: (data) => {
-      setHoldToken(data.data.holdToken)
+    onSuccess: (data, variables) => {
+      const sessionId = data.data.holdToken
+      activeSeatHoldRef.current = {
+        busId: variables.busId,
+        seatIds: [...variables.seatIds],
+        sessionId,
+      }
+      setHoldToken(sessionId)
       setHoldExpiresAt(data.data.holdExpiresAt)
       setHolding(false)
       void qc.invalidateQueries({ queryKey: ['public-events'] })
@@ -173,6 +180,7 @@ export default function PublicBusTickets() {
     mutationFn: ({ busId, seatIds }: { busId: string; seatIds: string[] }) =>
       api.post(`/public/events/${eventId}/buses/${busId}/release-hold`, { seatIds, sessionId: holdToken! }),
     onSuccess: () => {
+      activeSeatHoldRef.current = null
       setHoldToken(null)
       setHoldExpiresAt(null)
       setSelectedSeats([])
@@ -180,6 +188,42 @@ export default function PublicBusTickets() {
       void qc.invalidateQueries({ queryKey: ['public-events'] })
     }
   })
+
+  useEffect(() => {
+    const hold = activeSeatHoldRef.current
+    if (!hold) return
+
+    const stillSelected = activeBus?.id === hold.busId
+      && selectedSeats.length === hold.seatIds.length
+      && hold.seatIds.every((id, index) => selectedSeats[index] === id)
+    if (stillSelected) return
+
+    activeSeatHoldRef.current = null
+    setHoldToken(null)
+    setHoldExpiresAt(null)
+    void api.post(
+      `/public/events/${eventId}/buses/${hold.busId}/release-hold`,
+      { seatIds: hold.seatIds, sessionId: hold.sessionId },
+    ).then(() => {
+      void qc.invalidateQueries({ queryKey: ['public-events'] })
+    }).catch(() => {
+      // The ten-minute server expiry remains the fallback if release fails.
+    })
+  }, [activeBus?.id, selectedSeats, holdToken, eventId, qc])
+
+  useEffect(() => {
+    return () => {
+      const hold = activeSeatHoldRef.current
+      if (!hold) return
+      activeSeatHoldRef.current = null
+      void api.post(
+        `/public/events/${eventId}/buses/${hold.busId}/release-hold`,
+        { seatIds: hold.seatIds, sessionId: hold.sessionId },
+      ).catch(() => {
+        // The server-side expiration is the final cleanup safety net.
+      })
+    }
+  }, [eventId])
 
   const ticketTypes = (event?.ticketTypes ?? []).filter(tt => !tt.soldOut)
   const [ticketTypeId, setTicketTypeId] = useState<string>('')
@@ -204,6 +248,9 @@ export default function PublicBusTickets() {
   const reservationMutation = useMutation({
     mutationFn: (body: any) => api.post<{ data: any }>(`/public/events/${eventId}/reservations`, body),
     onSuccess: (res) => {
+      // The server has converted this hold to a ticket-linked reservation.
+      // Never release a successfully reserved seat during the route cleanup.
+      activeSeatHoldRef.current = null
       const { reservationCode, approval, accessToken } = res.data
       rememberReservationAccessToken(reservationCode, accessToken)
       setSubmitError(null)
