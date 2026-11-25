@@ -3,7 +3,6 @@ import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-do
 import { useAuth } from './lib/auth'
 import { useLanguage } from './lib/i18n'
 import BrandLogo from './components/public/BrandLogo'
-import WebsiteIntro from './components/public/WebsiteIntro'
 import Landing from './pages/public/Landing'
 import Login from './pages/auth/Login'
 import UpcomingEvents from './pages/public/UpcomingEvents'
@@ -88,7 +87,6 @@ function LegacyBusTicketsRedirect() {
 export default function App() {
   return (
     <>
-      <WebsiteIntro />
       <ScrollToTop />
       <Suspense fallback={<BootSplash />}>
         <Routes>
