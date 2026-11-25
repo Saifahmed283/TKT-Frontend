@@ -1,5 +1,36 @@
 import { useQuery } from '@tanstack/react-query'
-import { api } from './api'
+import { api, API_BASE } from './api'
+
+export interface TicketDesignSelection {
+  templateId: 'signature-split' | 'editorial-wide'
+  paletteId: 'obsidian-gold' | 'rose-noir' | 'champagne' | 'custom'
+  panelColor: string
+  accentColor: string
+  backgroundColor: string
+  textColor: string
+}
+
+export const DEFAULT_TICKET_DESIGN: TicketDesignSelection = {
+  templateId: 'signature-split',
+  paletteId: 'obsidian-gold',
+  panelColor: '#0B0B0C',
+  accentColor: '#C8A25C',
+  backgroundColor: '#F1EDE4',
+  textColor: '#171717',
+}
+
+export const TICKET_DESIGN_PALETTES: Array<{
+  id: TicketDesignSelection['paletteId']
+  label: string
+  panelColor: string
+  accentColor: string
+  backgroundColor: string
+  textColor: string
+}> = [
+  { id: 'obsidian-gold', label: 'Obsidian Gold', panelColor: '#0B0B0C', accentColor: '#C8A25C', backgroundColor: '#F1EDE4', textColor: '#171717' },
+  { id: 'rose-noir', label: 'Rose Noir', panelColor: '#350D24', accentColor: '#F22586', backgroundColor: '#FFF2F7', textColor: '#2A1020' },
+  { id: 'champagne', label: 'Champagne', panelColor: '#9B7A42', accentColor: '#E7C984', backgroundColor: '#FCF8F0', textColor: '#332918' },
+]
 
 export interface PublicTicketType {
   id: string
@@ -231,6 +262,45 @@ export function fetchReservationStatus(eventId: string, params: ReservationStatu
   if (token) queryParams.set('token', token)
   if (params.email) queryParams.set('email', params.email)
   return api.get<ReservationStatus>(`/public/events/${eventId}/reservations/status?${queryParams.toString()}`)
+}
+
+export async function downloadAppleWalletPass(
+  eventId: string,
+  code: string,
+  credentials: { token?: string | null; email?: string | null },
+): Promise<void> {
+  const response = await fetch(`${API_BASE}/public/events/${encodeURIComponent(eventId)}/reservations/wallet`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      code,
+      ...(credentials.token ? { token: credentials.token } : {}),
+      ...(credentials.email ? { email: credentials.email } : {}),
+    }),
+  })
+
+  if (!response.ok) {
+    let message = 'Apple Wallet pass is not available right now.'
+    let codeValue = 'WALLET_PASS_FAILED'
+    try {
+      const body = await response.json() as { error?: { code?: string; message?: string } }
+      message = body.error?.message ?? message
+      codeValue = body.error?.code ?? codeValue
+    } catch {}
+    throw Object.assign(new Error(message), { code: codeValue })
+  }
+
+  const pass = await response.blob()
+  const objectUrl = URL.createObjectURL(pass)
+  const anchor = document.createElement('a')
+  anchor.href = objectUrl
+  anchor.download = `TKT-${code.replace(/[^a-zA-Z0-9-]/g, '')}.pkpass`
+  anchor.style.display = 'none'
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 30_000)
 }
 
 export function resendReservationTicket(eventId: string, payload: { email: string; reservationCode?: string }) {
