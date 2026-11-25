@@ -115,6 +115,7 @@ export interface ReservationResult {
   approval: ReservationApproval
   paymentStatus?: 'NOT_REQUIRED' | 'PENDING' | 'CONFIRMED' | 'FAILED' | 'REFUNDED'
   qr: string | null
+  walletPassAvailable?: boolean
   // Secure access token for subsequent status lookups (replaces reservation code for sensitive operations)
   accessToken?: string | null
   seats?: { id: string; label: string; busId: string; passengerName?: string | null; bus?: { name: string } | null }[]
@@ -135,6 +136,7 @@ export interface ReservationStatus {
   ticketName: string
   attendeeName: string
   qr: string | null
+  walletPassAvailable?: boolean
   // Secure access token (returned on creation, used for subsequent lookups)
   accessToken?: string | null
   seats?: { id: string; label: string; busId: string; passengerName?: string | null; bus?: { name: string } | null }[]
