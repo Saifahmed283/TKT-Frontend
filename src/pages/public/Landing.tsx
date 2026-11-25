@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
@@ -15,6 +15,15 @@ export default function Landing() {
   const { theme } = useTheme()
   const isLight = theme === 'light'
   const reduce = useReducedMotion()
+  const [desktop3D, setDesktop3D] = useState(false)
+
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 1280px) and (prefers-reduced-motion: no-preference)')
+    const update = () => setDesktop3D(media.matches)
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
 
   const fadeUp = reduce ? {} : { initial: { opacity: 0, y: 18 }, animate: { opacity: 1, y: 0 } }
 
@@ -33,7 +42,7 @@ export default function Landing() {
             <LightRays
               raysOrigin="top-center"
               raysColor={isLight ? '#B8892E' : '#C8A25C'}
-              raysSpeed={0.35}
+              raysSpeed={0}
               lightSpread={0.95}
               rayLength={isLight ? 1.55 : 1.4}
               fadeDistance={1.1}
@@ -52,9 +61,22 @@ export default function Landing() {
         <div className={`pointer-events-none absolute inset-x-0 top-[4.5rem] z-[2] h-px bg-gradient-to-r from-transparent ${isLight ? 'via-signal/35' : 'via-signal/25'} to-transparent`} />
 
         <div className="absolute inset-y-0 end-0 z-[3] hidden w-[58%] overflow-hidden pt-[4.5rem] lg:block xl:w-[54%]" aria-hidden="true">
-          <Suspense fallback={null}>
-            <HeroKeystone />
-          </Suspense>
+          {desktop3D ? (
+            <Suspense fallback={null}>
+              <HeroKeystone />
+            </Suspense>
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <svg viewBox="0 0 240 240" className="h-[min(430px,38vw)] w-[min(430px,38vw)] overflow-visible opacity-90">
+                <defs><linearGradient id="tktHeroFallbackGold" gradientUnits="userSpaceOnUse" x1="36" y1="36" x2="204" y2="204"><stop offset="0%" stopColor="#C8A25C" /><stop offset="50%" stopColor="#E8D08B" /><stop offset="100%" stopColor="#C8A25C" /></linearGradient></defs>
+                <circle cx="120" cy="120" r="94" fill="none" stroke="url(#tktHeroFallbackGold)" strokeWidth="2.6" />
+                <circle cx="120" cy="120" r="84" fill="none" stroke="url(#tktHeroFallbackGold)" strokeWidth="1.2" />
+                <g stroke="url(#tktHeroFallbackGold)" strokeWidth="9.5" strokeLinecap="round" strokeLinejoin="round" fill="none">
+                  <line x1="120" y1="67" x2="120" y2="173" /><line x1="82" y1="67" x2="158" y2="67" /><line x1="82" y1="173" x2="158" y2="173" /><line x1="82" y1="90" x2="158" y2="150" /><line x1="82" y1="150" x2="158" y2="90" />
+                </g>
+              </svg>
+            </div>
+          )}
         </div>
 
         <div className="pointer-events-none relative z-10 mx-auto grid h-full max-w-7xl items-center gap-8 py-6 lg:grid-cols-[minmax(0,620px)_1fr] lg:gap-6">
