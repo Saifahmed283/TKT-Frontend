@@ -56,7 +56,7 @@ export default function PublicNav() {
           <button
             onClick={toggle}
             title={lang === 'en' ? 'Switch to Arabic' : 'التبديل إلى الإنجليزية'}
-            aria-label={lang === 'en' ? 'Switch language to Arabic' : 'التبديل إلى الإنجليزية'}
+            aria-label={lang === 'en' ? 'عربي' : 'EN'}
             className="inline-flex items-center justify-center border border-line-soft px-3 py-2 font-sans text-[11px] font-medium tracking-[0.02em] text-ink-2 transition-all duration-200 ease-out hover:-translate-y-px hover:border-signal/40 hover:text-signal active:translate-y-0 active:scale-[0.97]"
           >
             {lang === 'en' ? 'عربي' : 'EN'}
@@ -64,6 +64,8 @@ export default function PublicNav() {
           <button
             onClick={toggleTheme}
             title={t('theme')}
+            aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+            aria-pressed={theme === 'light'}
             className="inline-flex items-center justify-center border border-line-soft p-2 text-ink-2 transition-all duration-200 ease-out hover:-translate-y-px hover:border-signal/40 hover:text-signal active:translate-y-0 active:scale-[0.97] active:rotate-12"
           >
             {theme === 'dark' ? <Sun size={14} className="text-signal transition-transform duration-300" /> : <Moon size={14} className="text-signal transition-transform duration-300" />}
@@ -73,6 +75,7 @@ export default function PublicNav() {
             className="inline-flex border border-line-soft p-2 text-ink-2 transition-all duration-200 ease-out hover:border-signal/40 hover:text-signal active:scale-[0.95] lg:hidden"
             aria-label={t('menu')}
             aria-expanded={open}
+            aria-controls="tkt-mobile-nav"
           >
             <span className={`transition-transform duration-300 ${open ? 'rotate-90' : 'rotate-0'}`}>{open ? <X size={16} /> : <Menu size={16} />}</span>
           </button>
@@ -80,7 +83,7 @@ export default function PublicNav() {
       </div>
 
       {open && (
-        <div className="border-t border-line-soft bg-paper/96 backdrop-blur-xl lg:hidden">
+        <div id="tkt-mobile-nav" className="border-t border-line-soft bg-paper/96 backdrop-blur-xl lg:hidden">
           <div className="mx-auto max-w-7xl space-y-1 px-4 py-4 sm:px-6">
             {LINKS.map((l) => (
               <NavLink

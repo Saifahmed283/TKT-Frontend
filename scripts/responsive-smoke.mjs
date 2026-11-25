@@ -52,10 +52,14 @@ try {
         robots: document.querySelector('meta[name="robots"]')?.getAttribute('content') ?? '',
         pathname: window.location.pathname,
         mainCount: document.querySelectorAll('main').length,
+        heroRenderer: document.querySelector('[data-testid="hero-emblem"]')?.getAttribute('data-renderer') ?? null,
       }))
       const expectedPath = route === '/app' ? metrics.pathname : route
       const validAppPath = route !== '/app' || metrics.pathname === '/app' || metrics.pathname === '/login'
-      if (metrics.documentWidth > metrics.viewportWidth + 1) {
+      if (route === '/' && metrics.heroRenderer !== (viewport.width >= 1280 ? '3d' : 'static')) {
+        console.error(`FAIL ${viewport.name} /: expected ${viewport.width >= 1280 ? '3D' : 'static'} hero emblem, found ${metrics.heroRenderer ?? 'missing'}`)
+        failures++
+      } else if (metrics.documentWidth > metrics.viewportWidth + 1) {
         console.error(`FAIL ${viewport.name} ${route}: horizontal overflow ${metrics.documentWidth}px > ${metrics.viewportWidth}px`)
         failures++
       } else if (!validAppPath || metrics.pathname !== expectedPath || new URL(metrics.canonical, baseURL).pathname !== expectedPath) {

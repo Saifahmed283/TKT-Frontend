@@ -15,7 +15,9 @@ type EmailTemplate = {
   subject?: string
   preheader?: string
   title?: string
+  titleAr?: string
   body?: string
+  bodyAr?: string
   footer?: string
 }
 
@@ -32,9 +34,11 @@ type EventSettingsData = {
 const DEFAULT_TEMPLATE: EmailTemplate = {
   subject: 'Your ticket — {event}',
   preheader: 'Ticket for {event} — present your QR at check-in',
-  title: 'You\'re in, {event}',
-  body: 'Your reservation for <strong>{event}</strong> is confirmed. Show this QR at the gate — it is signed, single-use and cannot be forged.',
-  footer: 'TKT · Control center for live events',
+  title: 'Booking Confirmation & Ticket Issuance',
+  titleAr: 'تأكيد الحجز وإصدار التذكرة',
+  body: 'Hello, thank you for booking with TKT. Your ticket details are below.',
+  bodyAr: 'مرحباً، شكراً لحجزك معنا. يسعدنا تأكيد مشاركتك في الحدث التالي.',
+  footer: 'Your Partner in Travel, Events & Special Occasions',
 }
 
 export function EventSettingsPage() {
@@ -130,9 +134,13 @@ export function EventSettingsPage() {
             <p className="text-[11px] text-ink-3">Use <code className="font-mono bg-elevated px-1.5 rounded-none">{'{'}</code>event<code className="font-mono bg-elevated px-1.5 rounded-none">{'}'}</code> placeholder for event name. Leave blank to use defaults.</p>
             <Field label="Subject"><Input value={emailTpl.subject ?? ''} onChange={e => setEmailTpl({ ...emailTpl, subject: e.target.value })} placeholder={DEFAULT_TEMPLATE.subject} /></Field>
             <Field label="Preheader"><Input value={emailTpl.preheader ?? ''} onChange={e => setEmailTpl({ ...emailTpl, preheader: e.target.value })} placeholder={DEFAULT_TEMPLATE.preheader} /></Field>
-            <Field label="Title"><Input value={emailTpl.title ?? ''} onChange={e => setEmailTpl({ ...emailTpl, title: e.target.value })} placeholder={DEFAULT_TEMPLATE.title} /></Field>
-            <Field label="Body (HTML)">
-              <Textarea rows={6} value={emailTpl.body ?? ''} onChange={e => setEmailTpl({ ...emailTpl, body: e.target.value })} placeholder={DEFAULT_TEMPLATE.body} />
+            <Field label="Title (English)"><Input value={emailTpl.title ?? ''} onChange={e => setEmailTpl({ ...emailTpl, title: e.target.value })} placeholder={DEFAULT_TEMPLATE.title} /></Field>
+            <Field label="العنوان بالعربية"><Input dir="rtl" value={emailTpl.titleAr ?? ''} onChange={e => setEmailTpl({ ...emailTpl, titleAr: e.target.value })} placeholder={DEFAULT_TEMPLATE.titleAr} /></Field>
+            <Field label="Body (English)">
+              <Textarea rows={4} value={emailTpl.body ?? ''} onChange={e => setEmailTpl({ ...emailTpl, body: e.target.value })} placeholder={DEFAULT_TEMPLATE.body} />
+            </Field>
+            <Field label="نص الرسالة بالعربية">
+              <Textarea dir="rtl" rows={4} value={emailTpl.bodyAr ?? ''} onChange={e => setEmailTpl({ ...emailTpl, bodyAr: e.target.value })} placeholder={DEFAULT_TEMPLATE.bodyAr} />
             </Field>
             <Field label="Footer"><Input value={emailTpl.footer ?? ''} onChange={e => setEmailTpl({ ...emailTpl, footer: e.target.value })} placeholder={DEFAULT_TEMPLATE.footer} /></Field>
           </form>
@@ -150,30 +158,79 @@ export function EventSettingsPage() {
         </Panel>
       </div>
 
-      <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} title="Email Preview" wide>
-        <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-          <div className="border border-line-soft bg-elevated/30 p-4 font-mono text-[12px]">
-            <div className="text-ink-3">Subject:</div>
-            <div className="text-ink">{emailTpl.subject ?? DEFAULT_TEMPLATE.subject}</div>
+      <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} title="Email Preview — Figma Design" wide>
+        <div className="max-h-[78vh] space-y-4 overflow-y-auto">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="border border-line-soft bg-elevated/30 p-3 text-[12px]">
+              <div className="mb-1 font-mono text-[10px] uppercase tracking-wider text-ink-3">Subject</div>
+              <div className="break-words text-ink">{(emailTpl.subject ?? DEFAULT_TEMPLATE.subject)?.replaceAll('{event}', event.name)}</div>
+            </div>
+            <div className="border border-line-soft bg-elevated/30 p-3 text-[12px]">
+              <div className="mb-1 font-mono text-[10px] uppercase tracking-wider text-ink-3">Preheader</div>
+              <div className="break-words text-ink">{(emailTpl.preheader ?? DEFAULT_TEMPLATE.preheader)?.replaceAll('{event}', event.name)}</div>
+            </div>
           </div>
-          <div className="border border-line-soft bg-elevated/30 p-4 font-mono text-[12px]">
-            <div className="text-ink-3">Preheader:</div>
-            <div className="text-ink">{emailTpl.preheader ?? DEFAULT_TEMPLATE.preheader}</div>
+
+          <div className="mx-auto w-full max-w-[720px] overflow-hidden rounded-2xl border border-[#e8e3d9] bg-[#fdfbf7] shadow-xl" style={{ color: '#172033' }}>
+            <div className="flex flex-wrap items-center justify-between gap-4 bg-[#0b0b0c] px-6 py-6 sm:px-9">
+              <div dir="ltr" className="font-serif text-4xl tracking-wide text-[#c8a25c]">TKT</div>
+              <div className="text-right">
+                <p dir="rtl" className="text-sm text-white">رحلتك تبدأ معنا</p>
+                <p dir="ltr" className="mt-1 text-[10px] tracking-widest text-white">YOUR EXPERIENCE STARTS HERE</p>
+              </div>
+            </div>
+
+            <div className="space-y-4 px-5 py-7 sm:px-9">
+              <div>
+                <h2 dir="rtl" className="text-right text-2xl font-bold leading-relaxed text-[#0b1f44]">{(emailTpl.titleAr ?? DEFAULT_TEMPLATE.titleAr)?.replaceAll('{event}', event.name)}</h2>
+                <p dir="ltr" className="mt-1 text-left text-base font-bold text-[#c8a25c]">{(emailTpl.title ?? DEFAULT_TEMPLATE.title)?.replaceAll('{event}', event.name)}</p>
+                <p dir="rtl" className="mt-5 whitespace-pre-wrap text-right text-sm leading-8 text-[#172033]">{(emailTpl.bodyAr ?? DEFAULT_TEMPLATE.bodyAr)?.replaceAll('{event}', event.name)}</p>
+                <p dir="ltr" className="mt-2 whitespace-pre-wrap text-left text-sm leading-7 text-[#172033]">{(emailTpl.body ?? DEFAULT_TEMPLATE.body)?.replaceAll('{event}', event.name)}</p>
+              </div>
+
+              <section className="rounded-2xl bg-[#f1ede4] p-5">
+                <h3 dir="rtl" className="text-right text-base font-bold text-[#0b1f44]">تفاصيل الحجز</h3>
+                <p dir="ltr" className="mt-1 text-left text-[10px] font-semibold tracking-widest text-[#0b1f44]">BOOKING DETAILS</p>
+                <div className="mt-4 divide-y divide-[#e3ddd2]">
+                  {[
+                    ['الفعالية', 'EVENT', event.name],
+                    ['نوع التذكرة', 'TICKET', 'General Admission'],
+                    ['التاريخ والوقت', 'DATE', 'As scheduled'],
+                    ['الرقم المرجعي', 'REFERENCE', 'TKT-XXXXXX'],
+                  ].map(([ar, en, value]) => (
+                    <div key={en} className="grid grid-cols-[1fr_.8fr_1.2fr] gap-2 py-3 text-[11px] sm:text-xs">
+                      <span dir="rtl" className="text-right text-[#6d6a64]">{ar}</span>
+                      <span dir="ltr" className="text-left font-semibold tracking-wide text-[#172033]">{en}</span>
+                      <span className="break-words text-right font-semibold text-[#172033]">{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="flex flex-col items-center gap-4 rounded-2xl bg-[#faf8f4] p-4 sm:flex-row sm:gap-5">
+                <div className="flex size-28 shrink-0 items-center justify-center border-4 border-white bg-white p-2 shadow-sm" aria-label="Sample QR placeholder, not a real ticket code">
+                  <svg viewBox="0 0 21 21" role="img" aria-label="Sample QR placeholder only" className="size-full" shapeRendering="crispEdges">
+                    <rect width="21" height="21" fill="#fff"/>
+                    <path fill="#0b0b0c" d="M0 0h7v7H0zM14 0h7v7h-7zM0 14h7v7H0zM2 2v3h3V2zM16 2v3h3V2zM2 16v3h3v-3zM9 0h2v2H9zM8 4h2v2H8zM9 8h3v3H9zM13 9h2v2h-2zM17 9h2v3h-2zM8 13h2v2H8zM11 14h2v2h-2zM14 13h2v2h-2zM9 17h2v3H9zM13 17h3v2h-3zM18 16h3v2h-3z"/>
+                  </svg>
+                </div>
+                <div className="text-center sm:text-right">
+                  <p dir="rtl" className="text-sm font-bold leading-7 text-[#0b1f44]">امسح الرمز للتحقق من صلاحية التذكرة</p>
+                  <p dir="ltr" className="mt-1 text-xs leading-6 text-[#565e6b]">Scan this code to verify your ticket</p>
+                  <p className="mt-2 text-[10px] text-[#8a6a35]">Preview sample — actual QR is generated per ticket</p>
+                </div>
+              </section>
+
+              <div className="rounded-full bg-[#c8a25c] px-5 py-4 text-center text-sm font-bold text-white">عرض التذكرة&nbsp; / &nbsp;VIEW TICKET</div>
+
+              <div className="border-t border-[#e8e3d9] pt-5 text-center">
+                <p dir="rtl" className="text-sm font-bold text-[#0b1f44]">TKT لتنظيم الرحلات والفعاليات والمناسبات</p>
+                <p dir="ltr" className="mt-1 text-xs text-[#687080]">{(emailTpl.footer ?? DEFAULT_TEMPLATE.footer)?.replaceAll('{event}', event.name)}</p>
+              </div>
+            </div>
           </div>
-          <div className="border border-line-soft bg-elevated/30 p-4 font-mono text-[12px]">
-            <div className="text-ink-3">Title:</div>
-            <div className="text-ink">{emailTpl.title ?? DEFAULT_TEMPLATE.title}</div>
-          </div>
-          <div className="border border-line-soft bg-elevated/30 p-4">
-            <div className="text-ink-3 font-mono text-[11px] mb-2">Body:</div>
-            {/* Show stored template markup as text; rendering it would execute
-                author-controlled HTML in the authenticated dashboard origin. */}
-            <div className="prose prose-invert max-w-none whitespace-pre-wrap break-words">{emailTpl.body ?? DEFAULT_TEMPLATE.body ?? ''}</div>
-          </div>
-          <div className="border border-line-soft bg-elevated/30 p-4 font-mono text-[12px]">
-            <div className="text-ink-3">Footer:</div>
-            <div className="text-ink">{emailTpl.footer ?? DEFAULT_TEMPLATE.footer}</div>
-          </div>
+
+          <p className="text-center text-[11px] text-ink-3">This is a visual preview. A unique, signed QR image and the live ticket link are added when the ticket email is sent.</p>
           <div className="flex justify-end">
             <Button variant="ghost" onClick={() => setPreviewOpen(false)}>Close</Button>
           </div>
