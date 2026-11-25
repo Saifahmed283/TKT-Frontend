@@ -189,7 +189,7 @@ export default function ReservationStatusPage() {
                           </div>
                         </div>
                       )}
-                      {data.approval === 'APPROVED' && data.qr && (
+                      {data.approval === 'APPROVED' && data.qr && data.walletPassAvailable && (
                         <div className="space-y-2">
                           <button
                             type="button"
