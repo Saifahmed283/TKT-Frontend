@@ -39,6 +39,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   const [holdError, setHoldError] = useState<string | null>(null)
   const [holding, setHolding] = useState(false)
   const [seatPassengers, setSeatPassengers] = useState<Record<string, { name: string; email: string; phone: string }>>({})
+  const [seatView3d, setSeatView3d] = useState(false)
   const [stepIndex, setStepIndex] = useState(0)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
   const [holdAttempt, setHoldAttempt] = useState(0)
@@ -342,7 +343,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
     paymentProofUrl, setPaymentProofUrl,
     done, checkingCode, setCheckingCode, copied, existingReservation,
     buses, busId, setBusId, selectedSeatIds, setSelectedSeatIds,
-    holdToken, holdExpiresAt, setHoldExpiresAt, holdError, holding, seatPassengers, setSeatPassengers,
+    holdToken, holdExpiresAt, setHoldExpiresAt, holdError, holding, seatPassengers, setSeatPassengers, seatView3d, setSeatView3d,
     stepIndex, setStepIndex, confirmDiscard, setConfirmDiscard, holdAttempt, setHoldAttempt,
     duplicateLoading, resending, resendMessage,
     seatScrollRef, seatScroll, setSeatScroll,
