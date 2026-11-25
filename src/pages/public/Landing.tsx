@@ -30,7 +30,7 @@ export default function Landing() {
     <div className="h-[100dvh] overflow-hidden bg-paper text-ink">
       <PublicNav />
 
-      <header className="relative h-full overflow-hidden px-4 pt-[4.5rem] sm:px-6 lg:px-8">
+      <main id="main-content" className="relative h-full overflow-hidden px-4 pt-[4.5rem] sm:px-6 lg:px-8">
         <style>{`
           .tkt-hero-vignette{background:radial-gradient(circle at 68% 45%, rgba(11,11,12,0.08) 0%, rgba(11,11,12,0.68) 48%, rgba(11,11,12,0.92) 78%, var(--color-canvas) 100%);}
           :root[data-theme='light'] .tkt-hero-vignette{background:radial-gradient(circle at 68% 45%, rgba(247,244,238,0) 0%, rgba(247,244,238,0.22) 42%, rgba(247,244,238,0.56) 70%, var(--color-canvas) 100%);}
@@ -97,7 +97,7 @@ export default function Landing() {
 
           <div className="hidden lg:block" aria-hidden="true" />
         </div>
-      </header>
+      </main>
     </div>
   )
 }
