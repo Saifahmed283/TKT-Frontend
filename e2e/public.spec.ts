@@ -197,4 +197,125 @@ test.describe('TKT E2E — public site', () => {
     await expect(page.getByRole('link', { name: /Explore Events|استكشف الفعاليات/i }).first()).toBeVisible()
     await expect(page.getByText(/Every Entrance|كل دخول/i).first()).toBeVisible()
   })
+
+  test('wizard confirms before discarding entered details', async ({ page, request }) => {
+    const name = `E2E Discard Guard ${Date.now()}`
+    await seedPublicEvent(request, name)
+    await page.goto('/upcoming')
+    await page.getByText(name).first().waitFor({ timeout: 20_000 })
+    await page.locator('article', { hasText: name }).first().getByRole('button', { name: /Reserve|احجز/i }).first().click()
+    await page.getByTestId('ticket-option').first().click()
+    await page.getByTestId('wizard-next').click()
+    await page.getByLabel(/Full name|الاسم/i).fill('E2E Guard')
+
+    const dialog = page.getByRole('dialog')
+    await expect(dialog).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(page.getByTestId('wizard-discard-confirm')).toBeVisible()
+    await page.getByTestId('wizard-discard-cancel').click()
+    await expect(page.getByTestId('wizard-discard-confirm')).toBeHidden()
+    await expect(page.getByTestId('wizard-step-details')).toBeVisible()
+
+    await dialog.getByRole('button', { name: /Close dialog|إغلاق النافذة/i }).click()
+    await expect(page.getByTestId('wizard-discard-confirm')).toBeVisible()
+    await page.getByTestId('wizard-discard-accept').click()
+    await expect(dialog).toBeHidden()
+  })
+
+  test('pending reservation auto-polls until approval', async ({ page, request }) => {
+    const name = `E2E Auto Poll ${Date.now()}`
+    await seedPublicEvent(request, name)
+    const code = 'TKT-E2E-POLL'
+    let statusCalls = 0
+
+    await page.route('**/public/events/*/reservations', async (route) => {
+      if (route.request().method() !== 'POST') return route.continue()
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: { attendeeId: 'poll-attendee', ticketId: 'poll-ticket', reservationCode: code, price: '0', approval: 'PENDING', qr: null, seats: [] } }),
+      })
+    })
+    await page.route('**/public/events/*/reservations/status**', async (route) => {
+      statusCalls += 1
+      const approved = statusCalls > 1
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: {
+            reservationCode: code,
+            ticketId: 'poll-ticket',
+            attendeeId: 'poll-attendee',
+            approval: approved ? 'APPROVED' : 'PENDING',
+            paymentStatus: 'NOT_REQUIRED',
+            deliveryStatus: null,
+            ticketStatus: 'CONFIRMED',
+            price: '0',
+            ticketName: 'General Admission',
+            attendeeName: 'E2E Poller',
+            qr: approved ? 'TKT-E2E-POLL-QR' : null,
+            seats: [],
+          },
+        }),
+      })
+    })
+
+    await page.goto('/upcoming')
+    await page.getByText(name).first().waitFor({ timeout: 20_000 })
+    await page.locator('article', { hasText: name }).first().getByRole('button', { name: /Reserve|احجز/i }).first().click()
+    await page.getByTestId('ticket-option').first().click()
+    await page.getByTestId('wizard-next').click()
+    await page.getByLabel(/Full name|الاسم/i).fill('E2E Poller')
+    await page.getByLabel(/Email|البريد/i).fill(`e2e.poll+${Date.now()}@example.com`)
+    await page.getByTestId('reservation-phone').fill('+20 100 000 0002')
+    await page.getByTestId('wizard-next').click()
+    await page.getByTestId('wizard-submit').click()
+
+    await expect(page.getByText(/Reservation pending|قيد المراجعة/i).first()).toBeVisible({ timeout: 10_000 })
+    await expect.poll(() => statusCalls).toBeGreaterThanOrEqual(2)
+    await expect(page.getByText(/Ticket ready|تذكرتك جاهزة/i).first()).toBeVisible({ timeout: 15_000 })
+  })
+
+  test('seat hold failure offers a retry that enables the wizard', async ({ page, request }) => {
+    const name = `E2E Hold Retry ${Date.now()}`
+    await seedPaidTransportEvent(request, name)
+    let holdCalls = 0
+
+    await page.route('**/public/events/*/buses/*/hold', async (route) => {
+      if (route.request().method() !== 'POST') return route.continue()
+      holdCalls += 1
+      if (holdCalls === 1) {
+        await route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: { code: 'HOLD_FAILED', message: 'Simulated hold failure' }, data: null }),
+        })
+        return
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: { holdToken: 'e2e-hold', holdExpiresAt: new Date(Date.now() + 10 * 60_000).toISOString(), seats: [] } }),
+      })
+    })
+
+    await page.goto('/upcoming')
+    await page.getByText(name).first().waitFor({ timeout: 20_000 })
+    await page.locator('article', { hasText: name }).first().getByRole('button', { name: /Reserve|احجز/i }).first().click()
+    await page.getByTestId('ticket-option').filter({ hasText: 'Conference + Bus' }).click()
+    await page.getByTestId('wizard-next').click()
+    await page.getByLabel(/Full name|الاسم/i).fill('E2E Hold Retry')
+    await page.getByLabel(/Email|البريد/i).fill(`e2e.hold+${Date.now()}@example.com`)
+    await page.getByTestId('reservation-phone').fill('+20 100 000 0003')
+    await page.getByTestId('wizard-next').click()
+    await page.getByTestId('seat-option').first().click()
+
+    await expect(page.getByTestId('retry-hold')).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByTestId('wizard-next')).toBeDisabled()
+    await page.getByTestId('retry-hold').click()
+    await expect.poll(() => holdCalls).toBeGreaterThanOrEqual(2)
+    await expect(page.getByTestId('wizard-next')).toBeEnabled({ timeout: 10_000 })
+    await expect(page.getByTestId('wizard-summary')).toContainText(/Held until|محجوز حتى/i)
+  })
 })

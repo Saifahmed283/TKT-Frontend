@@ -77,6 +77,8 @@ export interface ReservationResult {
 
 export interface ReservationStatus {
   reservationCode: string
+  ticketId: string
+  attendeeId: string
   approval: ReservationApproval
   paymentStatus?: 'NOT_REQUIRED' | 'PENDING' | 'CONFIRMED' | 'FAILED' | 'REFUNDED'
   paymentProvider?: { id: string; name: string } | null
@@ -167,11 +169,31 @@ export function useWheelStatus() {
   })
 }
 
-export function useReservationStatus(eventId: string, code: string | null) {
+export function fetchReservationStatus(eventId: string, code: string) {
+  return api.get<ReservationStatus>(`/public/events/${eventId}/reservations/status?code=${encodeURIComponent(code)}`)
+}
+
+export function resendReservationTicket(eventId: string, payload: { reservationCode: string; email: string }) {
+  return api.post<{ ok: boolean; deliveryStatus: string | null }>(`/public/events/${eventId}/reservations/resend`, payload)
+}
+
+export function useReservationStatus(
+  eventId: string,
+  code: string | null,
+  options?: { enabled?: boolean; pollMs?: number | false; until?: number },
+) {
+  const pollMs = options?.pollMs === undefined ? 5_000 : options.pollMs
   return useQuery({
     queryKey: ['reservation-status', eventId, code],
-    queryFn: () => api.get<ReservationStatus>(`/public/events/${eventId}/reservations/status?code=${encodeURIComponent(code!)}`),
-    enabled: !!code,
-    refetchInterval: 15_000,
+    queryFn: () => fetchReservationStatus(eventId, code!),
+    enabled: !!code && options?.enabled !== false,
+    refetchInterval: (query) => {
+      const data = query.state.data as ReservationStatus | undefined
+      // Stop at a decision or at the hard cap — the status endpoint is
+      // rate-limited and there is no value in polling indefinitely.
+      if (pollMs === false || (options?.until != null && Date.now() >= options.until)) return false
+      if (data?.approval === 'APPROVED' || data?.approval === 'REJECTED') return false
+      return pollMs
+    },
   })
 }

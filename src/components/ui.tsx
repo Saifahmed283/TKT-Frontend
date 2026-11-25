@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react'
+import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { Corners, CountUp } from './instruments'
+import { useLanguage } from '../lib/i18n'
 import type { EventStatus } from '../lib/types'
 
 export { Corners, CountUp, Blink } from './instruments'
@@ -45,17 +46,66 @@ export function EmptyState({ icon, title, body, action }: { icon: ReactNode; tit
 }
 
 export function Modal({ open, onClose, title, children, wide }: { open: boolean; onClose: () => void; title: string; children: ReactNode; wide?: boolean }) {
+  const { t } = useLanguage()
+  const panelRef = useRef<HTMLDivElement>(null)
+  const titleId = useId()
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
+
+  useEffect(() => {
+    if (!open) return
+    const trigger = document.activeElement as HTMLElement | null
+    panelRef.current?.focus()
+    return () => { trigger?.focus?.() }
+  }, [open])
+
   if (!open) return null
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Escape') {
+      event.stopPropagation()
+      closeRef.current()
+      return
+    }
+    if (event.key !== 'Tab') return
+    const focusable = Array.from(
+      panelRef.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ) ?? [],
+    ).filter((el) => el.offsetParent !== null)
+    if (!focusable.length) {
+      event.preventDefault()
+      panelRef.current?.focus()
+      return
+    }
+    const first = focusable[0]!
+    const last = focusable[focusable.length - 1]!
+    const active = document.activeElement
+    if (event.shiftKey && (active === first || active === panelRef.current)) {
+      event.preventDefault()
+      last.focus()
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault()
+      first.focus()
+    }
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => closeRef.current()}>
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        onKeyDown={handleKeyDown}
         className={`animate-fade-in relative max-h-[85vh] w-full ${wide ? 'max-w-2xl' : 'max-w-md'} overflow-y-auto border border-line-soft bg-raised shadow-float`}
         onClick={(e) => e.stopPropagation()}
       >
         <Corners />
         <div className="flex items-center justify-between border-b border-line-soft px-5 py-4">
-          <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-ink-0">{title}</h2>
-          <button onClick={onClose} className="rounded-none p-1.5 text-ink-3 transition-colors hover:bg-elevated hover:text-ink-0" aria-label="Close">
+          <h2 id={titleId} className="font-display text-lg font-semibold uppercase tracking-wide text-ink-0">{title}</h2>
+          <button onClick={() => closeRef.current()} className="rounded-none p-1.5 text-ink-3 transition-colors hover:bg-elevated hover:text-ink-0" aria-label={t('closeDialog')}>
             <X size={16} />
           </button>
         </div>

@@ -1,11 +1,11 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import QRCode from 'qrcode'
 import { ArrowLeft, ArrowRight, Bus, CheckCircle2, ClipboardList, Clock3, Copy, CreditCard, Lock, QrCode, ShieldCheck, Ticket, UserRound } from 'lucide-react'
 import { Modal, ErrorBanner } from '../ui'
 import { api, ApiError } from '../../lib/api'
 import { useLanguage } from '../../lib/i18n'
-import { useReservationStatus, type PublicEvent, type ReservationResult } from '../../lib/public'
+import { fetchReservationStatus, resendReservationTicket, useReservationStatus, type PublicEvent, type ReservationResult } from '../../lib/public'
 import { FileUploadField } from '../ui/file-upload'
 import { ExternalLink } from 'lucide-react'
 
@@ -60,6 +60,16 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
   const [holding, setHolding] = useState(false)
   const [seatPassengers, setSeatPassengers] = useState<Record<string, { name: string; email: string; phone: string }>>({})
   const [stepIndex, setStepIndex] = useState(0)
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
+  const [holdAttempt, setHoldAttempt] = useState(0)
+  const [now, setNow] = useState(() => Date.now())
+  const [pollUntil] = useState(() => Date.now() + 10 * 60_000)
+  const [pollActive, setPollActive] = useState(true)
+  const [duplicateLoading, setDuplicateLoading] = useState(false)
+  const [resending, setResending] = useState(false)
+  const [resendMessage, setResendMessage] = useState<string | null>(null)
+  const seatScrollRef = useRef<HTMLDivElement>(null)
+  const [seatScroll, setSeatScroll] = useState({ overflow: false, atEnd: false })
 
   const selected = availableTypes.find((x) => x.id === ticketTypeId)
   const selectedProvider = event.paymentProviders?.find((p) => p.id === paymentProviderId) ?? null
@@ -90,7 +100,20 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
   })()
   const qrUrl = useQrDataUrl(done?.approval === 'APPROVED' && done.qr ? done.qr : null)
   const pending = done?.approval === 'PENDING'
-  const status = useReservationStatus(event.id, pending && checkingCode ? checkingCode : null)
+  const status = useReservationStatus(event.id, pending && checkingCode ? checkingCode : null, {
+    enabled: pending && pollActive,
+    pollMs: 5_000,
+    until: pollUntil,
+  })
+  const secondsLeft = holdExpiresAt ? Math.max(0, Math.floor((new Date(holdExpiresAt).getTime() - now) / 1000)) : null
+  const holdExpiring = secondsLeft != null && secondsLeft < 120
+  const holdCountdown = secondsLeft == null ? '' : `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, '0')}`
+
+  useEffect(() => {
+    if (!pollActive) return
+    const timer = window.setTimeout(() => setPollActive(false), Math.max(0, pollUntil - Date.now()))
+    return () => window.clearTimeout(timer)
+  }, [pollActive, pollUntil])
 
   useEffect(() => {
     if (!done || done.approval === 'APPROVED') return
@@ -107,6 +130,35 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
       )
     }
   }, [done, status.data])
+
+  useEffect(() => {
+    if (!holdExpiresAt) return
+    setNow(Date.now())
+    const timer = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => window.clearInterval(timer)
+  }, [holdExpiresAt])
+
+  useEffect(() => {
+    if (holdExpiresAt && secondsLeft === 0) {
+      setHoldExpiresAt(null)
+      setHoldError(t('holdExpired'))
+    }
+  }, [holdExpiresAt, secondsLeft, t])
+
+  useEffect(() => {
+    if (stepId !== 'seats' || !seatScrollRef.current) {
+      setSeatScroll({ overflow: false, atEnd: false })
+      return
+    }
+    const el = seatScrollRef.current
+    const measure = () => setSeatScroll({
+      overflow: el.scrollWidth > el.clientWidth + 1,
+      atEnd: el.scrollLeft + el.clientWidth >= el.scrollWidth - 4,
+    })
+    measure()
+    el.addEventListener('scroll', measure, { passive: true })
+    return () => el.removeEventListener('scroll', measure)
+  }, [stepId, busId, selected?.transportIncluded])
 
   useEffect(() => {
     const providers = event.paymentProviders ?? []
@@ -138,7 +190,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
       }
     }, 350)
     return () => { alive = false; clearTimeout(timer) }
-  }, [selected?.transportIncluded, busId, selectedSeatIds, holdToken, event.id])
+  }, [selected?.transportIncluded, busId, selectedSeatIds, holdToken, event.id, holdAttempt])
 
   const reserve = useMutation({
     mutationFn: () =>
@@ -190,6 +242,54 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
 
   const goBack = () => setStepIndex((i) => Math.max(i - 1, 0))
 
+  const hasEnteredDetails = [name, email, phone, notes, paymentReference].some((value) => value.trim())
+    || !!paymentProofUrl || selectedSeatIds.length > 0
+  const requestClose = () => {
+    if (!done && activeStep > 0 && hasEnteredDetails) setConfirmDiscard(true)
+    else onClose()
+  }
+
+  const openExisting = async () => {
+    if (!existingReservation) return
+    setDuplicateLoading(true)
+    try {
+      const data = await fetchReservationStatus(event.id, existingReservation.reservationCode)
+      setDone({
+        attendeeId: data.attendeeId,
+        ticketId: data.ticketId,
+        reservationCode: data.reservationCode,
+        price: data.price,
+        approval: data.approval,
+        paymentStatus: data.paymentStatus,
+        qr: data.qr,
+        seats: data.seats,
+      })
+      setCheckingCode(data.reservationCode)
+      setExistingReservation(null)
+    } catch {
+      setResendMessage(t('reservationLoadFailed'))
+    } finally {
+      setDuplicateLoading(false)
+    }
+  }
+
+  const resendTicket = async () => {
+    if (!existingReservation || resending) return
+    setResending(true)
+    setResendMessage(null)
+    try {
+      await resendReservationTicket(event.id, {
+        reservationCode: existingReservation.reservationCode,
+        email: email.trim(),
+      })
+      setResendMessage(t('ticketResent'))
+    } catch {
+      setResendMessage(t('resendFailed'))
+    } finally {
+      setResending(false)
+    }
+  }
+
   const copyCode = async (code: string) => {
     try {
       await navigator.clipboard.writeText(code)
@@ -199,7 +299,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
   }
 
   return (
-    <Modal open onClose={onClose} title={done ? (done.approval === 'APPROVED' ? t('reservationConfirmed') : t('reservationPending')) : `${t('reserveFor')} ${event.name}`} wide={!!done || stepId === 'seats' || stepId === 'review'}>
+    <Modal open onClose={requestClose} title={done ? (done.approval === 'APPROVED' ? t('reservationConfirmed') : t('reservationPending')) : `${t('reserveFor')} ${event.name}`} wide={!!done || stepId === 'seats' || stepId === 'review'}>
       {done ? (
         <div className="space-y-5">
           <div className={`flex items-start gap-3 rounded-none border px-4 py-4 ${done.approval === 'APPROVED' ? 'border-ok/25 bg-ok/8' : 'border-signal/25 bg-signal/8'}`}>
@@ -267,6 +367,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
                   {status.isFetching ? t('checkingStatus') : t('checkStatus')}
                 </button>
               </div>
+              <p className="mt-2 text-[11px] text-ink-3">{t('pendingPollingBody')}</p>
               {status.data?.approval === 'APPROVED' && status.data.qr && (
                 <div className="mt-4 flex items-center gap-4">
                   <QrDataImg code={status.data.qr} />
@@ -285,6 +386,16 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
         </div>
       ) : (
         <form onSubmit={onSubmit} className="space-y-4">
+          {confirmDiscard && (
+            <div data-testid="wizard-discard-confirm" className="border border-signal/30 bg-signal/8 p-4">
+              <p className="text-sm font-medium text-ink-0">{t('discardTitle')}</p>
+              <p className="mt-1 text-[12px] text-ink-2">{t('discardBody')}</p>
+              <div className="mt-3 flex gap-2">
+                <button type="button" data-testid="wizard-discard-cancel" className="btn-ghost !px-3 !py-1.5 text-[11px]" onClick={() => setConfirmDiscard(false)}>{t('discardCancel')}</button>
+                <button type="button" data-testid="wizard-discard-accept" className="btn-primary !px-3 !py-1.5 text-[11px]" onClick={onClose}>{t('discardConfirm')}</button>
+              </div>
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-2 border-b border-line-soft pb-4">
             {steps.map((s, i) => {
               const Icon = s.icon
@@ -302,27 +413,56 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
             })}
           </div>
 
+          {activeStep >= 1 && (
+            <div data-testid="wizard-summary" className="flex flex-wrap items-center justify-between gap-2 border border-line-soft bg-elevated/20 px-3 py-2 text-[11px] text-ink-2">
+              <span className="flex flex-wrap items-center gap-2">
+                <span className="font-medium text-ink-0">{selected?.name ?? t('ticket')}</span>
+                <span className="font-mono text-signal">{money(String(totalPrice), lang, selected?.currency ?? 'EGP')}</span>
+                {selectedSeatIds.length > 0 && <span className="text-ink-3">{selectedBus?.seats.find((s) => selectedSeatIds.includes(s.id))?.label ?? ''}</span>}
+              </span>
+              {holdExpiresAt && (
+                <span className={`inline-flex items-center gap-1 font-mono uppercase tracking-[0.12em] ${holdExpiring ? 'text-danger' : 'text-ok'}`}>
+                  <Clock3 size={12} /> {holdExpiring ? t('holdEndingSoon') : t('heldUntil')} {holdCountdown}
+                </span>
+              )}
+            </div>
+          )}
+
           {reserve.error && <ErrorBanner error={reserve.error} />}
           {existingReservation && (
-            <div className="rounded-none border border-signal/25 bg-signal/8 px-4 py-3 text-sm text-ink-1">
+            <div data-testid="wizard-existing-reservation" className="rounded-none border border-signal/25 bg-signal/8 px-4 py-3 text-sm text-ink-1">
               <p className="font-medium text-ink-0">{t('reservationExists')}</p>
               <p className="mt-1 font-mono text-[12px] text-signal">{existingReservation.reservationCode}</p>
-              <button
-                type="button"
-                className="btn-ghost mt-3 !px-3 !py-1.5 text-[11px]"
-                onClick={() => {
-                  setDone({
-                    attendeeId: '',
-                    ticketId: '',
-                    reservationCode: existingReservation.reservationCode,
-                    price: `${totalPrice}`,
-                    approval: (existingReservation.approval as ReservationResult['approval']) ?? 'PENDING',
-                    qr: existingReservation.qr ?? null,
-                  })
-                }}
-              >
-                {t('viewReservation')}
-              </button>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  data-testid="view-existing-reservation"
+                  className="btn-ghost !px-3 !py-1.5 text-[11px]"
+                  disabled={duplicateLoading}
+                  onClick={() => void openExisting()}
+                >
+                  {duplicateLoading ? t('loadingReservation') : t('viewReservation')}
+                </button>
+                <button
+                  type="button"
+                  data-testid="resend-ticket"
+                  className="btn-ghost !px-3 !py-1.5 text-[11px]"
+                  disabled={resending}
+                  onClick={() => void resendTicket()}
+                >
+                  {resending ? t('resending') : t('resendTicket')}
+                </button>
+                <button
+                  type="button"
+                  data-testid="forgot-code"
+                  className="btn-ghost !px-3 !py-1.5 text-[11px]"
+                  disabled={resending}
+                  onClick={() => void resendTicket()}
+                >
+                  {t('forgotCode')}
+                </button>
+              </div>
+              {resendMessage && <p className="mt-2 text-[11px] text-ink-2" role="status">{resendMessage}</p>}
             </div>
           )}
 
@@ -410,7 +550,11 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
                       <div>
                         <div className="mb-2 flex flex-wrap items-center gap-3 text-[10px] text-ink-3"><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-ok/40" />{t('available')}</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-amber/40" />{t('held')}</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-danger/40" />{t('reservedSeat')}</span><span className="inline-flex items-center gap-1"><span className="size-2.5 rounded-none bg-ink-3/40" />{t('unavailable')}</span></div>
                         <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">{layout.template === 'mect49' ? 'MECT 49-seat coach' : layout.template === 'coaster21' ? 'Coaster 21-seat' : t('customBusLayout')}</div>
-                        <div className="overflow-x-auto"><div className="grid w-fit gap-1.5" style={{ gridTemplateColumns: `repeat(${cols + (aisleAfter > 0 && aisleAfter < cols ? 1 : 0)}, minmax(0,1fr))` }}>
+                        <div
+                          ref={seatScrollRef}
+                          onScroll={(e) => setSeatScroll((prev) => ({ ...prev, atEnd: e.currentTarget.scrollLeft + e.currentTarget.clientWidth >= e.currentTarget.scrollWidth - 4 }))}
+                          className="relative overflow-x-auto"
+                        ><div className="grid w-fit gap-1.5" style={{ gridTemplateColumns: `repeat(${cols + (aisleAfter > 0 && aisleAfter < cols ? 1 : 0)}, minmax(0,1fr))` }}>
                           {Array.from({ length: layout.rows }).flatMap((_, r) => {
                             const row = r + 1
                             const cells: any[] = []
@@ -427,12 +571,22 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
                             return cells
                           })}
                         </div></div>
+                        {seatScroll.overflow && !seatScroll.atEnd && (
+                          <p className="mt-1 flex items-center gap-1 text-[10px] font-medium uppercase tracking-[0.14em] text-signal">
+                            {t('swipeSeats')} <ArrowRight size={12} className="rtl:-scale-x-100" />
+                          </p>
+                        )}
                         <div className="mt-3 space-y-2">
                           <div className="flex flex-wrap items-center gap-2 text-[11px] text-ink-2">
                             <span>{t('selectedSeats')}: {bus.seats.filter(s => selectedSeatIds.includes(s.id)).map(s => s.label).join(', ') || '—'}</span>
                             {holding && <span className="inline-flex items-center gap-1 text-signal"><Clock3 size={12} /> {t('holding')}</span>}
                             {holdExpiresAt && !holding && <span className="inline-flex items-center gap-1 text-ok"><Clock3 size={12} /> {t('heldUntil')} {new Date(holdExpiresAt).toLocaleTimeString()}</span>}
                             {holdError && <span className="text-danger">{holdError}</span>}
+                            {holdError && (
+                              <button type="button" data-testid="retry-hold" className="btn-ghost !px-2 !py-1 text-[11px]" onClick={() => setHoldAttempt((n) => n + 1)}>
+                                {t('retryHold')}
+                              </button>
+                            )}
                             {selectedSeatIds.length !== 1 && <span className="text-danger">{t('seatRequired')}</span>}
                           </div>
                           {bus.seats.filter(s => selectedSeatIds.includes(s.id)).map(s => (
@@ -467,6 +621,23 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
                 ) : (
                   <p className="text-ink-3">{t('noPaymentMethods')}</p>
                 )}
+              </div>
+              <div data-testid="payment-subtotal" className="border border-line-soft bg-panel/40 p-3 text-[12px] text-ink-2">
+                <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.16em] text-signal">{t('paymentSubtotal')}</p>
+                <div className="flex justify-between gap-3">
+                  <span>{t('ticketType')}: {selected?.name}</span>
+                  <span className="font-mono">{money(String(ticketPrice), lang, selected?.currency ?? 'EGP')}</span>
+                </div>
+                {seatTotal > 0 && (
+                  <div className="flex justify-between gap-3">
+                    <span>{t('seatSubtotal')} ({selectedSeatIds.length})</span>
+                    <span className="font-mono">{money(String(seatTotal), lang, selectedBus?.currency ?? 'EGP')}</span>
+                  </div>
+                )}
+                <div className="mt-2 flex justify-between gap-3 border-t border-line-soft pt-2 font-medium text-ink-0">
+                  <span>{t('total')}</span>
+                  <span className="font-mono text-signal">{money(String(totalPrice), lang, selected?.currency ?? 'EGP')}</span>
+                </div>
               </div>
               {(event.paymentProviders?.length ?? 0) > 0 ? (
                 <select data-testid="payment-provider" className="input" value={paymentProviderId} onChange={(e) => setPaymentProviderId(e.target.value)}>
