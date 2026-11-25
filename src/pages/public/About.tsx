@@ -7,39 +7,68 @@ import PublicFooter from '../../components/public/PublicFooter'
 import { Corners } from '../../components/instruments'
 import { ErrorBanner, Spinner } from '../../components/ui'
 import { useLanguage } from '../../lib/i18n'
-import { usePublicReviews } from '../../lib/public'
+import { useAboutContent, type AboutContent, type LocalizedText } from '../../lib/public'
 import SpotlightCard from '../../components/reactbits/SpotlightCard'
 import ShinyText from '../../components/reactbits/ShinyText'
 import BlurText from '../../components/reactbits/BlurText'
 
-const TEAM = [
-  {
-    name: { en: 'Founder Name', ar: 'اسم المؤسس' },
-    role: { en: 'Founder & CEO', ar: 'المؤسس والرئيس التنفيذي' },
-    bio: {
-      en: 'Leads the vision behind TKT, shaping premium experiences from concept to unforgettable entry.',
-      ar: 'يقود رؤية TKT ويصنع تجارب استثنائية من الفكرة حتى لحظة الدخول.',
+// Keeps the page intact if the content API is briefly unavailable. Editors
+// change the live copy from /app/site-content.
+const FALLBACK_ABOUT_CONTENT: AboutContent = {
+  copy: {
+    team: {
+      eyebrow: { en: 'The Team', ar: 'الفريق' },
+      titleA: { en: 'The people behind ', ar: 'الأشخاص خلف ' },
+      titleB: { en: 'the experience', ar: 'TKT' },
+      badge: { en: 'Built with intention', ar: 'صُنعت بشغف ودقة' },
+    },
+    partners: {
+      eyebrow: { en: 'Our Partners', ar: 'شركاؤنا' },
+      titleA: { en: 'Trusted by the teams', ar: 'موثوق من الفرق' },
+      titleB: { en: 'who build the night.', ar: 'التي تصنع الليلة.' },
+    },
+    reports: {
+      eyebrow: { en: 'Field Reports', ar: 'آراء من الميدان' },
+      titleA: { en: 'Voices from', ar: 'أصوات من' },
+      titleB: { en: 'the floor.', ar: 'قلب الحدث.' },
     },
   },
-  {
-    name: { en: 'Team Member', ar: 'اسم عضو الفريق' },
-    role: { en: 'Operations Lead', ar: 'قائد العمليات' },
-    bio: {
-      en: 'Builds the systems and on-ground flow that keep every event smooth, secure, and precise.',
-      ar: 'يبني الأنظمة وسير العمل الميداني ليبقى كل حدث سلساً وآمناً ودقيقاً.',
+  members: [
+    {
+      id: 'team-founder',
+      name: { en: 'Founder Name', ar: 'اسم المؤسس' },
+      role: { en: 'Founder & CEO', ar: 'المؤسس والرئيس التنفيذي' },
+      bio: {
+        en: 'Leads the vision behind TKT, shaping premium experiences from concept to unforgettable entry.',
+        ar: 'يقود رؤية TKT ويصنع تجارب استثنائية من الفكرة حتى لحظة الدخول.',
+      },
     },
-  },
-  {
-    name: { en: 'Team Member', ar: 'اسم عضو الفريق' },
-    role: { en: 'Experience Designer', ar: 'مصمم التجربة' },
-    bio: {
-      en: 'Crafts the visual and human details that make every TKT moment feel intentional.',
-      ar: 'يصمم التفاصيل البصرية والإنسانية التي تجعل كل لحظة في TKT مدروسة ومميزة.',
+    {
+      id: 'team-operations',
+      name: { en: 'Team Member', ar: 'اسم عضو الفريق' },
+      role: { en: 'Operations Lead', ar: 'قائد العمليات' },
+      bio: {
+        en: 'Builds the systems and on-ground flow that keep every event smooth, secure, and precise.',
+        ar: 'يبني الأنظمة وسير العمل الميداني ليبقى كل حدث سلساً وآمناً ودقيقاً.',
+      },
     },
-  },
-] as const
-
-const PARTNERS = ['NOVA EVENTS', 'SIGNALWORKS', 'MERIDIAN STAGES', 'AXIS MEDIA', 'HALCYON PROD', 'ORBITAL SOUND']
+    {
+      id: 'team-experience',
+      name: { en: 'Team Member', ar: 'اسم عضو الفريق' },
+      role: { en: 'Experience Designer', ar: 'مصمم التجربة' },
+      bio: {
+        en: 'Crafts the visual and human details that make every TKT moment feel intentional.',
+        ar: 'يصمم التفاصيل البصرية والإنسانية التي تجعل كل لحظة في TKT مدروسة ومميزة.',
+      },
+    },
+  ],
+  partners: ['NOVA EVENTS', 'SIGNALWORKS', 'MERIDIAN STAGES', 'AXIS MEDIA', 'HALCYON PROD', 'ORBITAL SOUND'].map((name, index) => ({
+    id: `partner-${index + 1}`,
+    name: { en: name, ar: name },
+  })),
+  reports: [],
+  updatedAt: null,
+}
 
 function Reveal({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
   const reduce = useReducedMotion()
@@ -56,30 +85,39 @@ function Reveal({ children, delay = 0, className = '' }: { children: React.React
   )
 }
 
-type ReviewItem = { id: string; author: string; role: string | null; content: string; eventName: string | null }
+type AboutReport = AboutContent['reports'][number]
 
-function FieldReportsSlider({ reviews }: { reviews: ReviewItem[] }) {
+function FieldReportsSlider({ reports }: { reports: AboutReport[] }) {
   const reduce = useReducedMotion()
   const { lang } = useLanguage()
   const [index, setIndex] = useState(0)
   const [dir, setDir] = useState(1)
   const [paused, setPaused] = useState(false)
 
+  const pick = (value: LocalizedText) => (lang === 'ar' ? value.ar : value.en)
+
   useEffect(() => {
-    if (reduce || paused || reviews.length <= 1) return
+    if (index >= reports.length) setIndex(0)
+  }, [index, reports.length])
+
+  useEffect(() => {
+    if (reduce || paused || reports.length <= 1) return
     const t = setInterval(() => {
       setDir(1)
-      setIndex((i) => (i + 1) % reviews.length)
+      setIndex((i) => (i + 1) % reports.length)
     }, 5500)
     return () => clearInterval(t)
-  }, [paused, reduce, reviews.length])
+  }, [paused, reduce, reports.length])
 
   const go = (next: number) => {
-    setDir(next > index ? 1 : -1)
-    setIndex((next + reviews.length) % reviews.length)
+    const target = (next + reports.length) % reports.length
+    setDir(target >= index ? 1 : -1)
+    setIndex(target)
   }
 
-  const current = reviews[index]
+  const current = reports[index]
+  const eventName = current ? pick(current.eventName) : ''
+  const role = current ? pick(current.role) : ''
   const variants = {
     enter: (d: number) => (reduce ? { opacity: 1 } : { opacity: 0, x: d * 40, filter: 'blur(6px)' }),
     center: { opacity: 1, x: 0, filter: 'blur(0px)' },
@@ -109,21 +147,21 @@ function FieldReportsSlider({ reviews }: { reviews: ReviewItem[] }) {
                 transition={{ duration: reduce ? 0 : 0.45, ease: [0.22, 1, 0.36, 1] }}
                 className="relative"
               >
-                {current.eventName && (
-                  <p className="mb-4 text-[10px] font-medium uppercase tracking-[0.18em] text-signal-dim">{current.eventName}</p>
+                {eventName && (
+                  <p className="mb-4 text-[10px] font-medium uppercase tracking-[0.18em] text-signal-dim">{eventName}</p>
                 )}
                 <blockquote className="max-w-4xl font-display text-xl font-medium leading-[1.5] tracking-tight text-ink-0 sm:text-2xl lg:text-[2rem]">
                   <span className="text-signal">"</span>
-                  {current.content}
+                  {pick(current.content)}
                   <span className="text-signal">"</span>
                 </blockquote>
                 <figcaption className="mt-8 flex items-center gap-4">
                   <span className="grid h-11 w-11 place-items-center border border-signal/25 bg-signal/10 font-mono text-[11px] font-semibold text-signal">
-                    {current.author.split(' ').map((w) => w[0]).join('').slice(0, 2)}
+                    {pick(current.author).split(' ').map((w) => w[0]).join('').slice(0, 2)}
                   </span>
                   <div>
-                    <p className="text-sm font-semibold text-ink-0">{current.author}</p>
-                    <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-ink-3">{current.role ?? (lang === 'ar' ? 'ضيف' : 'Guest')}</p>
+                    <p className="text-sm font-semibold text-ink-0">{pick(current.author)}</p>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-ink-3">{role || (lang === 'ar' ? 'ضيف' : 'Guest')}</p>
                   </div>
                 </figcaption>
               </motion.figure>
@@ -132,11 +170,11 @@ function FieldReportsSlider({ reviews }: { reviews: ReviewItem[] }) {
 
           <div className="relative mt-8 flex items-center justify-between gap-4 border-t border-line-soft pt-5">
             <div className="flex items-center gap-2">
-              {reviews.map((r, i) => (
+              {reports.map((r, i) => (
                 <button
                   key={r.id}
                   onClick={() => go(i)}
-                  aria-label={`${lang === 'ar' ? 'عرض مراجعة' : 'Show review'} ${i + 1}`}
+                  aria-label={`${lang === 'ar' ? 'عرض مراجعة' : 'Show report'} ${i + 1}`}
                   className={`h-1.5 transition-all duration-300 ${i === index ? 'w-8 bg-signal' : 'w-2 bg-line-soft hover:bg-signal/40'}`}
                 />
               ))}
@@ -157,9 +195,11 @@ function FieldReportsSlider({ reviews }: { reviews: ReviewItem[] }) {
 }
 
 export default function About() {
-  const reviews = usePublicReviews()
+  const siteContent = useAboutContent()
   const { t, lang } = useLanguage()
   const isAr = lang === 'ar'
+  const content = siteContent.data ?? FALLBACK_ABOUT_CONTENT
+  const pick = (value: LocalizedText) => (isAr ? value.ar : value.en)
 
   return (
     <div className="relative min-h-screen overflow-x-clip bg-paper text-ink">
@@ -192,14 +232,14 @@ export default function About() {
           <Reveal>
             <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-signal-dim">{isAr ? 'الفريق' : 'The Team'}</p>
+                <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-signal-dim">{pick(content.copy.team.eyebrow)}</p>
                 <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight text-ink-0 sm:text-5xl">
-                  {isAr ? 'الأشخاص خلف ' : 'The people behind '}
-                  <span className="text-signal">{isAr ? 'TKT' : 'the experience'}</span>
+                  {pick(content.copy.team.titleA)}
+                  <span className="text-signal">{pick(content.copy.team.titleB)}</span>
                 </h2>
               </div>
               <ShinyText
-                text={isAr ? 'صُنعت بشغف ودقة' : 'Built with intention'}
+                text={pick(content.copy.team.badge)}
                 className="text-[11px] font-medium uppercase tracking-[0.2em]"
                 color="var(--color-ink-3)"
                 shineColor="var(--color-signal)"
@@ -209,8 +249,8 @@ export default function About() {
           </Reveal>
 
           <div className="grid gap-4 md:grid-cols-3 md:gap-5">
-            {TEAM.map((member, i) => (
-              <Reveal key={i} delay={i * 0.09}>
+            {content.members.map((member, i) => (
+              <Reveal key={member.id} delay={i * 0.09}>
                 <SpotlightCard
                   className="!rounded-none !border !border-line-soft !bg-raised/45 !p-0 !shadow-none backdrop-blur-sm h-full"
                   spotlightColor="rgba(232, 208, 139, 0.18)"
@@ -226,9 +266,9 @@ export default function About() {
                       <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-3">0{i + 1}</span>
                     </div>
 
-                    <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-signal-dim">{member.role[lang]}</p>
-                    <h3 className="mt-3 font-display text-2xl font-semibold tracking-tight text-ink-0">{member.name[lang]}</h3>
-                    <p className="mt-4 text-sm leading-relaxed text-ink-2">{member.bio[lang]}</p>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-signal-dim">{pick(member.role)}</p>
+                    <h3 className="mt-3 font-display text-2xl font-semibold tracking-tight text-ink-0">{pick(member.name)}</h3>
+                    <p className="mt-4 text-sm leading-relaxed text-ink-2">{pick(member.bio)}</p>
 
                     <div className="mt-auto pt-6">
                       <div className="h-px w-12 bg-signal/40 transition-all duration-300 group-hover:w-20 group-hover:bg-signal/70" />
@@ -246,17 +286,17 @@ export default function About() {
           <Reveal>
             <div className="mb-8 flex items-center gap-3">
               <span className="h-px w-8 bg-signal-dim" aria-hidden="true" />
-              <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-signal-dim">{t('ourPartners')}</p>
+              <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-signal-dim">{pick(content.copy.partners.eyebrow)}</p>
             </div>
             <h2 className="max-w-3xl font-display text-3xl font-semibold leading-tight tracking-tight text-ink-0 sm:text-5xl">
-              {t('partnersTitleA')} <span className="text-signal">{t('partnersTitleB')}</span>
+              {pick(content.copy.partners.titleA)} <span className="text-signal">{pick(content.copy.partners.titleB)}</span>
             </h2>
           </Reveal>
           <div className="mt-10 grid grid-cols-2 gap-px border border-line-soft bg-line-soft sm:grid-cols-3 lg:grid-cols-6">
-            {PARTNERS.map((p, i) => (
-              <Reveal key={p} delay={i * 0.04}>
+            {content.partners.map((partner, i) => (
+              <Reveal key={partner.id} delay={i * 0.04}>
                 <div className="bg-paper/90 px-4 py-6 text-center transition-colors duration-200 hover:bg-raised/60">
-                  <p className="font-display text-xs font-semibold tracking-[0.18em] text-ink-2 sm:text-sm">{p}</p>
+                  <p className="font-display text-xs font-semibold tracking-[0.18em] text-ink-2 sm:text-sm">{pick(partner.name)}</p>
                 </div>
               </Reveal>
             ))}
@@ -270,23 +310,23 @@ export default function About() {
             <div className="mb-8">
               <div className="mb-4 flex items-center gap-3">
                 <span className="h-px w-8 bg-signal-dim" aria-hidden="true" />
-                <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-signal-dim">{t('testimonials')}</p>
+                <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-signal-dim">{pick(content.copy.reports.eyebrow)}</p>
               </div>
               <h2 className="font-display text-3xl font-semibold leading-tight tracking-tight text-ink-0 sm:text-5xl">
-                {t('testimonialsTitleA')} <span className="text-signal">{t('testimonialsTitleB')}</span>
+                {pick(content.copy.reports.titleA)} <span className="text-signal">{pick(content.copy.reports.titleB)}</span>
               </h2>
             </div>
           </Reveal>
 
-          {reviews.isLoading && <Spinner label={t('loading')} />}
-          {reviews.error && (
+          {siteContent.isLoading && <Spinner label={t('loading')} />}
+          {siteContent.error && (
             <div className="panel relative p-5">
               <Corners />
-              <ErrorBanner error={reviews.error} />
+              <ErrorBanner error={siteContent.error} />
             </div>
           )}
 
-          {reviews.data && reviews.data.length > 0 && <FieldReportsSlider reviews={reviews.data} />}
+          {content.reports.length > 0 && <FieldReportsSlider reports={content.reports} />}
         </div>
       </section>
 
