@@ -180,6 +180,7 @@ export function BusesPage() {
                 </div>
               )}
 
+              <div className="flex flex-wrap items-end gap-3">
                 <Field label="Holder / group name"><Input value={holderName} onChange={e => setHolderName(e.target.value)} placeholder="Name shown on seat" /></Field>
                 <Button disabled={!canReserveSelected || holderName.trim().length < 2} loading={reserve.isPending} onClick={() => reserve.mutate()}><Users size={15} /> Reserve {selected.length || ''} seat(s)</Button>
                 <Button variant="ghost" disabled={!canReleaseSelected} loading={release.isPending} onClick={() => release.mutate(selected)}>Release selected</Button>
