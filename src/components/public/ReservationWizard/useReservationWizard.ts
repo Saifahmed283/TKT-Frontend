@@ -172,6 +172,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
 
   useEffect(() => {
     if (!selected?.transportIncluded || !busId || selectedSeatIds.length !== 1) {
+      setHolding(false)
       setHoldExpiresAt(null)
       setHoldError(null)
       return
