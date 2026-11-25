@@ -2,10 +2,12 @@ import { Suspense, lazy, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import PublicNav from '../../components/public/PublicNav'
+import { Bloom, FloatingChip, OrbitRing, Sparkles, TicketFrame } from '../../components/public/PlayfulBits'
 import { useLanguage } from '../../lib/i18n'
 import { useTheme } from '../../lib/theme'
 
 const HeroKeystone = lazy(() => import('../../components/public/HeroKeystone'))
+const LightRays = lazy(() => import('../../components/reactbits/LightRays'))
 
 function HeroEmblemFallback() {
   return (
@@ -33,6 +35,22 @@ function HeroEmblemFallback() {
   )
 }
 
+/** Lightweight, framed hero sculpture for phones and tablets (no WebGL). */
+function HeroVisual() {
+  return (
+    <div className="relative mx-auto aspect-square w-full max-w-[224px] sm:max-w-[290px] lg:max-w-[340px]">
+      <Bloom className="inset-[6%] opacity-70" />
+      <OrbitRing inset="2%" second />
+      <Sparkles count={8} />
+      <TicketFrame className="absolute inset-[16%] p-3">
+        <HeroEmblemFallback />
+      </TicketFrame>
+      <FloatingChip className="start-[-4%] bottom-[16%]" delay="0.4s">TKT · 01</FloatingChip>
+      <FloatingChip className="end-[-2%] top-[10%]" delay="1.3s">LIVE</FloatingChip>
+    </div>
+  )
+}
+
 export default function Landing() {
   const { t, lang } = useLanguage()
   const { theme } = useTheme()
@@ -40,8 +58,9 @@ export default function Landing() {
   const [desktop3D, setDesktop3D] = useState(false)
 
   useEffect(() => {
-    // Keep WebGL off phones and tablets; only request the 3D model on large
-    // screens that have not asked the browser to reduce motion.
+    // Keep WebGL off phones and tablets; only request the 3D model and the
+    // nav-sourced light rays on large screens with a fine pointer that have
+    // not asked the browser to reduce motion.
     const media = window.matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)')
     const update = () => setDesktop3D(media.matches)
     update()
@@ -71,27 +90,68 @@ export default function Landing() {
               ? 'bg-[radial-gradient(ellipse_at_28%_18%,rgba(184,137,46,0.14),transparent_32%),radial-gradient(ellipse_at_72%_58%,rgba(200,162,92,0.10),transparent_38%)]'
               : 'bg-[radial-gradient(ellipse_at_30%_20%,rgba(232,208,139,0.07),transparent_28%),radial-gradient(ellipse_at_70%_55%,rgba(200,162,92,0.05),transparent_34%)]'
             }`} />
+            <Bloom className="-end-[12%] -top-[16%] h-[380px] w-[380px] opacity-60 sm:h-[480px] sm:w-[480px]" />
+            <Bloom tone="warm" className="start-[6%] bottom-[-18%] h-[320px] w-[320px] opacity-45" />
+            <Sparkles count={7} className="opacity-55" />
             <div className="tkt-hero-vignette absolute inset-0" />
             <div className="absolute inset-x-0 top-[4.5rem] h-px bg-gradient-to-r from-transparent via-signal/30 to-transparent" />
           </div>
 
-          <div
-            aria-hidden="true"
-            data-testid="hero-emblem"
-            data-renderer={desktop3D ? '3d' : 'static'}
-            className={`${desktop3D ? 'pointer-events-auto' : 'pointer-events-none'} absolute end-[-4%] top-[48%] z-[1] aspect-square w-[58%] max-w-[560px] -translate-y-1/2 opacity-20 sm:end-0 sm:w-[48%] sm:opacity-35 lg:end-[3%] lg:w-[46%] lg:opacity-90`}
-          >
-            {desktop3D ? (
+          {desktop3D && (
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+              <Suspense fallback={null}>
+                <LightRays
+                  raysOrigin="top-center"
+                  raysColor={isLight ? '#B8892E' : '#C8A25C'}
+                  raysSpeed={0.3}
+                  lightSpread={0.9}
+                  rayLength={isLight ? 1.5 : 1.35}
+                  fadeDistance={1.1}
+                  saturation={isLight ? 1.05 : 0.85}
+                  followMouse
+                  mouseInfluence={0.16}
+                  cursorShadow
+                  clickPulse={false}
+                  noiseAmount={0.04}
+                  distortion={0.05}
+                  lightMode={isLight}
+                  intensity={isLight ? 0.75 : 0.9}
+                  opacity={isLight ? 0.5 : 0.42}
+                  maxDevicePixelRatio={1.5}
+                  className={isLight ? 'mix-blend-multiply' : ''}
+                />
+              </Suspense>
+            </div>
+          )}
+
+          {desktop3D && (
+            <div
+              aria-hidden="true"
+              data-testid="hero-emblem"
+              data-renderer="3d"
+              className="pointer-events-auto absolute end-[3%] top-[48%] z-[1] aspect-square w-[46%] max-w-[560px] -translate-y-1/2 opacity-90"
+            >
               <Suspense fallback={<HeroEmblemFallback />}>
                 <HeroKeystone />
               </Suspense>
-            ) : (
-              <HeroEmblemFallback />
-            )}
-          </div>
+            </div>
+          )}
 
-          <div className="pointer-events-none relative z-10 mx-auto grid w-full max-w-7xl items-center gap-8 lg:grid-cols-[minmax(0,620px)_1fr] lg:gap-6">
-            <div className="tkt-hero-copy pointer-events-auto relative max-w-[620px]">
+          {desktop3D && (
+            <div aria-hidden="true" className="pointer-events-none absolute bottom-[7%] end-[6%] z-[2] hidden items-center gap-2 border border-signal/25 bg-raised/70 px-3 py-2 text-[9px] font-medium uppercase tracking-[0.2em] text-signal backdrop-blur-sm lg:flex">
+              <span className="h-1.5 w-1.5 animate-blink rounded-full bg-signal" />
+              {t('dragToExplore')}
+            </div>
+          )}
+
+          <div className="pointer-events-none relative z-10 mx-auto grid w-full max-w-7xl items-center gap-8 py-10 sm:grid-cols-[minmax(0,1fr)_minmax(0,0.82fr)] sm:gap-6 lg:grid-cols-[minmax(0,620px)_1fr] lg:py-0">
+            {!desktop3D && (
+              <div aria-hidden="true" data-testid="hero-emblem" data-renderer="static" className="order-1 w-full sm:order-2 sm:justify-self-end">
+                <HeroVisual />
+              </div>
+            )}
+
+            <div className="tkt-hero-copy pointer-events-auto order-2 max-w-[620px] sm:order-1">
               <div className="mb-4 flex items-center gap-3 sm:mb-[18px]">
                 <span className="h-px w-7 bg-signal-dim" aria-hidden="true" />
                 <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-signal-dim">{t('heroEyebrow')}</p>
@@ -113,7 +173,7 @@ export default function Landing() {
                 </Link>
               </div>
             </div>
-            <div className="hidden lg:block" aria-hidden="true" />
+            <div className="order-2 hidden lg:block" aria-hidden="true" />
           </div>
         </header>
       </main>

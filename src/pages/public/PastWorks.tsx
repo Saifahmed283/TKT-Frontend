@@ -8,6 +8,8 @@ import { usePublicEvents } from '../../lib/public'
 import { useLanguage } from '../../lib/i18n'
 import SpotlightCard from '../../components/reactbits/SpotlightCard'
 import BlurText from '../../components/reactbits/BlurText'
+import ShinyText from '../../components/reactbits/ShinyText'
+import { PageAccents } from '../../components/public/PlayfulBits'
 
 function Reveal({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
   const reduce = useReducedMotion()
@@ -40,6 +42,7 @@ export default function PastWorks() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_40%_at_50%_0%,color-mix(in_srgb,var(--color-signal)_9%,transparent),transparent_70%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-raised)_35%,transparent),transparent_28%)]" />
       </div>
+      <PageAccents />
 
       <PublicNav />
 
@@ -49,7 +52,7 @@ export default function PastWorks() {
           <Reveal>
             <div className="mb-5 flex items-center gap-3">
               <span className="h-px w-8 bg-signal-dim" aria-hidden="true" />
-              <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-signal-dim">{t('pastEyebrow')}</p>
+              <ShinyText text={t('pastEyebrow')} className="text-[11px] font-medium uppercase tracking-[0.24em]" color="var(--color-signal-dim)" shineColor="var(--color-signal)" speed={3.2} />
             </div>
             <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div>

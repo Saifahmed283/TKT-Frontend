@@ -11,6 +11,8 @@ import { FALLBACK_TAXONOMY } from '../../lib/taxonomy'
 import { useLanguage } from '../../lib/i18n'
 import SpotlightCard from '../../components/reactbits/SpotlightCard'
 import BlurText from '../../components/reactbits/BlurText'
+import ShinyText from '../../components/reactbits/ShinyText'
+import { PageAccents } from '../../components/public/PlayfulBits'
 
 const SERVICE_STEPS = [
   { n: '01', en: 'Consult', ar: 'استشارة', enBody: 'Tell us about the event — size, venue, timeline, and your team.', arBody: 'أخبرنا عن الفعالية — الحجم، المكان، الجدول الزمني، وفريقك.' },
@@ -70,6 +72,7 @@ export default function Contact() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_40%_at_50%_0%,color-mix(in_srgb,var(--color-signal)_10%,transparent),transparent_72%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-raised)_35%,transparent),transparent_30%)]" />
       </div>
+      <PageAccents />
 
       <PublicNav />
 
@@ -79,7 +82,7 @@ export default function Contact() {
           <Reveal>
             <div className="mb-5 flex items-center gap-3">
               <span className="h-px w-8 bg-signal-dim" aria-hidden="true" />
-              <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-signal-dim">{t('contactEyebrow')}</p>
+              <ShinyText text={t('contactEyebrow')} className="text-[11px] font-medium uppercase tracking-[0.24em]" color="var(--color-signal-dim)" shineColor="var(--color-signal)" speed={3.2} />
             </div>
             <div className="max-w-4xl font-display text-4xl font-semibold leading-[1.04] tracking-tight text-ink-0 sm:text-5xl lg:text-7xl">
               <BlurText text={t('contactTitleA')} delay={55} animateBy="words" direction="bottom" className="block" />

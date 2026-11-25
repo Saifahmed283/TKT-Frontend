@@ -6,6 +6,7 @@ import PublicNav from '../../components/public/PublicNav'
 import PublicFooter from '../../components/public/PublicFooter'
 import { Corners, Blink } from '../../components/instruments'
 import SpotlightCard from '../../components/reactbits/SpotlightCard'
+import { PageAccents } from '../../components/public/PlayfulBits'
 import { Button } from '../../components/ui/button'
 import { useLanguage } from '../../lib/i18n'
 import { getReservationAccessToken, useReservationStatus } from '../../lib/public'
@@ -53,6 +54,7 @@ export default function ReservationStatusPage() {
       <PublicNav />
       <main className="relative px-4 pb-20 pt-24 sm:px-6 lg:px-8">
         <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_68%_35%,rgba(232,208,139,0.08),transparent_35%),linear-gradient(to_bottom,var(--color-canvas),var(--color-paper))]" />
+        <PageAccents />
         <div className="relative z-10 mx-auto max-w-3xl">
           <div className="mb-6 flex items-center justify-between gap-3">
             <Link to="/upcoming" className="inline-flex items-center gap-2 text-[12px] text-ink-3 transition-colors hover:text-signal">

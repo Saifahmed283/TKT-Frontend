@@ -319,3 +319,98 @@
 @utility badge {
   @apply inline-flex items-center gap-1.5 border border-line px-2.5 py-0.5 text-xs font-medium;
 }
+
+/* ——— Playful decorative accents (CSS only, motion-safe) ——— */
+@keyframes tkt-sparkle {
+  0%, 100% { opacity: 0.22; transform: scale(0.7) rotate(0deg); }
+  50% { opacity: 0.85; transform: scale(1.15) rotate(25deg); }
+}
+@keyframes tkt-orbit-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes tkt-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes tkt-breathe {
+  0%, 100% { opacity: 0.42; transform: scale(0.94); }
+  50% { opacity: 0.78; transform: scale(1.06); }
+}
+
+.tkt-spark {
+  position: absolute;
+  left: var(--spark-x, 50%);
+  top: var(--spark-y, 50%);
+  width: var(--spark-size, 4px);
+  height: var(--spark-size, 4px);
+  border-radius: 9999px;
+  background: var(--color-signal);
+  opacity: 0.5;
+  animation: tkt-sparkle 3.6s ease-in-out infinite;
+  animation-delay: var(--spark-delay, 0s);
+}
+.tkt-spark--star {
+  border-radius: 0;
+  clip-path: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%);
+}
+.tkt-spark--gold { background: #c8a25c; }
+.tkt-spark--ink { background: var(--color-ink-2); }
+
+.tkt-orbit {
+  border-radius: 9999px;
+}
+.tkt-orbit-ring {
+  position: absolute;
+  inset: 0;
+  border: 1px dashed color-mix(in srgb, var(--color-signal) 32%, transparent);
+  border-radius: 9999px;
+}
+.tkt-orbit-track {
+  position: absolute;
+  inset: 0;
+  animation: tkt-orbit-spin 18s linear infinite;
+}
+.tkt-orbit-track--second {
+  animation-duration: 26s;
+  animation-direction: reverse;
+  transform: rotate(140deg);
+}
+.tkt-orbit-dot {
+  position: absolute;
+  top: -3px;
+  left: calc(50% - 3px);
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--color-signal);
+  box-shadow: 0 0 14px 2px color-mix(in srgb, var(--color-signal) 45%, transparent);
+}
+.tkt-orbit-dot--small {
+  top: -2px;
+  left: calc(50% - 2px);
+  width: 4px;
+  height: 4px;
+  opacity: 0.7;
+}
+
+.tkt-chip {
+  animation: tkt-float 4.5s ease-in-out infinite;
+}
+
+.tkt-bloom {
+  border-radius: 9999px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-signal) 17%, transparent) 0%, transparent 70%);
+  animation: tkt-breathe 8s ease-in-out infinite;
+}
+.tkt-bloom[data-tone='warm'] {
+  background: radial-gradient(circle, rgba(200, 162, 92, 0.12) 0%, transparent 70%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tkt-spark,
+  .tkt-orbit-track,
+  .tkt-chip,
+  .tkt-bloom {
+    animation: none !important;
+  }
+}

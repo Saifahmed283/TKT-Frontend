@@ -11,6 +11,7 @@ import { useAboutContent, type AboutContent, type LocalizedText } from '../../li
 import SpotlightCard from '../../components/reactbits/SpotlightCard'
 import ShinyText from '../../components/reactbits/ShinyText'
 import BlurText from '../../components/reactbits/BlurText'
+import { PageAccents } from '../../components/public/PlayfulBits'
 
 // Keeps the page intact if the content API is briefly unavailable. Editors
 // change the live copy from /app/site-content.
@@ -207,6 +208,7 @@ export default function About() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_40%_at_50%_0%,color-mix(in_srgb,var(--color-signal)_10%,transparent),transparent_72%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-raised)_35%,transparent),transparent_30%)]" />
       </div>
+      <PageAccents />
 
       <PublicNav />
 
@@ -216,7 +218,7 @@ export default function About() {
           <Reveal>
             <div className="mb-5 flex items-center gap-3">
               <span className="h-px w-8 bg-signal-dim" aria-hidden="true" />
-              <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-signal-dim">{t('aboutEyebrow')}</p>
+              <ShinyText text={t('aboutEyebrow')} className="text-[11px] font-medium uppercase tracking-[0.24em]" color="var(--color-signal-dim)" shineColor="var(--color-signal)" speed={3.2} />
             </div>
             <div className="max-w-4xl font-display text-4xl font-semibold leading-[1.04] tracking-tight text-ink-0 sm:text-5xl lg:text-7xl">
               <BlurText text={t('aboutTitleA')} delay={55} animateBy="words" direction="bottom" className="block" />

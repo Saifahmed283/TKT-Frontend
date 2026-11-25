@@ -5,6 +5,8 @@ import { useAuth } from '../../lib/auth'
 import { ApiError } from '../../lib/api'
 import { useLanguage } from '../../lib/i18n'
 import BrandLogo from '../../components/public/BrandLogo'
+import ShinyText from '../../components/reactbits/ShinyText'
+import { PageAccents } from '../../components/public/PlayfulBits'
 
 export default function Login() {
   const { login, user } = useAuth()
@@ -34,10 +36,11 @@ export default function Login() {
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-paper px-4 py-10 sm:px-6">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(200,162,92,0.12),transparent_35%)]" />
+      <PageAccents />
       <div className="relative w-full max-w-md">
         <div className="mb-8 text-center">
           <Link to="/" className="inline-flex justify-center" aria-label="TKT home"><BrandLogo imageClassName="h-12" /></Link>
-          <p className="mt-5 text-[11px] font-medium uppercase tracking-[0.2em] text-signal">{t('loginEyebrow')}</p>
+          <ShinyText text={t('loginEyebrow')} className="mt-5 text-[11px] font-medium uppercase tracking-[0.2em]" color="var(--color-signal)" shineColor="var(--color-ink-0)" speed={3.2} />
           <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight text-ink-0">{t('loginTitle')}</h1>
           <p className="mt-3 text-sm leading-relaxed text-ink-3">{t('loginBody')}</p>
         </div>
