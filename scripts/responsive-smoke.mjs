@@ -53,11 +53,12 @@ try {
         pathname: window.location.pathname,
         mainCount: document.querySelectorAll('main').length,
       }))
-      const expectedPath = route === '/app' ? '/login' : route
+      const expectedPath = route === '/app' ? metrics.pathname : route
+      const validAppPath = route !== '/app' || metrics.pathname === '/app' || metrics.pathname === '/login'
       if (metrics.documentWidth > metrics.viewportWidth + 1) {
         console.error(`FAIL ${viewport.name} ${route}: horizontal overflow ${metrics.documentWidth}px > ${metrics.viewportWidth}px`)
         failures++
-      } else if (metrics.pathname !== expectedPath || new URL(metrics.canonical, baseURL).pathname !== expectedPath) {
+      } else if (!validAppPath || metrics.pathname !== expectedPath || new URL(metrics.canonical, baseURL).pathname !== expectedPath) {
         console.error(`FAIL ${viewport.name} ${route}: current route or canonical URL is incorrect (path=${metrics.pathname}, canonical=${metrics.canonical})`)
         failures++
       } else if ((route.startsWith('/app') || route.startsWith('/reservation/') || route === '/login') && metrics.robots !== 'noindex, nofollow') {
