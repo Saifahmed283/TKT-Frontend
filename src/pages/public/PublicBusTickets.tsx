@@ -154,6 +154,14 @@ export default function PublicBusTickets() {
   const [formData, setFormData] = useState({ name: '', email: '', phone: '' })
   const [view3d, setView3d] = useState(false)
 
+  // The event arrives asynchronously. Keep a valid active bus selected after
+  // the public event query resolves and refresh the object when seat states
+  // are revalidated, without resetting the current bus selection.
+  useEffect(() => {
+    const nextBus = buses.find((bus) => bus.id === activeBus?.id) ?? buses[0] ?? null
+    if (nextBus !== activeBus) setActiveBus(nextBus)
+  }, [buses, activeBus?.id])
+
   const heldSeatIds = new Set(activeBus?.seats.filter(s => s.state === 'HELD').map(s => s.id) ?? [])
   const reservedSeatIds = new Set(activeBus?.seats.filter(s => s.state === 'RESERVED').map(s => s.id) ?? [])
 
