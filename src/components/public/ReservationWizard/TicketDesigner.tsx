@@ -31,7 +31,7 @@ function dateTimeLabel(event: PublicEvent, lang: string) {
   }
 }
 
-function QrPreviewStub({ dark = false }: { dark?: boolean }) {
+function QrPreviewStub() {
   const cells = [
     '111111100101111111',
     '100000101101000001',
