@@ -2,13 +2,13 @@ import { Suspense, lazy } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
-import PublicNav from '../components/public/PublicNav'
-import BlurText from '../components/reactbits/BlurText'
-import { useLanguage } from '../lib/i18n'
-import { useTheme } from '../lib/theme'
+import PublicNav from '../../components/public/PublicNav'
+import BlurText from '../../components/reactbits/BlurText'
+import { useLanguage } from '../../lib/i18n'
+import { useTheme } from '../../lib/theme'
 
-const HeroKeystone = lazy(() => import('../components/public/HeroKeystone'))
-const LightRays = lazy(() => import('../components/reactbits/LightRays'))
+const HeroKeystone = lazy(() => import('../../components/public/HeroKeystone'))
+const LightRays = lazy(() => import('../../components/reactbits/LightRays'))
 
 export default function Landing() {
   const { t } = useLanguage()

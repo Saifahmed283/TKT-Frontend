@@ -1,10 +1,10 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowRight, Users, Ticket, QrCode, Shield, ListTodo, AlertTriangle, Megaphone, Play, Archive, UserCog, Check, X, Radar, ClipboardCheck, Layers, Globe, Lock, Unlock, CalendarClock, CreditCard, KeyRound, Smartphone, Plug, BriefcaseBusiness, FileText, MapPinned, Trash2 } from 'lucide-react'
-import { api } from '../lib/api'
-import type { Overview } from '../lib/types'
-import { ErrorBanner, PageHeader, Spinner, StatCard, StatusBadge, fmtDateTime, fmtTime, Corners, Blink } from '../components/ui'
+import { api } from '../../lib/api'
+import type { Overview } from '../../lib/types'
+import { ErrorBanner, PageHeader, Spinner, StatCard, StatusBadge, fmtDateTime, fmtTime, Corners, Blink } from '../../components/ui'
 import { useConfirm } from '@/components/ui/dialog'
 
 const moduleCards = [

@@ -2,12 +2,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Search, Users, Download, Trash2 } from 'lucide-react'
-import { api } from '../../lib/api'
-import { useDebouncedValue } from '../../lib/useDebouncedValue'
-import { useTaxonomy } from '../../lib/taxonomy'
-import { EmptyState, ErrorBanner, PageHeader, Spinner, fmtDateTime } from '../../components/ui'
-import { ConfirmDialog } from '../../components/ui/dialog'
-import { exportPdf, downloadAuthFile } from '../../lib/export'
+import { api } from '../../../lib/api'
+import { useDebouncedValue } from '../../../lib/useDebouncedValue'
+import { useTaxonomy } from '../../../lib/taxonomy'
+import { EmptyState, ErrorBanner, PageHeader, Spinner, fmtDateTime } from '../../../components/ui'
+import { ConfirmDialog } from '../../../components/ui/dialog'
+import { exportPdf, downloadAuthFile } from '../../../lib/export'
 
 interface AttendeeRow {
   id: string

@@ -1,13 +1,13 @@
 import { Activity, Calendar, MapPin, Ticket, Users } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
-import PublicNav from '../components/public/PublicNav'
-import PublicFooter from '../components/public/PublicFooter'
-import { Corners } from '../components/instruments'
-import { ErrorBanner, Spinner, CountUp } from '../components/ui'
-import { usePublicEvents } from '../lib/public'
-import { useLanguage } from '../lib/i18n'
-import SpotlightCard from '../components/reactbits/SpotlightCard'
-import BlurText from '../components/reactbits/BlurText'
+import PublicNav from '../../components/public/PublicNav'
+import PublicFooter from '../../components/public/PublicFooter'
+import { Corners } from '../../components/instruments'
+import { ErrorBanner, Spinner, CountUp } from '../../components/ui'
+import { usePublicEvents } from '../../lib/public'
+import { useLanguage } from '../../lib/i18n'
+import SpotlightCard from '../../components/reactbits/SpotlightCard'
+import BlurText from '../../components/reactbits/BlurText'
 
 function Reveal({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
   const reduce = useReducedMotion()

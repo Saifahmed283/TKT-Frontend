@@ -44,7 +44,7 @@ export function WorkforcePage() {
       )
     },
     onSuccess: (d) => {
-      if (d.accountCreated) toast.success(d.onboardingEmailOk ? 'Account created and credentials emailed' : `Account created, but email failed: ${d.onboardingEmailError ?? 'check SMTP'}`)
+      if (d.accountCreated) toast.success(d.onboardingEmailOk ? 'Account created. Credentials are being emailed.' : `Account created, but email was not queued: ${d.onboardingEmailError ?? 'check SMTP'}`)
       else toast.success('Applicant converted to staff')
       qc.invalidateQueries({ queryKey: ['workforce-apps'] }); qc.invalidateQueries({ queryKey: ['workforce-profiles'] }); qc.invalidateQueries({ queryKey: ['staff'] })
     },

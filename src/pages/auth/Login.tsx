@@ -1,10 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { ArrowRight, Globe } from 'lucide-react'
-import { useAuth } from '../lib/auth'
-import { ApiError } from '../lib/api'
-import { useLanguage } from '../lib/i18n'
-import BrandLogo from '../components/public/BrandLogo'
+import { useAuth } from '../../lib/auth'
+import { ApiError } from '../../lib/api'
+import { useLanguage } from '../../lib/i18n'
+import BrandLogo from '../../components/public/BrandLogo'
 
 export default function Login() {
   const { login, user } = useAuth()

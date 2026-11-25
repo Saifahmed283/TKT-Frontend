@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { CalendarDays, Plus } from 'lucide-react'
-import { api } from '../lib/api'
-import type { EventSummary } from '../lib/types'
-import { PageHeader, StatusBadge, Spinner, ErrorBanner, EmptyState, fmtDateTime, Corners } from '../components/ui'
-import { EventFormModal } from '../components/events/EventFormModal'
+import { api } from '../../lib/api'
+import type { EventSummary } from '../../lib/types'
+import { PageHeader, StatusBadge, Spinner, ErrorBanner, EmptyState, fmtDateTime, Corners } from '../../components/ui'
+import { EventFormModal } from '../../components/events/EventFormModal'
 import { useState } from 'react'
 
 export default function EventsPage() {

@@ -3,19 +3,19 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Bus, Clock, ExternalLink, XCircle, Box, Grid3X3 } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
-import PublicNav from '../components/public/PublicNav'
-import { api } from '../lib/api'
-import { useLanguage } from '../lib/i18n'
-import { usePublicEvents, type PublicBus, type PublicSeat } from '../lib/public'
-import { normalizeBusLayout } from '../lib/busLayouts'
-import SpotlightCard from '../components/reactbits/SpotlightCard'
-import { Button } from '../components/ui/button'
-import { Corners, Blink } from '../components/instruments'
-import { useToast } from '../components/ui/toast'
-import { FileUploadField } from '../components/ui/file-upload'
-import { ApiError } from '../lib/api'
+import PublicNav from '../../components/public/PublicNav'
+import { api } from '../../lib/api'
+import { useLanguage } from '../../lib/i18n'
+import { usePublicEvents, type PublicBus, type PublicSeat } from '../../lib/public'
+import { normalizeBusLayout } from '../../lib/busLayouts'
+import SpotlightCard from '../../components/reactbits/SpotlightCard'
+import { Button } from '../../components/ui/button'
+import { Corners, Blink } from '../../components/instruments'
+import { useToast } from '../../components/ui/toast'
+import { FileUploadField } from '../../components/ui/file-upload'
+import { ApiError } from '../../lib/api'
 
-const BusSeatMap3D = lazy(() => import('../components/public/BusSeatMap3D'))
+const BusSeatMap3D = lazy(() => import('../../components/public/BusSeatMap3D'))
 
 function fmtMoney(value: number | string | null | undefined, currency = 'EGP'): string {
   const n = Number(value ?? 0)

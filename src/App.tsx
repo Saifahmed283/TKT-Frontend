@@ -4,25 +4,25 @@ import { useAuth } from './lib/auth'
 import { useLanguage } from './lib/i18n'
 import BrandLogo from './components/public/BrandLogo'
 import WebsiteIntro from './components/public/WebsiteIntro'
-import Landing from './pages/Landing'
-import Login from './pages/Login'
-import UpcomingEvents from './pages/UpcomingEvents'
-import PastWorks from './pages/PastWorks'
-import Contact from './pages/Contact'
-import About from './pages/About'
-import ReservationStatusPage from './pages/ReservationStatus'
+import Landing from './pages/public/Landing'
+import Login from './pages/auth/Login'
+import UpcomingEvents from './pages/public/UpcomingEvents'
+import PastWorks from './pages/public/PastWorks'
+import Contact from './pages/public/Contact'
+import About from './pages/public/About'
+import ReservationStatusPage from './pages/public/ReservationStatus'
 import Shell from './components/shell/Shell'
 import { RequirePermission } from './components/auth/RequirePermission'
 
 // App pages are loaded on demand. The old static import graph put every
 // operations page (and libraries such as three, recharts and jspdf) into the
 // first JS download, delaying data requests on the public site.
-const Dashboard = lazy(() => import('./pages/Dashboard'))
-const EventsPage = lazy(() => import('./pages/Events'))
-const EventDetail = lazy(() => import('./pages/EventDetail'))
-const AttendeesPage = lazy(() => import('./pages/attendees/Attendees'))
-const TicketsPage = lazy(() => import('./pages/tickets/Tickets'))
-const ScannerPage = lazy(() => import('./pages/scanner/Scanner'))
+const Dashboard = lazy(() => import('./pages/app/Dashboard'))
+const EventsPage = lazy(() => import('./pages/public/Events'))
+const EventDetail = lazy(() => import('./pages/public/EventDetail'))
+const AttendeesPage = lazy(() => import('./pages/app/attendees/Attendees'))
+const TicketsPage = lazy(() => import('./pages/app/tickets/Tickets'))
+const ScannerPage = lazy(() => import('./pages/app/scanner/Scanner'))
 const AccessLogsPage = lazy(() => import('./pages/app/events/AccessLogsPage').then((m) => ({ default: m.AccessLogsPage })))
 const AreasPage = lazy(() => import('./pages/app/events/AreasPage').then((m) => ({ default: m.AreasPage })))
 const AuditPage = lazy(() => import('./pages/app/events/AuditPage').then((m) => ({ default: m.AuditPage })))
