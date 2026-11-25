@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Bus, Clock, ExternalLink, XCircle, Box, Grid3X3 } from 'lucide-react'
@@ -16,6 +16,7 @@ import { FileUploadField } from '../../components/ui/file-upload'
 import { ApiError } from '../../lib/api'
 
 const BusSeatMap3D = lazy(() => import('../../components/public/BusSeatMap3D'))
+const MECT49SeatMap = lazy(() => import('../../components/public/MECT49SeatMap'))
 
 function fmtMoney(value: number | string | null | undefined, currency = 'EGP'): string {
   const n = Number(value ?? 0)
@@ -32,7 +33,21 @@ function SeatMap2D({ bus, selectedSeats, onSeatClick, heldSeats, reservedSeats, 
   className?: string
 }) {
   const reduce = useReducedMotion()
+  const { lang } = useLanguage()
   const layout = normalizeBusLayout(bus.layout)
+  if (layout.template === 'mect49') {
+    return (
+      <div className={className}>
+        <MECT49SeatMap
+          seats={bus.seats}
+          selectedSeatIds={selectedSeats}
+          onSeatClick={onSeatClick}
+          language={lang}
+          maxSelectable={1}
+        />
+      </div>
+    )
+  }
   const cols = layout.cols
   const aisleAfter = layout.aisleAfterCol
   const rows = layout.rows
@@ -68,7 +83,7 @@ function SeatMap2D({ bus, selectedSeats, onSeatClick, heldSeats, reservedSeats, 
                     disabled={!isAvailable && !isSelected}
                     onClick={() => onSeatClick(seat)}
                     className={cls}
-                    title={isHeld ? `Held${seat.holderName ? ` · ${seat.holderName}` : ''}` : seat.label}
+                    title={isHeld ? `Held · ${seat.label}` : seat.label}
                     whileTap={reduce ? undefined : { scale: 0.95 }}
                   >
                     {seat.label}
@@ -132,11 +147,20 @@ export default function PublicBusTickets() {
   const [selectedSeats, setSelectedSeats] = useState<string[]>([])
   const [seatPassengers, setSeatPassengers] = useState<Record<string, { name: string; email: string; phone: string }>>({})
   const [holdToken, setHoldToken] = useState<string | null>(null)
+  const activeSeatHoldRef = useRef<{ busId: string; seatIds: string[]; sessionId: string } | null>(null)
   const [holdExpiresAt, setHoldExpiresAt] = useState<string | null>(null)
   const [holding, setHolding] = useState(false)
   const [holdError, setHoldError] = useState<string | null>(null)
   const [formData, setFormData] = useState({ name: '', email: '', phone: '' })
   const [view3d, setView3d] = useState(false)
+
+  // The event arrives asynchronously. Keep a valid active bus selected after
+  // the public event query resolves and refresh the object when seat states
+  // are revalidated, without resetting the current bus selection.
+  useEffect(() => {
+    const nextBus = buses.find((bus) => bus.id === activeBus?.id) ?? buses[0] ?? null
+    if (nextBus !== activeBus) setActiveBus(nextBus)
+  }, [buses, activeBus?.id])
 
   const heldSeatIds = new Set(activeBus?.seats.filter(s => s.state === 'HELD').map(s => s.id) ?? [])
   const reservedSeatIds = new Set(activeBus?.seats.filter(s => s.state === 'RESERVED').map(s => s.id) ?? [])
@@ -145,8 +169,14 @@ export default function PublicBusTickets() {
     mutationFn: ({ busId, seatIds }: { busId: string; seatIds: string[] }) =>
       api.post<{ data: { holdToken: string; holdExpiresAt: string; seats: PublicSeat[] } }>(`/public/events/${eventId}/buses/${busId}/hold`, { seatIds, sessionId: holdToken || crypto.randomUUID(), holdMinutes: 10 }),
     onMutate: () => { setHolding(true); setHoldError(null) },
-    onSuccess: (data) => {
-      setHoldToken(data.data.holdToken)
+    onSuccess: (data, variables) => {
+      const sessionId = data.data.holdToken
+      activeSeatHoldRef.current = {
+        busId: variables.busId,
+        seatIds: [...variables.seatIds],
+        sessionId,
+      }
+      setHoldToken(sessionId)
       setHoldExpiresAt(data.data.holdExpiresAt)
       setHolding(false)
       void qc.invalidateQueries({ queryKey: ['public-events'] })
@@ -158,6 +188,7 @@ export default function PublicBusTickets() {
     mutationFn: ({ busId, seatIds }: { busId: string; seatIds: string[] }) =>
       api.post(`/public/events/${eventId}/buses/${busId}/release-hold`, { seatIds, sessionId: holdToken! }),
     onSuccess: () => {
+      activeSeatHoldRef.current = null
       setHoldToken(null)
       setHoldExpiresAt(null)
       setSelectedSeats([])
@@ -165,6 +196,42 @@ export default function PublicBusTickets() {
       void qc.invalidateQueries({ queryKey: ['public-events'] })
     }
   })
+
+  useEffect(() => {
+    const hold = activeSeatHoldRef.current
+    if (!hold) return
+
+    const stillSelected = activeBus?.id === hold.busId
+      && selectedSeats.length === hold.seatIds.length
+      && hold.seatIds.every((id, index) => selectedSeats[index] === id)
+    if (stillSelected) return
+
+    activeSeatHoldRef.current = null
+    setHoldToken(null)
+    setHoldExpiresAt(null)
+    void api.post(
+      `/public/events/${eventId}/buses/${hold.busId}/release-hold`,
+      { seatIds: hold.seatIds, sessionId: hold.sessionId },
+    ).then(() => {
+      void qc.invalidateQueries({ queryKey: ['public-events'] })
+    }).catch(() => {
+      // The ten-minute server expiry remains the fallback if release fails.
+    })
+  }, [activeBus?.id, selectedSeats, holdToken, eventId, qc])
+
+  useEffect(() => {
+    return () => {
+      const hold = activeSeatHoldRef.current
+      if (!hold) return
+      activeSeatHoldRef.current = null
+      void api.post(
+        `/public/events/${eventId}/buses/${hold.busId}/release-hold`,
+        { seatIds: hold.seatIds, sessionId: hold.sessionId },
+      ).catch(() => {
+        // The server-side expiration is the final cleanup safety net.
+      })
+    }
+  }, [eventId])
 
   const ticketTypes = (event?.ticketTypes ?? []).filter(tt => !tt.soldOut)
   const [ticketTypeId, setTicketTypeId] = useState<string>('')
@@ -189,6 +256,9 @@ export default function PublicBusTickets() {
   const reservationMutation = useMutation({
     mutationFn: (body: any) => api.post<{ data: any }>(`/public/events/${eventId}/reservations`, body),
     onSuccess: (res) => {
+      // The server has converted this hold to a ticket-linked reservation.
+      // Never release a successfully reserved seat during the route cleanup.
+      activeSeatHoldRef.current = null
       const { reservationCode, approval, accessToken } = res.data
       rememberReservationAccessToken(reservationCode, accessToken)
       setSubmitError(null)
@@ -223,12 +293,18 @@ export default function PublicBusTickets() {
   const handleSeatClick = (seat: PublicSeat) => {
     if (seat.state === 'RESERVED' || seat.state === 'UNAVAILABLE') return
     if (seat.state === 'HELD' && !selectedSeats.includes(seat.id)) return
-    setSelectedSeats(prev => prev.includes(seat.id) ? prev.filter(x => x !== seat.id) : [...prev, seat.id])
-    if (!selectedSeats.includes(seat.id)) {
-      setSeatPassengers(prev => ({ ...prev, [seat.id]: { name: formData.name, email: formData.email, phone: formData.phone } }))
-    } else {
-      setSeatPassengers(prev => { const n = { ...prev }; delete n[seat.id]; return n })
-    }
+
+    const wasSelected = selectedSeats.includes(seat.id)
+    const previousSeatId = selectedSeats[0]
+    setSelectedSeats(wasSelected ? [] : [seat.id])
+    setSeatPassengers((current) => {
+      const next = { ...current }
+      if (previousSeatId) delete next[previousSeatId]
+      if (!wasSelected) {
+        next[seat.id] = { name: formData.name, email: formData.email, phone: formData.phone }
+      }
+      return next
+    })
   }
 
   const handleHold = () => {
@@ -244,7 +320,7 @@ export default function PublicBusTickets() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitError(null)
-    if (!activeBus || selectedSeats.length === 0) { setSubmitError(isAr ? 'اختر مقاعد أولاً' : 'Select seats first'); return }
+    if (!activeBus || selectedSeats.length !== 1) { setSubmitError(isAr ? 'اختر مقعدًا واحدًا' : 'Select exactly one seat'); return }
     if (!formData.name.trim() || !formData.email.trim()) { setSubmitError(isAr ? 'الاسم والبريد مطلوبان' : 'Name and email are required'); return }
     if (!selectedTicketType?.id) { setSubmitError(isAr ? 'اختر نوع التذكرة' : 'Select a ticket type'); return }
     if (isPaid && !paymentProviderId && !paymentReference.trim() && !paymentProofUrl) {

@@ -3,9 +3,10 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, Html, RoundedBox } from '@react-three/drei'
 import type * as THREE from 'three'
 import type { PublicBus, PublicSeat } from '../../lib/public'
-import { normalizeBusLayout } from '../../lib/busLayouts'
+import { MECT49_SEAT_PLACEMENTS, normalizeBusLayout } from '../../lib/domain/busLayouts'
 
 type SeatStatus = 'AVAILABLE' | 'HELD' | 'RESERVED' | 'UNAVAILABLE' | 'SELECTED'
+type Position3D = [number, number, number]
 
 function colorFor(status: SeatStatus, look?: string) {
   const premium = look === 'luxury' || look === 'coach'
@@ -18,7 +19,13 @@ function colorFor(status: SeatStatus, look?: string) {
   }
 }
 
-function SeatMesh({ seat, status, look, onClick }: { seat: PublicSeat; status: SeatStatus; look?: string; onClick: () => void }) {
+function SeatMesh({ seat, status, look, position, onClick }: {
+  seat: PublicSeat
+  status: SeatStatus
+  look?: string
+  position: Position3D
+  onClick: () => void
+}) {
   const ref = useRef<THREE.Group>(null)
   const [hovered, setHovered] = useState(false)
   const base = colorFor(status, look)
@@ -33,7 +40,7 @@ function SeatMesh({ seat, status, look, onClick }: { seat: PublicSeat; status: S
   return (
     <group
       ref={ref}
-      position={[seat.col - 1, 0, seat.row - 1]}
+      position={position}
       onClick={(e) => { e.stopPropagation(); if (interactive) onClick() }}
       onPointerOver={(e) => { e.stopPropagation(); if (interactive) { setHovered(true); document.body.style.cursor = 'pointer' } }}
       onPointerOut={() => { setHovered(false); document.body.style.cursor = '' }}
@@ -51,18 +58,64 @@ function SeatMesh({ seat, status, look, onClick }: { seat: PublicSeat; status: S
   )
 }
 
-function BusFloor({ rows, cols, aisleAfter, look }: { rows: number; cols: number; aisleAfter: number; look?: string }) {
-  const width = cols + (aisleAfter > 0 && aisleAfter < cols ? 0.6 : 0) + 0.8
-  const depth = rows + 0.8
+function BusFloor({ rows, cols, aisleAfter, look, mect49 }: {
+  rows: number
+  cols: number
+  aisleAfter: number
+  look?: string
+  mect49: boolean
+}) {
+  const width = mect49 ? 5.4 : cols + (aisleAfter > 0 && aisleAfter < cols ? 0.6 : 0) + 0.8
+  const depth = mect49 ? 14.6 : rows + 0.8
+  const center: Position3D = mect49 ? [0, -0.02, 6.65] : [(cols - 1) / 2, -0.02, (rows - 1) / 2]
+
   return (
-    <group position={[(cols - 1) / 2, -0.02, (rows - 1) / 2]}>
+    <group position={center}>
       <RoundedBox args={[width, 0.06, depth]} radius={0.08} smoothness={2} position={[0, -0.03, 0]}>
-        <meshStandardMaterial color={look === "luxury" || look === "coach" ? "#17181c" : "#1a1b1e"} roughness={0.9} metalness={look === "luxury" || look === "coach" ? 0.12 : 0.05} />
+        <meshStandardMaterial color={look === 'luxury' || look === 'coach' ? '#17181c' : '#1a1b1e'} roughness={0.9} metalness={look === 'luxury' || look === 'coach' ? 0.12 : 0.05} />
       </RoundedBox>
       <mesh position={[0, 0.001, -depth / 2 + 0.25]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[width - 0.3, 0.35]} />
         <meshStandardMaterial color="#E8D08B" emissive="#E8D08B" emissiveIntensity={0.15} transparent opacity={0.35} />
       </mesh>
+      {mect49 && (
+        <>
+          <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[0.58, 12.7]} />
+            <meshStandardMaterial color="#ddd5c4" transparent opacity={0.28} />
+          </mesh>
+          {[-width / 2 + 0.08, width / 2 - 0.08].map((x) => (
+            <RoundedBox key={x} args={[0.08, 0.26, depth - 0.15]} radius={0.035} position={[x, 0.12, 0]}>
+              <meshStandardMaterial color="#C8A25C" metalness={0.35} roughness={0.45} />
+            </RoundedBox>
+          ))}
+        </>
+      )}
+    </group>
+  )
+}
+
+function MECTServiceFixtures() {
+  return (
+    <group>
+      <RoundedBox args={[1.1, 0.25, 0.34]} radius={0.06} position={[0.1, 0.18, -0.78]}>
+        <meshStandardMaterial color="#C8A25C" metalness={0.45} roughness={0.35} />
+      </RoundedBox>
+      <Html position={[0.1, 0.38, -0.78]} center style={{ pointerEvents: 'none' }}>
+        <span style={{ color: '#f8f4e9', fontSize: 10, fontWeight: 700 }}>FRONT TV</span>
+      </Html>
+      <RoundedBox args={[0.62, 0.3, 0.72]} radius={0.08} position={[-1.78, 0.15, 0.35]}>
+        <meshStandardMaterial color="#46464a" roughness={0.8} />
+      </RoundedBox>
+      <Html position={[-1.78, 0.43, 0.35]} center style={{ pointerEvents: 'none' }}>
+        <span style={{ color: '#eee5d4', fontSize: 9 }}>DRIVER</span>
+      </Html>
+      <RoundedBox args={[0.55, 0.42, 1.4]} radius={0.06} position={[2.05, 0.22, 6.2]}>
+        <meshStandardMaterial color="#c8c2b7" roughness={0.75} />
+      </RoundedBox>
+      <Html position={[2.05, 0.48, 6.2]} center style={{ pointerEvents: 'none' }}>
+        <span style={{ color: '#17181c', fontSize: 9, fontWeight: 700 }}>TV · WC · EXIT</span>
+      </Html>
     </group>
   )
 }
@@ -80,22 +133,33 @@ export default function BusSeatMap3D({
 }) {
   const layout = normalizeBusLayout(bus.layout)
   const { rows, cols, aisleAfterCol: aisleAfter, look } = layout
-  const center = useMemo(() => [(cols - 1) / 2, 0.3, (rows - 1) / 2] as [number, number, number], [cols, rows])
+  const mect49 = layout.template === 'mect49'
+  const center = useMemo(
+    () => (mect49 ? [0, 0.3, 6.4] as Position3D : [(cols - 1) / 2, 0.3, (rows - 1) / 2] as Position3D),
+    [mect49, cols, rows],
+  )
+
+  const positionByLabel = useMemo(() => new Map(
+    MECT49_SEAT_PLACEMENTS.map((seat) => [
+      seat.label,
+      [(seat.x - 420) / 100, 0, (seat.y - 260) / 75] as Position3D,
+    ]),
+  ), [])
 
   const seatStatuses = useMemo(() => {
-    const m = new Map<string, SeatStatus>()
-    for (const s of bus.seats) {
-      if (selectedSeats.includes(s.id)) m.set(s.id, 'SELECTED')
-      else m.set(s.id, s.state)
+    const map = new Map<string, SeatStatus>()
+    for (const seat of bus.seats) {
+      if (selectedSeats.includes(seat.id)) map.set(seat.id, 'SELECTED')
+      else map.set(seat.id, seat.state)
     }
-    return m
+    return map
   }, [bus.seats, selectedSeats])
 
   return (
     <div className={className}>
       <div className="h-[420px] w-full border border-line-soft bg-[#111214]" role="img" aria-label="3D bus seat map. Use 2D map for keyboard seat selection.">
         <Canvas
-          camera={{ position: [center[0], Math.max(rows, cols) * 0.9, rows + 2.5], fov: 45 }}
+          camera={{ position: [center[0], Math.max(rows, cols) * (mect49 ? 1.08 : 0.9), center[2] + (mect49 ? 7 : 2.5)], fov: 45 }}
           dpr={[1, 1.5]}
           performance={{ min: 0.5 }}
           frameloop="demand"
@@ -105,22 +169,29 @@ export default function BusSeatMap3D({
           <directionalLight position={[4, 8, 6]} intensity={1.1} color="#fff6dd" />
           <directionalLight position={[-4, 5, -2]} intensity={0.35} color="#88aaff" />
           <Suspense fallback={null}>
-            <BusFloor rows={rows} cols={cols} aisleAfter={aisleAfter} look={look} />
-            {bus.seats.map((seat) => (
-              <SeatMesh
-                key={seat.id}
-                seat={seat}
-                status={seatStatuses.get(seat.id) ?? seat.state}
-                look={look}
-                onClick={() => onSeatClick(seat)}
-              />
-            ))}
+            <BusFloor rows={rows} cols={cols} aisleAfter={aisleAfter} look={look} mect49={mect49} />
+            {mect49 && <MECTServiceFixtures />}
+            {bus.seats.map((seat) => {
+              const position = mect49
+                ? positionByLabel.get(seat.label) ?? [0, 0, 0]
+                : [seat.col - 1, 0, seat.row - 1] as Position3D
+              return (
+                <SeatMesh
+                  key={seat.id}
+                  seat={seat}
+                  status={seatStatuses.get(seat.id) ?? seat.state}
+                  look={look}
+                  position={position}
+                  onClick={() => onSeatClick(seat)}
+                />
+              )
+            })}
           </Suspense>
           <OrbitControls
             target={center}
             enablePan={false}
-            minDistance={Math.max(rows, cols) * 0.7}
-            maxDistance={Math.max(rows, cols) * 2.2}
+            minDistance={Math.max(rows, cols) * (mect49 ? 0.55 : 0.7)}
+            maxDistance={Math.max(rows, cols) * (mect49 ? 1.55 : 2.2)}
             maxPolarAngle={Math.PI / 2.15}
             minPolarAngle={Math.PI / 6}
           />

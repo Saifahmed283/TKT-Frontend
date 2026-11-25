@@ -25,3 +25,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Generated TypeScript and Playwright artifacts
+*.tsbuildinfo
+test-results/
+playwright-report/

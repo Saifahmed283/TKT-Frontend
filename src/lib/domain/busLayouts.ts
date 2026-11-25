@@ -36,23 +36,48 @@ function gridSeats(rows: number, cols: number, _aisleAfterCol = 0, unavailable: 
   return seats
 }
 
-/** MECT 49-seat: 49 bookable passenger seats labeled 1-49. 1B/2B auxiliary positions are non-bookable and not exposed. */
-function mect49Seats(): BusSeatDef[] {
-  const seats: BusSeatDef[] = []
-  let n = 1
-  // Front: 2 seats (1-2)
-  seats.push({ label: String(n++), row: 1, col: 3, kind: 'seat' })
-  seats.push({ label: String(n++), row: 1, col: 4, kind: 'seat' })
-  // Row 2: 2 seats (3-4)
-  seats.push({ label: String(n++), row: 2, col: 3, kind: 'seat' })
-  seats.push({ label: String(n++), row: 2, col: 4, kind: 'seat' })
-  // Rows 3-12: 4 seats each (5-44)
-  for (let r = 3; r <= 12; r++) {
-    for (const c of [1, 2, 3, 4]) seats.push({ label: String(n++), row: r, col: c, kind: 'seat' })
+/**
+ * Canonical MECT 49 seat geometry. Logical row/column values are stable API
+ * coordinates; x/y are normalized view coordinates shared by 2D and 3D maps.
+ */
+export const MECT49_SEAT_PLACEMENTS: Array<BusSeatDef & { x: number; y: number }> = (() => {
+  const seats: Array<BusSeatDef & { x: number; y: number }> = []
+  const left = [292, 365]
+  const right = [492, 565]
+  const four = [...left, ...right]
+
+  for (let row = 0; row < 5; row += 1) {
+    const y = 260 + row * 76
+    four.forEach((x, col) => seats.push({
+      label: String(1 + row * 4 + col), row: row + 1, col: col + 1, x, y, kind: 'seat',
+    }))
   }
-  // Back row: 5 seats (45-49)
-  for (let c = 1; c <= 5; c++) seats.push({ label: String(n++), row: 13, col: c, kind: 'seat' })
+
+  const addPair = (labels: number[], row: number, y: number, xs: number[]) => {
+    labels.forEach((label, index) => seats.push({
+      label: String(label), row, col: index + 1, x: xs[index], y, kind: 'seat',
+    }))
+  }
+  addPair([21, 22], 6, 650, left)
+  addPair([23, 24], 7, 730, left)
+  addPair([25, 26], 8, 810, left)
+  addPair([27, 28], 8, 810, right)
+
+  for (let row = 0; row < 4; row += 1) {
+    const y = 890 + row * 76
+    four.forEach((x, col) => seats.push({
+      label: String(29 + row * 4 + col), row: row + 9, col: col + 1, x, y, kind: 'seat',
+    }))
+  }
+
+  ;[270, 345, 420, 495, 570].forEach((x, index) => seats.push({
+    label: String(45 + index), row: 13, col: index + 1, x, y: 1260, kind: 'seat',
+  }))
   return seats
+})()
+
+function mect49Seats(): BusSeatDef[] {
+  return MECT49_SEAT_PLACEMENTS.map((seat) => ({ ...seat, state: 'AVAILABLE' }))
 }
 
 /** 21-seat Coaster: IDs 1-21 in visual reading order. Confirm physical numbering with operator before paid bookings. */
@@ -103,7 +128,7 @@ export function buildTemplateSeats(templateId: BusTemplateId | string, opts?: { 
   return gridSeats(opts?.rows ?? 10, opts?.cols ?? 4, opts?.aisleAfterCol ?? 2, opts?.unavailable ?? [])
 }
 
-export function normalizeBusLayout(layout: any): { template: BusTemplateId; rows: number; cols: number; aisleAfterCol: number; look: string; seats: BusSeatDef[] } {
+export function normalizeBusLayout(layout: any): { template: BusTemplateId; rows: number; cols: number; aisleAfterCol: number; look: string; seats: BusSeatDef[]; viewBox?: { w: number; h: number } } {
   const template = ((layout?.template as BusTemplateId) || 'grid')
   const tpl = getBusTemplate(template)
   const rows = Number(layout?.rows ?? tpl.rows ?? 10)
@@ -114,5 +139,5 @@ export function normalizeBusLayout(layout: any): { template: BusTemplateId; rows
   const seats: BusSeatDef[] = rawSeats
     ? rawSeats.map((s: any) => ({ label: String(s.label), row: Number(s.row), col: Number(s.col), state: s.state === 'UNAVAILABLE' ? 'UNAVAILABLE' : 'AVAILABLE', kind: s.kind ?? 'seat', x: s.x, y: s.y }))
     : buildTemplateSeats(template, { rows, cols, aisleAfterCol, unavailable: layout?.unavailable ?? [] })
-  return { template, rows, cols, aisleAfterCol, look, seats }
+  return { template, rows, cols, aisleAfterCol, look, seats, viewBox: layout?.viewBox ?? tpl.viewBox }
 }

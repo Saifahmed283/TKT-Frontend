@@ -4,15 +4,16 @@ import { useAuth } from './lib/auth'
 import { useLanguage } from './lib/i18n'
 import BrandLogo from './components/public/BrandLogo'
 import WebsiteIntro from './components/public/WebsiteIntro'
-import Landing from './pages/public/Landing'
-import Login from './pages/auth/Login'
-import UpcomingEvents from './pages/public/UpcomingEvents'
-import PastWorks from './pages/public/PastWorks'
-import Contact from './pages/public/Contact'
-import About from './pages/public/About'
-import ReservationStatusPage from './pages/public/ReservationStatus'
-import Shell from './components/shell/Shell'
-import { RequirePermission } from './components/auth/RequirePermission'
+const Shell = lazy(() => import('./components/shell/Shell'))
+const RequirePermission = lazy(() => import('./components/auth/RequirePermission').then((m) => ({ default: m.RequirePermission })))
+
+const Landing = lazy(() => import('./pages/public/Landing'))
+const Login = lazy(() => import('./pages/auth/Login'))
+const UpcomingEvents = lazy(() => import('./pages/public/UpcomingEvents'))
+const PastWorks = lazy(() => import('./pages/public/PastWorks'))
+const Contact = lazy(() => import('./pages/public/Contact'))
+const About = lazy(() => import('./pages/public/About'))
+const ReservationStatusPage = lazy(() => import('./pages/public/ReservationStatus'))
 
 // App pages are loaded on demand. The old static import graph put every
 // operations page (and libraries such as three, recharts and jspdf) into the
@@ -76,6 +77,27 @@ function ScrollToTop() {
   const { pathname } = useLocation()
   useEffect(() => {
     window.scrollTo(0, 0)
+
+    const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+    if (canonical) canonical.href = new URL(pathname, window.location.origin).toString()
+
+    const privateRoute = pathname.startsWith('/app') || pathname.startsWith('/reservation/') || pathname === '/login'
+    let robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]')
+    if (!robots) {
+      robots = document.createElement('meta')
+      robots.name = 'robots'
+      document.head.appendChild(robots)
+    }
+    robots.content = privateRoute ? 'noindex, nofollow' : 'index, follow'
+
+    const pageTitles: Record<string, string> = {
+      '/': 'TKT — Events & Experiences',
+      '/upcoming': 'Upcoming Events | TKT',
+      '/past': 'Past Experiences | TKT',
+      '/about': 'About TKT — Events & Experiences',
+      '/contact': 'Contact TKT',
+    }
+    document.title = pageTitles[pathname] ?? (privateRoute ? 'Private Ticket Area | TKT' : 'TKT — Events & Experiences')
   }, [pathname])
   return null
 }

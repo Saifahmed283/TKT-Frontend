@@ -155,15 +155,27 @@ export default function HeroKeystone() {
       sealGroup.position.x = w > 900 ? 1.4 : w > 700 ? 0.8 : 0
       sealGroup.position.y = 0
       sealGroup.scale.setScalar(w < 900 ? 0.88 : 1)
+      draw()
     }
 
     const onDown = (clientX: number, clientY: number) => { isDragging = true; prevX = clientX; prevY = clientY }
+    const draw = () => {
+      if (raf) return
+      raf = window.requestAnimationFrame(() => {
+        raf = 0
+        sealGroup.rotation.y = targetRotY
+        sealGroup.rotation.x = targetRotX
+        renderer.render(scene, camera)
+      })
+    }
+
     const onMove = (clientX: number, clientY: number) => {
       if (!isDragging) return
       targetRotY += (clientX - prevX) * 0.007
       targetRotX += (clientY - prevY) * 0.007
       prevX = clientX
       prevY = clientY
+      draw()
     }
     const onUp = () => { isDragging = false }
 
@@ -183,25 +195,7 @@ export default function HeroKeystone() {
     ro.observe(container)
     size()
 
-    const clock = new THREE.Clock()
-    const animate = () => {
-      raf = window.requestAnimationFrame(animate)
-      const elapsed = clock.getElapsedTime()
-      haloOrbitGroup.rotation.z = elapsed * 0.22
-      innerRing.rotation.z = -elapsed * 0.14
-      outerRing.rotation.z = elapsed * 0.05
-      sealGroup.position.y = Math.sin(elapsed * 0.8) * 0.08
-      shadowPlane.scale.setScalar(1 + Math.sin(elapsed * 0.8) * 0.03)
-      shadowMat.opacity = 0.72 - Math.sin(elapsed * 0.8) * 0.05
-      if (!isDragging) {
-        targetRotY = -0.28 + Math.sin(elapsed * 0.55) * 0.38
-        targetRotX = 0.08 + Math.cos(elapsed * 0.4) * 0.12
-      }
-      sealGroup.rotation.y += (targetRotY - sealGroup.rotation.y) * 0.08
-      sealGroup.rotation.x += (targetRotX - sealGroup.rotation.x) * 0.08
-      renderer.render(scene, camera)
-    }
-    animate()
+    draw()
 
     return () => {
       window.cancelAnimationFrame(raf)
@@ -216,6 +210,10 @@ export default function HeroKeystone() {
       dotGeo.dispose()
       innerRing.geometry.dispose()
       outerRing.geometry.dispose()
+      shadowTex.dispose()
+      shadowPlane.geometry.dispose()
+      shadowMat.dispose()
+      edgeMat.dispose()
       goldMaterial.dispose()
       paleGoldMaterial.dispose()
       if (renderer.domElement.parentNode === container) container.removeChild(renderer.domElement)

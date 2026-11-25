@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useLanguage } from '../../lib/i18n'
 
 const SESSION_KEY = 'tkt_intro_seen'
@@ -18,10 +17,9 @@ const HALO_DOTS = [
 ].map((d, i) => ({ ...d, id: i, delay: 0.5 + i * 0.022 }))
 
 export default function WebsiteIntro() {
-  const reduce = useReducedMotion()
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const { lang } = useLanguage()
   const [show, setShow] = useState(false)
-  const [progress, setProgress] = useState(0)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -39,26 +37,17 @@ export default function WebsiteIntro() {
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
 
-    let pct = 0
-    const interval = window.setInterval(() => {
-      pct = Math.min(100, pct + 2)
-      setProgress(pct)
-      if (pct >= 100) {
-        window.clearInterval(interval)
-        window.setTimeout(finish, 380)
-      }
-    }, 42)
-
+    const timeout = window.setTimeout(finish, 1550)
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
         e.preventDefault()
-        window.clearInterval(interval)
+        window.clearTimeout(timeout)
         finish()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => {
-      window.clearInterval(interval)
+      window.clearTimeout(timeout)
       window.removeEventListener('keydown', onKey)
       document.body.style.overflow = prev
     }
@@ -69,13 +58,10 @@ export default function WebsiteIntro() {
     : { verifying: 'VERIFYING SEAL', enter: 'Enter Experience', hint: 'Press Enter to enter' }
 
   return (
-    <AnimatePresence>
+    <>
       {show && (
-        <motion.div
+        <div
           className="tkt-intro fixed inset-0 z-[120] flex flex-col items-center justify-center overflow-hidden bg-[#0B0B0C] text-[#FAF8F4]"
-          initial={{ opacity: 1 }}
-          exit={{ opacity: 0, visibility: 'hidden' as any }}
-          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
           role="dialog"
           aria-label="TKT Brand Introduction"
         >
@@ -91,7 +77,7 @@ export default function WebsiteIntro() {
             .tkt-intro .intro-hairline { width: 0; height: 1px; background: #C8A25C; margin: 14px 0 16px; opacity: 0; animation: tktLineGrow 0.8s 0.95s var(--ease-arch) forwards; }
             .tkt-intro .intro-descriptor { font-family: 'Poppins', 'Cairo', sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 0.42em; padding-left: 0.42em; color: #FAF8F4; opacity: 0; transform: translateY(10px); animation: tktFadeUp 0.8s 1.05s var(--ease-arch) forwards; }
             .tkt-intro .intro-progress-track { width: min(280px, 70vw); height: 2px; background: #1C1B1B; margin-top: 40px; position: relative; overflow: hidden; }
-            .tkt-intro .intro-progress-fill { height: 100%; background: linear-gradient(90deg, #C8A25C, #E8D08B); box-shadow: 0 0 12px rgba(232,208,139,0.35); transition: width 0.1s linear; }
+            .tkt-intro .intro-progress-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #C8A25C, #E8D08B); box-shadow: 0 0 12px rgba(232,208,139,0.35); transform: scaleX(0); transform-origin: left center; animation: tktProgress 1.55s linear forwards; }
             .tkt-intro .intro-counter { margin-top: 14px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.28em; color: #6E6A62; text-transform: uppercase; }
             .tkt-intro .skip-btn { position: absolute; bottom: max(28px, env(safe-area-inset-bottom)); right: max(28px, env(safe-area-inset-right)); background: transparent; border: none; color: #6E6A62; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer; padding: 10px 0; transition: color 0.25s; }
             .tkt-intro .skip-btn:hover, .tkt-intro .skip-btn:focus-visible { color: #E8D08B; outline: none; }
@@ -101,9 +87,11 @@ export default function WebsiteIntro() {
             @keyframes tktFadeUp { to { opacity: 1; transform: translateY(0); } }
             @keyframes tktFadeIn { to { opacity: 1; } }
             @keyframes tktLineGrow { to { width: 72px; opacity: 1; } }
+            @keyframes tktProgress { to { transform: scaleX(1); } }
             @media (prefers-reduced-motion: reduce) {
               .tkt-intro .seal-ring-outer, .tkt-intro .seal-ring-inner, .tkt-intro .mono-stroke, .tkt-intro .halo-dot, .tkt-intro .intro-wordmark, .tkt-intro .intro-hairline, .tkt-intro .intro-descriptor, .tkt-intro .seal-static { animation: none !important; opacity: 1 !important; transform: none !important; stroke-dashoffset: 0 !important; }
               .tkt-intro .intro-hairline { width: 72px !important; }
+              .tkt-intro .intro-progress-fill { animation: none !important; transform: scaleX(1) !important; }
             }
           `}</style>
 
@@ -153,19 +141,17 @@ export default function WebsiteIntro() {
             <div className="intro-descriptor">EVENTS · EXPERIENCES</div>
 
             <div className="intro-progress-track" aria-hidden="true">
-              <div className="intro-progress-fill" style={{ width: `${progress}%` }} />
+              <div className="intro-progress-fill" />
             </div>
-            <div className="intro-counter" aria-live="polite">
-              {copy.verifying} · {String(progress).padStart(2, '0')}%
-            </div>
+            <div className="intro-counter">{copy.verifying}</div>
             <p className="mt-5 text-[10px] font-medium uppercase tracking-[0.18em] text-[#6E6A62]">{copy.hint}</p>
           </div>
 
           <button type="button" className="skip-btn" onClick={finish}>
             {copy.enter} →
           </button>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   )
 }
