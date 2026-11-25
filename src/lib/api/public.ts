@@ -123,6 +123,33 @@ export interface PublicReview {
   createdAt: string
 }
 
+export interface LocalizedText {
+  en: string
+  ar: string
+}
+
+export interface AboutContent {
+  copy: {
+    team: { eyebrow: LocalizedText; titleA: LocalizedText; titleB: LocalizedText; badge: LocalizedText }
+    partners: { eyebrow: LocalizedText; titleA: LocalizedText; titleB: LocalizedText }
+    reports: { eyebrow: LocalizedText; titleA: LocalizedText; titleB: LocalizedText }
+  }
+  members: { id: string; name: LocalizedText; role: LocalizedText; bio: LocalizedText }[]
+  partners: { id: string; name: LocalizedText }[]
+  reports: { id: string; author: LocalizedText; role: LocalizedText; content: LocalizedText; eventName: LocalizedText }[]
+  updatedAt: string | null
+}
+
+export const ABOUT_CONTENT_QUERY_KEY = ['about-content'] as const
+
+export function useAboutContent() {
+  return useQuery({
+    queryKey: ABOUT_CONTENT_QUERY_KEY,
+    queryFn: () => api.get<AboutContent>('/public/site-content/about'),
+    staleTime: 60_000,
+  })
+}
+
 export interface WheelStatus {
   canSpin: boolean
   spinsUsed: number

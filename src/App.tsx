@@ -45,6 +45,7 @@ const Guide = lazy(() => import('./pages/app/Guide').then((m) => ({ default: m.G
 const ProfilePage = lazy(() => import('./pages/app/ProfilePage').then((m) => ({ default: m.ProfilePage })))
 const OrganizationsPage = lazy(() => import('./pages/app/organizations/OrganizationsPage').then((m) => ({ default: m.OrganizationsPage })))
 const OrganizationDetailPage = lazy(() => import('./pages/app/organizations/OrganizationDetailPage').then((m) => ({ default: m.OrganizationDetailPage })))
+const SiteContentPage = lazy(() => import('./pages/app/SiteContentPage').then((m) => ({ default: m.SiteContentPage })))
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -132,6 +133,7 @@ export default function App() {
             <Route path="events/:eventId/settings" element={<RequirePermission permission="event.settings"><EventSettingsPage /></RequirePermission>} />
             <Route path="organizations" element={<OrganizationsPage />} />
             <Route path="organizations/:orgId" element={<OrganizationDetailPage />} />
+            <Route path="site-content" element={<RequirePermission permission="platform.manage"><SiteContentPage /></RequirePermission>} />
             <Route path="guide" element={<Guide />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="scanner" element={<ScannerPage />} />

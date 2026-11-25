@@ -93,6 +93,11 @@ const dict = {
 
 
   // About
+  theTeam: { en: 'The Team', ar: 'الفريق' },
+  teamTitleA: { en: 'The people behind ', ar: 'الأشخاص خلف ' },
+  teamTitleB: { en: 'the experience', ar: 'TKT' },
+  builtWithIntention: { en: 'Built with intention', ar: 'صُنعت بشغف ودقة' },
+  siteContent: { en: 'Website content', ar: 'محتوى الموقع' },
   aboutEyebrow: { en: 'About TKT', ar: 'عن TKT' },
   aboutTitleA: { en: 'We run the night', ar: 'ندير الليلة' },
   aboutTitleB: { en: 'so you don’t have to.', ar: 'لتستمتع أنت بها.' },

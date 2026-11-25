@@ -13,10 +13,11 @@ import { useLanguage } from '../../lib/i18n'
 import { useTheme } from '../../lib/theme'
 import BrandLogo from '../public/BrandLogo'
 
-const nav = [
+const nav: { to: string; end: boolean; icon: typeof LayoutDashboard; label: string; perm?: string }[] = [
   { to: '/app', end: true, icon: LayoutDashboard, label: 'overview' },
   { to: '/app/events', end: false, icon: CalendarDays, label: 'events' },
   { to: '/app/organizations', end: false, icon: Building2, label: 'organizations' },
+  { to: '/app/site-content', end: false, icon: Globe, label: 'siteContent', perm: 'platform.manage' },
   { to: '/app/scanner', end: false, icon: ScanLine, label: 'scanner' },
   { to: '/app/guide', end: false, icon: BookOpen, label: 'guide' },
 ]
@@ -152,7 +153,7 @@ export default function Shell() {
             <span className="text-signal">//</span> {t('workspace')}
           </p>
           <nav className="space-y-0.5">
-            {nav.map((item) => (
+            {nav.filter((item) => !item.perm || has(item.perm)).map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
