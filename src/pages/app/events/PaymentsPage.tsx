@@ -64,7 +64,12 @@ export function PaymentsPage() {
     onError: (e: any) => { toast.error(e?.message ?? 'Failed to delete provider'); setDeleteProviderId(null) },
   })
   const review = useMutation({
-    mutationFn: ({ ticketId, action }: { ticketId: string; action: 'CONFIRM' | 'REJECT' }) => api.post(`/events/${eventId}/payments/reservations/${ticketId}/review`, { action }),
+    mutationFn: ({ ticketId, action }: { ticketId: string; action: 'CONFIRM' | 'REJECT' }) =>
+      api(`/events/${eventId}/payments/reservations/${ticketId}/review`, {
+        method: 'POST',
+        headers: { 'Idempotency-Key': crypto.randomUUID() },
+        body: JSON.stringify({ action }),
+      }),
     onSuccess: (_, v) => { toast.success(v.action === 'CONFIRM' ? 'Payment confirmed' : 'Payment rejected'); refresh() },
     onError: (e: any) => toast.error(e?.message ?? 'Review failed'),
   })
