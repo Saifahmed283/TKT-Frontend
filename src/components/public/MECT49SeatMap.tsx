@@ -6,6 +6,18 @@ type Placement = { label: string; x: number; y: number }
 
 const placements: Placement[] = MECT49_SEAT_PLACEMENTS.map(({ label, x, y }) => ({ label, x, y }))
 
+type Props = {
+  seats: PublicSeat[]
+  selectedSeatIds: string[]
+  onSeatClick: (seat: PublicSeat) => void
+  language?: 'ar' | 'en'
+  maxSelectable?: number
+  disabled?: boolean
+  allowStatusSelection?: boolean
+  onSeatContextMenu?: (seat: PublicSeat) => void
+  className?: string
+}
+
 const labels = {
   ar: { title: 'اختيار مقعدك', subtitle: 'MECT · مخطط 49 مقعدًا', available: 'متاح', selected: 'مختار', held: 'محجوز مؤقتًا', reserved: 'محجوز', unavailable: 'غير متاح', driver: 'السائق', front: 'مقدمة الباص', aisle: 'الممر', tv: 'شاشة', wc: 'دورة مياه', exit: 'مخرج', rear: 'الصف الخلفي · 5 مقاعد', chosen: 'المقاعد المختارة', remaining: 'المقاعد المتاحة' },
   en: { title: 'Choose your seat', subtitle: 'MECT · 49-seat coach layout', available: 'Available', selected: 'Selected', held: 'On hold', reserved: 'Reserved', unavailable: 'Unavailable', driver: 'Driver', front: 'Front', aisle: 'Aisle', tv: 'TV', wc: 'WC', exit: 'Exit', rear: 'Rear row · 5 seats', chosen: 'Selected seats', remaining: 'Seats available' },
