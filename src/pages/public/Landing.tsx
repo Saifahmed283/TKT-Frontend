@@ -39,7 +39,7 @@ export default function Landing() {
             <div className="absolute inset-x-0 top-[4.5rem] h-px bg-gradient-to-r from-transparent via-signal/30 to-transparent" />
           </div>
 
-          <div aria-hidden="true" className="pointer-events-none absolute end-[-4%] top-[48%] z-[1] w-[58%] max-w-[560px] -translate-y-1/2 opacity-20 sm:end-0 sm:w-[48%] sm:opacity-35 lg:end-[3%] lg:w-[46%] lg:opacity-90">
+          <div aria-hidden="true" className="pointer-events-none absolute end-[-4%] top-[48%] z-[1] w-[58%] max-w-[560px] -translate-y-1/2 opacity-20 sm:end-0 sm:w-[48%] sm:opacity-35 lg:end-[3%] lg:w-[46%] lg:opacity-35 xl:opacity-90">
             <svg viewBox="0 0 480 480" className="tkt-hero-seal h-auto w-full overflow-visible">
               <defs>
                 <linearGradient id="tktHeroGold" gradientUnits="userSpaceOnUse" x1="72" y1="70" x2="410" y2="414">
