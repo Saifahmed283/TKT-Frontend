@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import QRCode from 'qrcode'
-import { ArrowLeft, CheckCircle2, Clock3, Copy, Lock, QrCode, RefreshCw, ShieldCheck, Ticket } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Clock3, Copy, Lock, QrCode, RefreshCw, ShieldCheck, Ticket, Wallet } from 'lucide-react'
 import PublicNav from '../../components/public/PublicNav'
 import PublicFooter from '../../components/public/PublicFooter'
 import { Corners, Blink } from '../../components/instruments'
@@ -9,7 +9,7 @@ import SpotlightCard from '../../components/reactbits/SpotlightCard'
 import { PageAccents } from '../../components/public/PlayfulBits'
 import { Button } from '../../components/ui/button'
 import { useLanguage } from '../../lib/i18n'
-import { getReservationAccessToken, useReservationStatus } from '../../lib/public'
+import { downloadAppleWalletPass, getReservationAccessToken, useReservationStatus } from '../../lib/public'
 
 function useQrDataUrl(code: string | null) {
   const [url, setUrl] = useState<string | null>(null)
@@ -40,6 +40,8 @@ export default function ReservationStatusPage() {
   const [copied, setCopied] = useState(false)
   const [emailInput, setEmailInput] = useState('')
   const [email, setEmail] = useState('')
+  const [walletLoading, setWalletLoading] = useState(false)
+  const [walletMessage, setWalletMessage] = useState<string | null>(null)
   const hasCapability = Boolean(code && (getReservationAccessToken(code) || email))
   const status = useReservationStatus(eventId, code || null, { email })
   const data = status.data
@@ -47,6 +49,23 @@ export default function ReservationStatusPage() {
 
   const copyCode = async () => {
     try { await navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1200) } catch {}
+  }
+
+  const addToWallet = async () => {
+    if (!data?.qr || walletLoading) return
+    setWalletLoading(true)
+    setWalletMessage(null)
+    try {
+      await downloadAppleWalletPass(eventId, code, {
+        token: getReservationAccessToken(code),
+        email: email.trim() || undefined,
+      })
+      setWalletMessage(isAr ? 'تم تجهيز بطاقة Apple Wallet.' : 'Your Apple Wallet pass is ready.')
+    } catch (error) {
+      setWalletMessage(error instanceof Error ? error.message : (isAr ? 'تعذر تجهيز البطاقة.' : 'Could not create the Wallet pass.'))
+    } finally {
+      setWalletLoading(false)
+    }
   }
 
   return (
@@ -168,6 +187,23 @@ export default function ReservationStatusPage() {
                               <p key={s.id} className="text-sm text-ink-0">{s.bus?.name ? `${s.bus.name} · ` : ''}{s.label}{s.passengerName ? ` — ${s.passengerName}` : ''}</p>
                             ))}
                           </div>
+                        </div>
+                      )}
+                      {data.approval === 'APPROVED' && data.qr && (
+                        <div className="space-y-2">
+                          <button
+                            type="button"
+                            onClick={() => void addToWallet()}
+                            disabled={walletLoading}
+                            data-testid="reservation-add-to-apple-wallet"
+                            className="flex w-full items-center justify-center gap-2 border border-signal/40 bg-[#0B0B0C] px-4 py-3 text-[12px] font-semibold text-[#F1EDE4] transition-colors hover:border-signal hover:bg-[#171717] disabled:cursor-wait disabled:opacity-60"
+                          >
+                            <Wallet size={16} className="text-[#C8A25C]" />
+                            {walletLoading
+                              ? (isAr ? 'جارٍ تجهيز البطاقة…' : 'Preparing Wallet pass…')
+                              : (isAr ? 'إضافة إلى Apple Wallet' : 'Add to Apple Wallet')}
+                          </button>
+                          {walletMessage && <p role="status" className="text-[11px] text-ink-3">{walletMessage}</p>}
                         </div>
                       )}
                       <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3"><ShieldCheck size={13} className="text-signal" /> {t('secureBooking') ?? 'Secure booking'}</div>
