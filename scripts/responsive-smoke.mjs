@@ -65,6 +65,20 @@ try {
           const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)
           return Boolean(hit && (hit === hero || hero.contains(hit)))
         })(),
+        heroHitStack: (() => {
+          const hero = document.querySelector('[data-testid="hero-emblem"]')
+          if (!hero) return []
+          const rect = hero.getBoundingClientRect()
+          return document.elementsFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)
+            .slice(0, 6)
+            .map((element) => ({
+              tag: element.tagName,
+              id: element.id,
+              className: typeof element.className === 'string' ? element.className : '',
+              pointerEvents: getComputedStyle(element).pointerEvents,
+              testId: element.getAttribute('data-testid'),
+            }))
+        })(),
       }))
       const expectedPath = route === '/app' ? metrics.pathname : route
       const validAppPath = route !== '/app' || metrics.pathname === '/app' || metrics.pathname === '/login'
@@ -73,7 +87,7 @@ try {
         console.error(`FAIL ${viewport.name} /: expected ${expects3D ? '3D' : 'static'} hero emblem, found ${metrics.heroRenderer ?? 'missing'}`)
         failures++
       } else if (route === '/' && expects3D && (metrics.heroPointerEvents !== 'auto' || !metrics.heroHitInside)) {
-        console.error(`FAIL ${viewport.name} /: 3D hero is not reachable by pointer (pointer-events=${metrics.heroPointerEvents}, hitInside=${metrics.heroHitInside})`)
+        console.error(`FAIL ${viewport.name} /: 3D hero is not reachable by pointer (pointer-events=${metrics.heroPointerEvents}, hitInside=${metrics.heroHitInside}, hitStack=${JSON.stringify(metrics.heroHitStack)})`)
         failures++
       } else if (metrics.documentWidth > metrics.viewportWidth + 1) {
         console.error(`FAIL ${viewport.name} ${route}: horizontal overflow ${metrics.documentWidth}px > ${metrics.viewportWidth}px`)
