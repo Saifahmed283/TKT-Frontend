@@ -7,6 +7,7 @@ const viewports = [
   { name: 'mobile', width: 390, height: 844 },
   { name: 'tablet-portrait', width: 768, height: 1024 },
   { name: 'tablet-landscape', width: 1024, height: 768 },
+  { name: 'compact-desktop', width: 1100, height: 800 },
   { name: 'desktop', width: 1440, height: 900 },
   { name: 'wide-desktop', width: 1920, height: 1080 },
 ]
@@ -34,7 +35,7 @@ try {
   }
   await utilityContext.close()
   for (const viewport of viewports) {
-    const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height }, deviceScaleFactor: viewport.width <= 390 ? 2 : 1 })
+    const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height }, deviceScaleFactor: viewport.width <= 390 ? 2 : 1, hasTouch: viewport.name.startsWith('tablet') })
     const page = await context.newPage()
     for (const route of routes) {
       const response = await page.goto(new URL(route, baseURL).toString(), { waitUntil: 'domcontentloaded', timeout: 30000 })
@@ -56,8 +57,9 @@ try {
       }))
       const expectedPath = route === '/app' ? metrics.pathname : route
       const validAppPath = route !== '/app' || metrics.pathname === '/app' || metrics.pathname === '/login'
-      if (route === '/' && metrics.heroRenderer !== (viewport.width >= 1280 ? '3d' : 'static')) {
-        console.error(`FAIL ${viewport.name} /: expected ${viewport.width >= 1280 ? '3D' : 'static'} hero emblem, found ${metrics.heroRenderer ?? 'missing'}`)
+      const expects3D = viewport.width >= 1024 && !viewport.name.startsWith('tablet')
+      if (route === '/' && metrics.heroRenderer !== (expects3D ? '3d' : 'static')) {
+        console.error(`FAIL ${viewport.name} /: expected ${expects3D ? '3D' : 'static'} hero emblem, found ${metrics.heroRenderer ?? 'missing'}`)
         failures++
       } else if (metrics.documentWidth > metrics.viewportWidth + 1) {
         console.error(`FAIL ${viewport.name} ${route}: horizontal overflow ${metrics.documentWidth}px > ${metrics.viewportWidth}px`)
@@ -77,8 +79,22 @@ try {
     }
     await context.close()
   }
+
+  const reducedContext = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+  const reducedPage = await reducedContext.newPage()
+  await reducedPage.emulateMedia({ reducedMotion: 'reduce' })
+  await reducedPage.goto(new URL('/', baseURL).toString(), { waitUntil: 'domcontentloaded', timeout: 30000 })
+  await reducedPage.waitForTimeout(350)
+  const reducedRenderer = await reducedPage.locator('[data-testid="hero-emblem"]').getAttribute('data-renderer')
+  if (reducedRenderer !== 'static') {
+    console.error(`FAIL reduced-motion desktop: expected static hero emblem, found ${reducedRenderer ?? 'missing'}`)
+    failures++
+  } else {
+    console.log('PASS reduced-motion desktop keeps static hero emblem')
+  }
+  await reducedContext.close()
 } finally {
   await browser.close()
 }
 if (failures) throw new Error(`Responsive smoke test found ${failures} failure(s)`)
-console.log(`Responsive smoke passed: ${viewports.length} viewports × ${routes.length} public routes`)
+console.log(`Responsive smoke passed: ${viewports.length} viewports × ${routes.length} public routes, plus reduced-motion check`)
