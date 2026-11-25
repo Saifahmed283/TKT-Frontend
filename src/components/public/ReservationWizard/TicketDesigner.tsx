@@ -265,7 +265,14 @@ export function TicketDesigner({
             key={palette.id}
             type="button"
             aria-pressed={design.paletteId === palette.id}
-            onClick={() => onChange({ ...design, ...palette, paletteId: palette.id })}
+            onClick={() => onChange({
+              ...design,
+              paletteId: palette.id,
+              panelColor: palette.panelColor,
+              accentColor: palette.accentColor,
+              backgroundColor: palette.backgroundColor,
+              textColor: palette.textColor,
+            })}
             className={`group border p-2 text-start transition-colors ${design.paletteId === palette.id ? 'border-signal/60 bg-signal/5' : 'border-line-soft bg-paper hover:border-signal/30'}`}
           >
             <span className="mb-2 flex h-8 overflow-hidden rounded-sm">
