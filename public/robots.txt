@@ -3,5 +3,6 @@ Allow: /
 Disallow: /app/
 Disallow: /login
 Disallow: /api/
+Disallow: /reservation/
 
 Sitemap: https://ticketak.vercel.app/sitemap.xml
