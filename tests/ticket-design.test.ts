@@ -18,6 +18,7 @@ describe('ticket design payload contract', () => {
     const value = {
       templateId: 'editorial-wide' as const,
       ...palette,
+      paletteId: palette.id,
     } as any
 
     expect(normalizeTicketDesign(value)).toEqual({
