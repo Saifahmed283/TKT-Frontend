@@ -140,7 +140,7 @@ export function ReservationsPage() {
                   setPage(1)
                 }}
                 className={`rounded-none px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.15em] transition-colors ${
-                  filter === f ? 'bg-signal text-black' : 'text-ink-2 hover:bg-elevated hover:text-ink'
+                  filter === f ? 'bg-signal text-on-signal' : 'text-ink-2 hover:bg-elevated hover:text-ink'
                 }`}
               >
                 {f}

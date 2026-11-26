@@ -2,7 +2,7 @@ import { Suspense, lazy, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import PublicNav from '../../components/public/PublicNav'
-import { Bloom, FloatingChip, OrbitRing, Sparkles, TicketFrame } from '../../components/public/PlayfulBits'
+import { Bloom, FloatingChip, OrbitRing, Sparkles } from '../../components/public/PlayfulBits'
 import { useLanguage } from '../../lib/i18n'
 import { useTheme } from '../../lib/theme'
 
@@ -35,18 +35,18 @@ function HeroEmblemFallback() {
   )
 }
 
-/** Lightweight, framed hero sculpture for phones and tablets (no WebGL). */
+/** Lightweight, animated circular sculpture for tablet (no WebGL). */
 function HeroVisual() {
   return (
-    <div className="relative mx-auto aspect-square w-full max-w-[224px] sm:max-w-[290px] lg:max-w-[340px]">
+    <div className="relative mx-auto aspect-square w-full max-w-[272px] lg:max-w-[340px]">
       <Bloom className="inset-[6%] opacity-70" />
       <OrbitRing inset="2%" second />
       <Sparkles count={8} />
-      <TicketFrame className="absolute inset-[16%] p-3">
+      <div className="absolute inset-[12%] grid place-items-center rounded-full">
         <HeroEmblemFallback />
-      </TicketFrame>
-      <FloatingChip className="start-[-4%] bottom-[16%]" delay="0.4s">TKT · 01</FloatingChip>
-      <FloatingChip className="end-[-2%] top-[10%]" delay="1.3s">LIVE</FloatingChip>
+      </div>
+      <FloatingChip className="start-[2%] bottom-[12%]" delay="0.4s">TKT · 01</FloatingChip>
+      <FloatingChip className="end-[0%] top-[8%]" delay="1.3s">LIVE</FloatingChip>
     </div>
   )
 }
@@ -56,6 +56,16 @@ export default function Landing() {
   const { theme } = useTheme()
   const isLight = theme === 'light'
   const [desktop3D, setDesktop3D] = useState(false)
+  // Phones get copy only; the static sculpture is reserved for tablet widths.
+  const [showStaticHero, setShowStaticHero] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 640px)').matches)
+
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 640px)')
+    const update = () => setShowStaticHero(media.matches)
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
 
   useEffect(() => {
     // Keep WebGL off phones and tablets; only request the 3D model and the
@@ -76,13 +86,14 @@ export default function Landing() {
       <PublicNav />
 
       <main id="main-content" className="relative min-h-[100svh]">
-        <header className="relative flex min-h-[100svh] items-center overflow-hidden px-4 pb-16 pt-28 sm:px-6 sm:pt-32 lg:px-8">
+        <header className="relative flex min-h-[100svh] flex-col justify-center overflow-x-clip px-4 pb-12 pt-24 sm:px-6 sm:pb-16 sm:pt-28 lg:px-8 lg:pb-16 lg:pt-32">
           <style>{`
             .tkt-hero-vignette{background:radial-gradient(circle at 68% 45%,rgba(11,11,12,.08) 0%,rgba(11,11,12,.48) 48%,rgba(11,11,12,.78) 78%,var(--color-canvas) 100%)}
             :root[data-theme='light'] .tkt-hero-vignette{background:radial-gradient(circle at 68% 45%,rgba(247,244,238,0) 0%,rgba(247,244,238,.12) 42%,rgba(247,244,238,.42) 70%,var(--color-canvas) 100%)}
+            @media(max-width:639px){.tkt-hero-vignette{background:radial-gradient(circle at 50% 45%,rgba(11,11,12,.1) 0%,rgba(11,11,12,.42) 58%,var(--color-canvas) 100%)}:root[data-theme='light'] .tkt-hero-vignette{background:radial-gradient(circle at 50% 45%,rgba(247,244,238,0) 0%,rgba(247,244,238,.2) 58%,var(--color-canvas) 100%)}}
             .tkt-hero-copy{animation:tktHeroEnter .65s cubic-bezier(.22,1,.36,1) both}
-                                    @keyframes tktHeroEnter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-                                    @media(prefers-reduced-motion:reduce){.tkt-hero-copy{animation:none!important}}
+            @keyframes tktHeroEnter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+            @media(prefers-reduced-motion:reduce){.tkt-hero-copy{animation:none!important}}
           `}</style>
 
           <div aria-hidden="true" className="pointer-events-none absolute inset-0">
@@ -138,20 +149,20 @@ export default function Landing() {
           )}
 
           {desktop3D && (
-            <div aria-hidden="true" className="pointer-events-none absolute bottom-[7%] end-[6%] z-[2] hidden items-center gap-2 border border-signal/25 bg-raised/70 px-3 py-2 text-[9px] font-medium uppercase tracking-[0.2em] text-signal backdrop-blur-sm lg:flex">
+            <div aria-hidden="true" className="pointer-events-none absolute bottom-[7%] end-[6%] z-[2] hidden items-center gap-2 border border-signal/25 bg-raised/70 px-3 py-2 text-[10px] font-medium uppercase tracking-[0.16em] text-signal backdrop-blur-sm lg:flex">
               <span className="h-1.5 w-1.5 animate-blink rounded-full bg-signal" />
               {t('dragToExplore')}
             </div>
           )}
 
-          <div className="pointer-events-none relative z-10 mx-auto grid w-full max-w-7xl items-center gap-8 py-10 sm:grid-cols-[minmax(0,1fr)_minmax(0,0.82fr)] sm:gap-6 lg:grid-cols-[minmax(0,620px)_1fr] lg:py-0">
-            {!desktop3D && (
-              <div aria-hidden="true" data-testid="hero-emblem" data-renderer="static" className="order-1 w-full sm:order-2 sm:justify-self-end">
+          <div className="pointer-events-none relative z-10 mx-auto grid w-full max-w-7xl shrink-0 items-center gap-6 py-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,0.82fr)] sm:gap-6 sm:py-8 lg:grid-cols-[minmax(0,620px)_1fr] lg:py-0">
+            {!desktop3D && showStaticHero && (
+              <div aria-hidden="true" data-testid="hero-emblem" data-renderer="static" className="order-2 w-full sm:order-2 sm:justify-self-center">
                 <HeroVisual />
               </div>
             )}
 
-            <div className="tkt-hero-copy pointer-events-auto order-2 max-w-[620px] sm:order-1">
+            <div className="tkt-hero-copy pointer-events-auto order-1 max-w-[620px] sm:order-1">
               <div className="mb-4 flex items-center gap-3 sm:mb-[18px]">
                 <span className="h-px w-7 bg-signal-dim" aria-hidden="true" />
                 <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-signal-dim">{t('heroEyebrow')}</p>

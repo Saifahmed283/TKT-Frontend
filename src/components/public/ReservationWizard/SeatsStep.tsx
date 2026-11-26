@@ -36,8 +36,8 @@ export function SeatsStep({ w }: { w: ReservationWizard }) {
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <p className="text-[10px] uppercase tracking-[0.14em] text-ink-3">{bus.name}</p>
                   <div className="inline-flex items-center gap-1 rounded-lg border border-line-soft bg-panel/50 p-1">
-                    <button type="button" aria-pressed={!seatView3d} onClick={() => setSeatView3d(false)} className={`inline-flex items-center gap-1 rounded px-2 py-1.5 text-[10px] ${!seatView3d ? 'bg-signal text-black' : 'text-ink-3'}`}><Grid3X3 size={12} /> 2D</button>
-                    <button type="button" aria-pressed={seatView3d} onClick={() => setSeatView3d(true)} className={`inline-flex items-center gap-1 rounded px-2 py-1.5 text-[10px] ${seatView3d ? 'bg-signal text-black' : 'text-ink-3'}`}><Box size={12} /> 3D</button>
+                    <button type="button" aria-pressed={!seatView3d} onClick={() => setSeatView3d(false)} className={`inline-flex items-center gap-1 rounded px-2 py-1.5 text-[10px] ${!seatView3d ? 'bg-signal text-on-signal' : 'text-ink-3'}`}><Grid3X3 size={12} /> 2D</button>
+                    <button type="button" aria-pressed={seatView3d} onClick={() => setSeatView3d(true)} className={`inline-flex items-center gap-1 rounded px-2 py-1.5 text-[10px] ${seatView3d ? 'bg-signal text-on-signal' : 'text-ink-3'}`}><Box size={12} /> 3D</button>
                   </div>
                 </div>
                 {seatView3d ? (

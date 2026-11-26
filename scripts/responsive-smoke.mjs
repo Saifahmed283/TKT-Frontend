@@ -114,8 +114,10 @@ try {
       const expectedPath = route === '/app' ? metrics.pathname : route
       const validAppPath = route !== '/app' || metrics.pathname === '/app' || metrics.pathname === '/login'
       const expects3D = viewport.width >= 1024 && !viewport.name.startsWith('tablet')
-      if (route === '/' && metrics.heroRenderer !== (expects3D ? '3d' : 'static')) {
-        console.error(`FAIL ${viewport.name} /: expected ${expects3D ? '3D' : 'static'} hero emblem, found ${metrics.heroRenderer ?? 'missing'}`)
+      const expectsVisual = viewport.width >= 640
+      const expectedRenderer = expects3D ? '3d' : expectsVisual ? 'static' : null
+      if (route === '/' && metrics.heroRenderer !== expectedRenderer) {
+        console.error(`FAIL ${viewport.name} /: expected ${expectedRenderer ?? 'no hero visual on mobile'}, found ${metrics.heroRenderer ?? 'missing'}`)
         failures++
       } else if (route === '/' && expects3D && (metrics.heroPointerEvents !== 'auto' || !metrics.heroHitInside)) {
         console.error(`FAIL ${viewport.name} /: 3D hero is not reachable by pointer (pointer-events=${metrics.heroPointerEvents}, hitInside=${metrics.heroHitInside}, hitStack=${JSON.stringify(metrics.heroHitStack)})`)

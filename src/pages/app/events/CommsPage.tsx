@@ -196,7 +196,7 @@ export function CommsPage() {
                 onClick={() => setForm({ ...form, targetType: t })}
                 className={
                   form.targetType === t
-                    ? 'rounded-none bg-signal px-3 py-1.5 text-[12px] font-semibold text-black'
+                    ? 'rounded-none bg-signal px-3 py-1.5 text-[12px] font-semibold text-on-signal'
                     : 'rounded-none border border-line px-3 py-1.5 text-[12px] text-ink-2 hover:bg-raised'
                 }
               >

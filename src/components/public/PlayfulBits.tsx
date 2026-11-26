@@ -69,7 +69,7 @@ export function FloatingChip({
   return (
     <span
       aria-hidden={decorative || undefined}
-      className={`tkt-chip pointer-events-none absolute z-[2] inline-flex items-center gap-1.5 whitespace-nowrap border border-signal/30 bg-raised/85 px-2.5 py-1.5 text-[9px] font-medium uppercase tracking-[0.16em] text-signal backdrop-blur-sm ${className}`}
+      className={`tkt-chip pointer-events-none absolute z-[2] inline-flex items-center gap-1.5 whitespace-nowrap border border-signal/30 bg-raised/85 px-2.5 py-1.5 text-[10px] font-medium uppercase tracking-[0.12em] text-signal backdrop-blur-sm ${className}`}
       style={{ animationDelay: delay }}
     >
       {children}

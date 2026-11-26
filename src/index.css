@@ -24,6 +24,10 @@
   --color-signal-600: #f07f00;
   --color-signal-300: #ffcb80;
 
+  /* Text placed on a signal-coloured surface. Kept explicit so it never
+     falls back to black-on-black when the theme changes. */
+  --color-on-signal: #0b0b0c;
+
   --color-ok-400: #34d399;
   --color-warn-400: #fbbf24;
   --color-err-400: #fb7185;
@@ -152,6 +156,7 @@
     --color-signal-500: #a9772b;
     --color-signal-600: #87601f;
     --color-signal-300: #ddb96f;
+    --color-on-signal: #fffdf8;
     --color-ok-400: #1e8550;
     --color-warn-400: #b45309;
     --color-err-400: #c24141;
@@ -248,7 +253,7 @@
     background: rgba(45, 35, 20, 0.035);
   }
   .btn-primary {
-    @apply btn bg-signal text-canvas hover:bg-signal-400 active:scale-[0.98];
+    @apply btn bg-signal text-on-signal hover:bg-signal-400 active:scale-[0.98];
   }
   .btn-primary:hover {
     box-shadow: var(--shadow-glow);

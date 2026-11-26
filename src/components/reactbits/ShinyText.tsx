@@ -58,17 +58,36 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
 
 let paint: CanvasRenderingContext2D | null = null;
 
+/** Canvas fillStyle can't parse `var(--token)`, so resolve the live theme first. */
+const resolveColor = (value: string): string => {
+  if (typeof window === 'undefined' || !value.includes('var(')) return value;
+  const styles = getComputedStyle(document.documentElement);
+  let resolved = value;
+  for (let depth = 0; depth < 4 && resolved.includes('var('); depth++) {
+    const next = resolved.replace(/var\(\s*(--[\w-]+)\s*(?:,\s*([^)]*))?\)/g, (_match, token: string, fallback: string | undefined) => {
+      return styles.getPropertyValue(token).trim() || (fallback ?? '').trim();
+    });
+    if (next === resolved) break;
+    resolved = next;
+  }
+  return resolved;
+};
+
 const parseColor = (value: string): number[] | null => {
   if (typeof document === 'undefined') return null;
+  const resolved = resolveColor(value);
+  if (!resolved || resolved.includes('var(')) return null;
   if (!paint) paint = document.createElement('canvas').getContext('2d');
   if (!paint) return null;
   paint.fillStyle = '#000000';
-  paint.fillStyle = value;
-  const resolved = String(paint.fillStyle);
-  if (resolved.startsWith('#')) {
-    return [1, 3, 5].map(i => parseInt(resolved.slice(i, i + 2), 16)).concat(1);
+  paint.fillStyle = resolved;
+  const normalized = String(paint.fillStyle);
+  // An unsupported value leaves the previous (black) fillStyle in place.
+  if (normalized === '#000000' && !/^#?0{6}$/i.test(resolved.trim())) return null;
+  if (normalized.startsWith('#')) {
+    return [1, 3, 5].map(i => parseInt(normalized.slice(i, i + 2), 16)).concat(1);
   }
-  const parts = resolved.match(/[\d.]+/g);
+  const parts = normalized.match(/[\d.]+/g);
   if (!parts || parts.length < 3) return null;
   return [Number(parts[0]), Number(parts[1]), Number(parts[2]), parts.length > 3 ? Number(parts[3]) : 1];
 };
@@ -197,15 +216,19 @@ const ShinyText = ({
 
     const draw = () => {
       const s = settingsRef.current!;
-      const key = `${s.color}|${s.shineColor}`;
+      const baseColor = resolveColor(s.color);
+      const shineColor = resolveColor(s.shineColor);
+      const key = `${baseColor}|${shineColor}`;
       if (key !== state.colors) {
         state.colors = key;
-        base = parseColor(s.color);
-        shine = parseColor(s.shineColor);
+        base = parseColor(baseColor);
+        shine = parseColor(shineColor);
         clear = shine ? [shine[0], shine[1], shine[2], 0] : null;
       }
       if (!base || !shine) {
+        // Keep the CSS var here so a theme change still resolves correctly.
         root.style.backgroundImage = `linear-gradient(${s.color}, ${s.color})`;
+        if (glowRef.current) glowRef.current.style.backgroundImage = 'none';
         return;
       }
       if (state.pos === null || s.disabled) {
@@ -356,6 +379,15 @@ const ShinyText = ({
     });
     observer.observe(root);
 
+    // Theme toggles change tokens on <html> without necessarily re-rendering
+    // this span, so re-resolve the colours when the theme attributes change.
+    const themeObserver = typeof MutationObserver === 'undefined' ? null : new MutationObserver(() => {
+      state.colors = '';
+      draw();
+      wake();
+    });
+    themeObserver?.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class'] });
+
     root.addEventListener('pointerenter', onEnter);
     root.addEventListener('pointermove', onMove);
     root.addEventListener('pointerleave', onLeave);
@@ -380,6 +412,7 @@ const ShinyText = ({
       cancelAnimationFrame(raf);
       window.clearTimeout(timer);
       observer.disconnect();
+      themeObserver?.disconnect();
       root.removeEventListener('pointerenter', onEnter);
       root.removeEventListener('pointermove', onMove);
       root.removeEventListener('pointerleave', onLeave);
