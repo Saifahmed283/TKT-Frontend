@@ -259,19 +259,43 @@ export function resolveBusLayout(layout: any): ResolvedBusLayout {
   const aisleAfterCol = Math.max(0, Math.min(cols, asNumber(layout?.aisleAfterCol, template.aisleAfterCol ?? 0)))
   const rawSeats = Array.isArray(layout?.seats) && layout.seats.length ? layout.seats : null
 
+  const generatedSeats = buildTemplateSeats(templateId, {
+    rows,
+    cols,
+    aisleAfterCol,
+    unavailable: Array.isArray(layout?.unavailable) ? layout.unavailable : [],
+  })
+  const generatedByPosition = new Map(generatedSeats.map((seat) => [String(seat.row) + ':' + String(seat.col), seat]))
+  const generatedByLabel = new Map(generatedSeats.map((seat) => [seat.label.trim().toUpperCase(), seat]))
+
+  // Public APIs often send only logical row/column coordinates. Always hydrate
+  // missing SVG and 3D coordinates from the canonical template so seats never
+  // collapse into the origin in either renderer.
   const seats: BusSeatDef[] = rawSeats
-    ? rawSeats.map((seat: any) => ({
-        label: String(seat.label), row: asNumber(seat.row, 1), col: asNumber(seat.col, 1),
-        x: seat.x == null ? undefined : asNumber(seat.x, 0),
-        y: seat.y == null ? undefined : asNumber(seat.y, 0),
-        mx: seat.mx == null ? undefined : asNumber(seat.mx, 0),
-        z: seat.z == null ? undefined : asNumber(seat.z, 0),
-        width: seat.width == null ? undefined : asNumber(seat.width, 0.4),
-        side: (seat.side as SeatSide) ?? undefined,
-        kind: (seat.kind as SeatKind) ?? 'seat',
-        state: seat.state === 'UNAVAILABLE' ? 'UNAVAILABLE' : 'AVAILABLE',
-      }))
-    : buildTemplateSeats(templateId, { rows, cols, aisleAfterCol, unavailable: Array.isArray(layout?.unavailable) ? layout.unavailable : [] })
+    ? rawSeats.map((seat: any, index: number) => {
+        const row = asNumber(seat.row, generatedSeats[index]?.row ?? 1)
+        const col = asNumber(seat.col, generatedSeats[index]?.col ?? 1)
+        const label = String(seat.label ?? generatedSeats[index]?.label ?? index + 1)
+        const fallback = generatedByPosition.get(String(row) + ':' + String(col))
+          ?? generatedByLabel.get(label.trim().toUpperCase())
+          ?? generatedSeats[index]
+
+        return {
+          ...fallback,
+          label,
+          row,
+          col,
+          x: seat.x == null ? fallback?.x : asNumber(seat.x, fallback?.x ?? 0),
+          y: seat.y == null ? fallback?.y : asNumber(seat.y, fallback?.y ?? 0),
+          mx: seat.mx == null ? fallback?.mx : asNumber(seat.mx, fallback?.mx ?? 0),
+          z: seat.z == null ? fallback?.z : asNumber(seat.z, fallback?.z ?? 0),
+          width: seat.width == null ? fallback?.width : asNumber(seat.width, fallback?.width ?? 0.4),
+          side: (seat.side as SeatSide) ?? fallback?.side,
+          kind: (seat.kind as SeatKind) ?? fallback?.kind ?? 'seat',
+          state: seat.state === 'UNAVAILABLE' ? 'UNAVAILABLE' : 'AVAILABLE',
+        }
+      })
+    : generatedSeats
 
   const cabinRaw = layout?.cabin
   const cabin: BusCabin = {
@@ -287,9 +311,23 @@ export function resolveBusLayout(layout: any): ResolvedBusLayout {
   return {
     ...template,
     schemaVersion: asNumber(layout?.schemaVersion, 2),
-    name: String(layout?.name ?? template.name),
-    nameAr: String(layout?.nameAr ?? template.nameAr),
+    name: String(layout?.name ?? (templateId === 'grid' || templateId === 'custom'
+      ? String(rows) + ' × ' + String(cols) + ' seating plan'
+      : template.name)),
+    nameAr: String(layout?.nameAr ?? (templateId === 'grid' || templateId === 'custom'
+      ? 'مخطط ' + String(rows) + ' صفوف × ' + String(cols) + ' مقاعد'
+      : template.nameAr)),
+    description: String(layout?.description ?? (templateId === 'grid' || templateId === 'custom'
+      ? String(rows) + ' rows · up to ' + String(cols) + ' seats per row'
+      : template.description)),
+    descriptionAr: String(layout?.descriptionAr ?? (templateId === 'grid' || templateId === 'custom'
+      ? String(rows) + ' صفوف · حتى ' + String(cols) + ' مقاعد في الصف'
+      : template.descriptionAr)),
     rows, cols, aisleAfterCol, seats, viewBox, cabin,
+    modelCode: String(layout?.modelCode ?? (templateId === 'grid' || templateId === 'custom'
+      ? 'STANDARD COACH'
+      : template.modelCode)),
+    totalBookableSeats: seats.filter((seat) => (seat.kind ?? 'seat') === 'seat').length,
     features: normalizeFeatures(layout, template),
   } as ResolvedBusLayout
 }

@@ -2,6 +2,7 @@ import { Clock3, Grid3X3, Box } from 'lucide-react'
 import { lazy, Suspense } from 'react'
 import type { ReservationWizard } from './useReservationWizard'
 import BusSeatMap2D from '../BusSeatMap2D'
+import { resolveBusLayout } from '../../../lib/domain/busLayouts'
 
 const BusSeatMap3D = lazy(() => import('../BusSeatMap3D'))
 
@@ -31,11 +32,24 @@ export function SeatsStep({ w }: { w: ReservationWizard }) {
           {(() => {
             const bus = buses.find(b => b.id === busId) ?? buses[0]
             if (!bus) return null
+            const model = resolveBusLayout(bus.layout)
             return (
               <div>
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-ink-3">{bus.name}</p>
-                  <div className="inline-flex items-center gap-1 rounded-lg border border-line-soft bg-panel/50 p-1">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line-soft bg-panel/60 px-3 py-3">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-ink-0">{bus.name}</p>
+                    <p className="mt-1 text-[11px] text-ink-3">{w.lang === 'ar' ? model.nameAr : model.name}</p>
+                    <p className="mt-0.5 text-[10px] text-ink-3">
+                      {w.lang === 'ar'
+                        ? String(model.rows) + ' صفوف · ' + String(model.cols) + ' مقاعد في الصف'
+                        : String(model.rows) + ' rows · ' + String(model.cols) + ' seats per row'}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="flex items-baseline justify-end gap-1 font-mono text-sm font-semibold tabular-nums text-ink-0">{bus.availableSeats}<span className="text-[10px] font-normal text-ink-3">{w.lang === 'ar' ? 'متاح' : 'available'}</span></p>
+                    <p className="mt-0.5 text-[10px] text-ink-3">{bus.totalSeats} {w.lang === 'ar' ? 'مقعد إجمالي' : 'seats total'}</p>
+                  </div>
+                  <div className="ml-auto inline-flex items-center gap-1 rounded-lg border border-line-soft bg-panel/50 p-1">
                     <button type="button" aria-pressed={!seatView3d} onClick={() => setSeatView3d(false)} className={`inline-flex items-center gap-1 rounded px-2 py-1.5 text-[10px] ${!seatView3d ? 'bg-signal text-black' : 'text-ink-3'}`}><Grid3X3 size={12} /> 2D</button>
                     <button type="button" aria-pressed={seatView3d} onClick={() => setSeatView3d(true)} className={`inline-flex items-center gap-1 rounded px-2 py-1.5 text-[10px] ${seatView3d ? 'bg-signal text-black' : 'text-ink-3'}`}><Box size={12} /> 3D</button>
                   </div>

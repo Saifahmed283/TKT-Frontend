@@ -1,6 +1,7 @@
 import { Ticket } from 'lucide-react'
 import { resolveUploadPreviewUrl } from '../../ui/file-upload'
 import type { ReservationWizard } from './useReservationWizard'
+import { DesignStep } from './DesignStep'
 
 export function ReviewStep({ w }: { w: ReservationWizard }) {
   const {
@@ -14,8 +15,19 @@ export function ReviewStep({ w }: { w: ReservationWizard }) {
   const isAr = lang === 'ar'
   const identityLabel = nationality === 'EG' ? (isAr ? 'الرقم القومي' : 'National ID') : (isAr ? 'جواز السفر' : 'Passport number')
   const identityValue = identityNumber.trim()
+  const maskedIdentityValue = identityValue ? '•'.repeat(Math.max(0, identityValue.length - 4)) + identityValue.slice(-4) : ''
   return (
     <div data-testid="wizard-review" className="space-y-4">
+      <details data-testid="optional-ticket-customization" className="group border border-line-soft bg-elevated/20">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-ink-0">
+          <span>{isAr ? 'خصّص شكل تذكرتك (اختياري)' : 'Customize your ticket (optional)'}</span>
+          <span className="text-[10px] font-normal text-ink-3 group-open:hidden">{isAr ? 'فتح' : 'Customize'}</span>
+          <span className="hidden text-[10px] font-normal text-ink-3 group-open:inline">{isAr ? 'إغلاق' : 'Close'}</span>
+        </summary>
+        <div className="border-t border-line-soft p-4">
+          <DesignStep w={w} />
+        </div>
+      </details>
       <div className="flex items-start justify-between gap-3 border-b border-line-soft pb-3">
         <div><h3 className="font-semibold text-ink-0">{isAr ? 'راجع بياناتك قبل الإرسال' : 'Review every detail before submitting'}</h3><p className="mt-1 text-[11px] text-ink-3">{isAr ? 'استخدم زر الرجوع لتصحيح أي معلومة.' : 'Use Back to correct anything that is not exact.'}</p></div>
         <span className="shrink-0 rounded-full border border-ok/30 bg-ok/5 px-2.5 py-1 text-[10px] font-semibold text-ok">{isAr ? 'مكتمل' : 'READY'}</span>
@@ -28,7 +40,7 @@ export function ReviewStep({ w }: { w: ReservationWizard }) {
           [t('phone'), phone.trim()],
           [isAr ? 'النوع' : 'Gender', ({male:isAr?'ذكر':'Male',female:isAr?'أنثى':'Female',other:isAr?'آخر':'Other',prefer_not_to_say:isAr?'أفضل عدم الإفصاح':'Prefer not to say'} as Record<string,string>)[gender]],
           [isAr ? 'الجنسية' : 'Nationality', nationality === 'EG' ? (isAr ? 'مصري' : 'Egyptian') : (isAr ? 'غير مصري' : 'Non-Egyptian')],
-          [identityLabel, identityValue],
+          [identityLabel, maskedIdentityValue],
         ].map(([label,value]) => <div key={label} className="grid grid-cols-[minmax(0,.8fr)_minmax(0,1.2fr)] gap-3 text-[12px]"><span className="text-ink-3">{label}</span><bdi className="break-all text-end font-medium text-ink-0">{value}</bdi></div>)}
         {notes.trim() && <div className="border-t border-line-soft pt-2 text-[12px]"><span className="text-ink-3">{t('customization')}: </span><span className="text-ink-0">{notes.trim()}</span></div>}
       </section>

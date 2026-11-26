@@ -5,7 +5,6 @@ import { useReservationWizard } from './useReservationWizard'
 import { money } from './shared'
 import { TicketStep } from './TicketStep'
 import { DetailsStep } from './DetailsStep'
-import { DesignStep } from './DesignStep'
 import { PaymentStep } from './PaymentStep'
 import { ReviewStep } from './ReviewStep'
 import { DoneScreen } from './DoneScreen'
@@ -15,7 +14,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
   const { t, lang, done, stepId, activeStep, steps, selected, totalPrice, selectedSeatIds, selectedBus, holdExpiresAt, holdExpiring, holdCountdown, confirmDiscard, setConfirmDiscard, reserve, existingReservation, duplicateLoading, resending, resendMessage, openExisting, resendTicket, canGoBack, goBack, goNext, canContinue, onSubmit, requestClose } = w
 
   return (
-    <Modal open onClose={requestClose} title={done ? (done.approval === 'APPROVED' ? t('reservationConfirmed') : t('reservationPending')) : `${t('reserveFor')} ${event.name}`} wide={!!done || stepId === 'design' || stepId === 'review'}>
+    <Modal open onClose={requestClose} title={done ? (done.approval === 'APPROVED' ? t('reservationConfirmed') : t('reservationPending')) : `${t('reserveFor')} ${event.name}`} wide={!!done || stepId === 'details' || stepId === 'review'} extraWide={stepId === 'details' || stepId === 'review'}>
       {done ? (
         <DoneScreen w={w} onClose={onClose} />
       ) : (
@@ -132,9 +131,12 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
           )}
 
           {stepId === 'ticket' && <TicketStep w={w} />}
-          {stepId === 'details' && <DetailsStep w={w} />}
-          {stepId === 'payment' && <PaymentStep w={w} />}
-          {stepId === 'design' && <DesignStep w={w} />}
+          {stepId === 'details' && (
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-2 xl:items-start">
+              <DetailsStep w={w} />
+              <PaymentStep w={w} />
+            </div>
+          )}
           {stepId === 'review' && <ReviewStep w={w} />}
 
           {stepId !== 'review' ? (

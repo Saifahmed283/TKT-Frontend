@@ -1,38 +1,14 @@
-import { useState } from 'react'
 import type { ReservationWizard } from './useReservationWizard'
 import { money } from './shared'
 import { SeatsStep } from './SeatsStep'
 
-type TicketFilter = 'all' | 'program' | 'bus'
-
 export function TicketStep({ w }: { w: ReservationWizard }) {
   const {
     t, lang, availableTypes, ticketTypeId, setTicketTypeId,
-    setSelectedSeatIds, setHoldExpiresAt, selected,
+    setSelectedSeatIds, setHoldExpiresAt, selected, hasPaymentProvider,
   } = w
-  const [filter, setFilter] = useState<TicketFilter>('all')
-  const hasProgramOnly = availableTypes.some((ticket) => !ticket.transportIncluded)
-  const hasBusIncluded = availableTypes.some((ticket) => ticket.transportIncluded)
-  const visibleTypes = availableTypes.filter((ticket) => {
-    if (filter === 'program') return !ticket.transportIncluded
-    if (filter === 'bus') return Boolean(ticket.transportIncluded)
-    return true
-  })
-
-
-  const changeFilter = (next: TicketFilter) => {
-    setFilter(next)
-    const nextTypes = availableTypes.filter((ticket) =>
-      next === 'all' || (next === 'bus' ? Boolean(ticket.transportIncluded) : !ticket.transportIncluded),
-    )
-    const stillVisible = nextTypes.some((ticket) => ticket.id === ticketTypeId && !ticket.soldOut)
-    if (!stillVisible) {
-      const firstAvailable = nextTypes.find((ticket) => !ticket.soldOut)
-      if (firstAvailable) setTicketTypeId(firstAvailable.id)
-      setSelectedSeatIds([])
-      setHoldExpiresAt(null)
-    }
-  }
+  const visibleTypes = availableTypes
+  const paymentSetupMissing = availableTypes.some((ticket) => Number(ticket.price) > 0) && !hasPaymentProvider
 
   return (
     <div data-testid="wizard-step-ticket" className="space-y-4">
@@ -43,30 +19,17 @@ export function TicketStep({ w }: { w: ReservationWizard }) {
         </p>
       </div>
 
-      {(hasProgramOnly && hasBusIncluded) && (
-        <div className="grid grid-cols-2 gap-2 rounded-lg border border-line-soft bg-elevated/30 p-1" role="group" aria-label="Ticket package filter">
-          {([
-            ['program', lang === 'ar' ? 'البرنامج فقط' : 'Program only'],
-            ['bus', lang === 'ar' ? 'البرنامج + الحافلة' : 'Program + Bus included'],
-          ] as const).map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              data-testid={`ticket-filter-${id}`}
-              aria-pressed={filter === id}
-              onClick={() => changeFilter(id)}
-              className={`min-h-10 px-2 py-2 text-[10px] font-semibold transition-colors sm:text-[11px] ${filter === id ? 'bg-signal text-[#0b0b0c] shadow-sm' : 'text-ink-2 hover:bg-paper'}`}
-            >
-              {label}
-            </button>
-          ))}
+      {paymentSetupMissing && (
+        <div data-testid="payment-provider-missing" role="status" className="border border-signal/30 bg-signal/5 px-3 py-3 text-[11px] leading-relaxed text-ink-1">
+          <p className="font-semibold text-ink-0">
+            {lang === 'ar' ? 'الحجز المدفوع غير متاح حاليًا' : 'Paid booking is not available yet'}
+          </p>
+          <p className="mt-1 text-ink-2">
+            {lang === 'ar'
+              ? 'منظّم الفعالية لم يفعّل وسيلة دفع لهذا الحدث بعد. هنوقف الانتقال قبل إدخال بياناتك لحد ما يتم إعداد الدفع.'
+              : 'The event organizer has not enabled a payment method for this event. Booking is paused before collecting your details until payment is configured.'}
+          </p>
         </div>
-      )}
-
-      {filter !== 'all' && (
-        <button type="button" onClick={() => changeFilter('all')} className="text-[10px] font-medium text-signal underline underline-offset-4">
-          {lang === 'ar' ? 'عرض كل الباقات' : 'View all ticket packages'}
-        </button>
       )}
 
       <div className="grid gap-2 sm:grid-cols-2">
@@ -74,9 +37,12 @@ export function TicketStep({ w }: { w: ReservationWizard }) {
           const now = Date.now()
           const notStarted = tt.salesStartAt ? now < new Date(tt.salesStartAt).getTime() : false
           const ended = tt.salesEndAt ? now > new Date(tt.salesEndAt).getTime() : false
-          const disabled = tt.soldOut || notStarted || ended
+          const paymentUnavailable = Number(tt.price) > 0 && !hasPaymentProvider
+          const disabled = tt.soldOut || notStarted || ended || paymentUnavailable
           const active = tt.id === ticketTypeId
-          const suffix = tt.soldOut ? ` (${t('soldOut')})` : notStarted ? ` (${t('openingSoon')})` : ended ? ` (${t('reservationsClosed')})` : tt.remaining != null ? ` (${tt.remaining} ${t('left')})` : ''
+          const suffix = paymentUnavailable
+            ? (lang === 'ar' ? ' (الدفع غير مُعد)' : ' (payment not set up)')
+            : tt.soldOut ? ' (' + t('soldOut') + ')' : notStarted ? ' (' + t('openingSoon') + ')' : ended ? ' (' + t('reservationsClosed') + ')' : tt.remaining != null ? ' (' + tt.remaining + ' ' + t('left') + ')' : ''
           return (
             <button
               key={tt.id}
