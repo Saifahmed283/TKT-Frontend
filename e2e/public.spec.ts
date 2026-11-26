@@ -259,7 +259,7 @@ test.describe('TKT E2E — public site', () => {
     })
     // This client-flow test uses a synthetic paid reservation code; mock its
     // status endpoint too, rather than querying the local database for it.
-    await page.route(/\/public\/events\/[^/]+\/reservations\/status\\?/, async (route) => {
+    await page.route(/\/public\/events\/[^/]+\/reservations\/status\?/, async (route) => {
       const url = new URL(route.request().url())
       if (url.searchParams.get('code') !== 'TKT-E2E-PAID') return route.continue()
       await route.fulfill({
