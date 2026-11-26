@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, Lock, Check, Pencil, Trash2 } from 'lucide-react'
+import { Search, Plus, Lock, Check, Pencil, Trash2, Inbox } from 'lucide-react'
 import { api } from '../../../lib/api'
 import { useDebouncedValue } from '../../../lib/useDebouncedValue'
 import { useTaxonomy } from '../../../lib/taxonomy'
-import { ErrorBanner, PageHeader, Spinner, fmtDateTime } from '../../../components/ui'
-import { Table, Td, EmptyState } from '../../../components/ui/table'
+import { ErrorBanner, PageHeader, Spinner, EmptyState, fmtDateTime } from '../../../components/ui'
+import { Table, Td } from '../../../components/ui/table'
 import { Badge } from '../../../components/ui/badge'
 import { ConfirmDialog } from '../../../components/ui/dialog'
 import { useSse } from '../../../lib/sse'
@@ -246,7 +246,7 @@ export default function TicketsPage() {
         <ErrorBanner error={query.error} />
       ) : (query.data?.rows.length ?? 0) === 0 ? (
         <EmptyState
-          colSpan={8}
+          icon={<Inbox className="size-6" />}
           title="No tickets issued"
           body="Issue tickets to attendees to enable credential minting."
         />

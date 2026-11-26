@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import QRCode from 'qrcode'
-import { ArrowLeft, CheckCircle2, Clock3, Copy, Lock, QrCode, RefreshCw, ShieldCheck, Ticket } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Clock3, Copy, Lock, QrCode, RefreshCw, ShieldCheck, Ticket, XCircle } from 'lucide-react'
 import PublicNav from '../../components/public/PublicNav'
 import PublicFooter from '../../components/public/PublicFooter'
 import { Corners, Blink } from '../../components/instruments'
@@ -31,6 +31,21 @@ function money(price: string, currency = 'EGP', lang = 'en') {
   return `${currency} ${n.toLocaleString()}`
 }
 
+const PAYMENT_LABELS: Record<string, [string, string]> = {
+  NOT_REQUIRED: ['لا يلزم دفع', 'Not required'],
+  PENDING: ['قيد المراجعة', 'Pending review'],
+  CONFIRMED: ['مؤكد', 'Confirmed'],
+  FAILED: ['فشل', 'Failed'],
+  REFUNDED: ['مسترد', 'Refunded'],
+}
+
+function paymentLabel(status: string | undefined, isAr: boolean) {
+  if (!status) return '—'
+  const pair = PAYMENT_LABELS[status]
+  if (pair) return isAr ? pair[0] : pair[1]
+  return status.replace(/_/g, ' ').toLowerCase().replace(/^\w/, (c) => c.toUpperCase())
+}
+
 export default function ReservationStatusPage() {
   const { code = '' } = useParams<{ code: string }>()
   const [sp] = useSearchParams()
@@ -58,7 +73,7 @@ export default function ReservationStatusPage() {
         <div className="relative z-10 mx-auto max-w-3xl">
           <div className="mb-6 flex items-center justify-between gap-3">
             <Link to="/upcoming" className="inline-flex items-center gap-2 text-[12px] text-ink-3 transition-colors hover:text-signal">
-              <ArrowLeft size={14} /> {isAr ? 'الفعاليات' : 'Events'}
+              <ArrowLeft size={14} className="rtl:rotate-180" /> {isAr ? 'الفعاليات' : 'Events'}
             </Link>
             <Button size="sm" variant="ghost" onClick={() => void status.refetch()} disabled={status.isFetching}>
               <RefreshCw size={14} className={status.isFetching ? 'animate-spin' : ''} /> {isAr ? 'تحديث' : 'Refresh'}
@@ -114,10 +129,23 @@ export default function ReservationStatusPage() {
                 </div>
               )}
 
+              {hasCapability && !status.isLoading && !status.error && !data && (
+                <div className="border border-line-soft bg-elevated/30 p-6 text-center">
+                  <QrCode className="mx-auto size-7 text-ink-3" />
+                  <p className="mt-3 text-sm text-ink-2">{isAr ? 'لم نعثر على حجز بهذا الرمز والبريد.' : 'No reservation found for this code and email.'}</p>
+                  <p className="mt-1 text-[11px] text-ink-3">{isAr ? 'تحقق من رمز الحجز أو أعد المحاولة.' : 'Check the reservation code or try refreshing.'}</p>
+                </div>
+              )}
               {data && (
                 <div className="space-y-5">
                   <div className={`flex items-start gap-3 border px-4 py-4 ${data.approval === 'APPROVED' ? 'border-ok/25 bg-ok/8' : data.approval === 'REJECTED' ? 'border-danger/25 bg-danger/8' : 'border-signal/25 bg-signal/8'}`}>
-                    <CheckCircle2 className={`mt-0.5 size-5 shrink-0 ${data.approval === 'APPROVED' ? 'text-ok' : data.approval === 'REJECTED' ? 'text-danger' : 'text-signal'}`} />
+                    {data.approval === 'APPROVED' ? (
+                      <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-ok" />
+                    ) : data.approval === 'REJECTED' ? (
+                      <XCircle className="mt-0.5 size-5 shrink-0 text-danger" />
+                    ) : (
+                      <Clock3 className="mt-0.5 size-5 shrink-0 text-signal" />
+                    )}
                     <div>
                       <p className="font-display text-xl font-semibold tracking-tight text-ink-0">
                         {data.approval === 'APPROVED' ? (t('ticketReady') ?? 'Ticket ready') : data.approval === 'REJECTED' ? (isAr ? 'تم رفض الحجز' : 'Reservation rejected') : (t('reservationPending') ?? 'Reservation pending')}
@@ -137,10 +165,16 @@ export default function ReservationStatusPage() {
                       {data.approval === 'APPROVED' ? (
                         qrUrl ? <img src={qrUrl} alt="Ticket QR" className="h-52 w-52 border border-line-soft bg-white p-2" /> : <div className="grid h-52 w-52 place-items-center border border-line-soft"><QrCode className="size-8 text-ink-3" /></div>
                       ) : (
-                        <div className="grid h-52 w-52 place-items-center border border-dashed border-signal/30 bg-signal/5 text-center">
+                        <div className={`grid h-52 w-52 place-items-center border border-dashed text-center ${data.approval === 'REJECTED' ? 'border-danger/30 bg-danger/5' : 'border-signal/30 bg-signal/5'}`}>
                           <div>
-                            <Lock className="mx-auto size-7 text-signal" />
-                            <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">{t('pending') ?? 'Pending'}</p>
+                            {data.approval === 'REJECTED' ? (
+                              <XCircle className="mx-auto size-7 text-danger" />
+                            ) : (
+                              <Lock className="mx-auto size-7 text-signal" />
+                            )}
+                            <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">
+                              {data.approval === 'REJECTED' ? (isAr ? 'مرفوض' : 'Rejected') : (t('pending') ?? 'Pending')}
+                            </p>
                           </div>
                         </div>
                       )}
@@ -157,8 +191,8 @@ export default function ReservationStatusPage() {
                       <div className="grid grid-cols-2 gap-3">
                         <div className="border border-line-soft bg-elevated/30 p-3"><p className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">{isAr ? 'الاسم' : 'Name'}</p><p className="mt-1 text-sm text-ink-0">{data.attendeeName}</p></div>
                         <div className="border border-line-soft bg-elevated/30 p-3"><p className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">{t('ticketType') ?? 'Ticket'}</p><p className="mt-1 text-sm text-ink-0">{data.ticketName}</p></div>
-                        <div className="border border-line-soft bg-elevated/30 p-3"><p className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">{isAr ? 'الدفع' : 'Payment'}</p><p className="mt-1 text-sm text-ink-0">{data.paymentStatus ?? '—'}</p></div>
-                        <div className="border border-line-soft bg-elevated/30 p-3"><p className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">{t('price') ?? 'Price'}</p><p className="mt-1 text-sm text-ink-0">{money(data.price, 'EGP', lang)}</p></div>
+                        <div className="border border-line-soft bg-elevated/30 p-3"><p className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">{isAr ? 'الدفع' : 'Payment'}</p><p className="mt-1 text-sm text-ink-0">{paymentLabel(data.paymentStatus, isAr)}</p></div>
+                        <div className="border border-line-soft bg-elevated/30 p-3"><p className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">{t('price') ?? 'Price'}</p><p className="mt-1 text-sm text-ink-0">{money(data.price, data.currency ?? 'EGP', lang)}</p></div>
                       </div>
                       {data.seats && data.seats.length > 0 && (
                         <div className="border border-line-soft bg-elevated/30 p-3">
@@ -181,7 +215,7 @@ export default function ReservationStatusPage() {
                   {data.approval === 'PENDING' && (
                     <div className="flex items-center gap-2 border border-line-soft bg-elevated/20 px-4 py-3 text-[12px] text-ink-2">
                       <Clock3 size={14} className="text-signal" />
-                      <span>{isAr ? 'يتم تحديث الحالة تلقائياً كل 15 ثانية.' : 'Status refreshes automatically every 15 seconds.'}</span>
+                      <span>{isAr ? 'يتم تحديث الحالة تلقائياً كل 5 ثوانٍ.' : 'Status refreshes automatically every 5 seconds.'}</span>
                       <span className="ml-auto inline-flex items-center gap-1 text-ok"><Blink className="bg-ok" /> Live</span>
                     </div>
                   )}

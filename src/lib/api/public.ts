@@ -183,6 +183,7 @@ export interface ReservationStatus {
   deliveryStatus?: string | null
   ticketStatus: string
   price: string
+  currency?: string
   ticketName: string
   attendeeName: string
   qr: string | null

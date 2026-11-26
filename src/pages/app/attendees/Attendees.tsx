@@ -7,6 +7,7 @@ import { useDebouncedValue } from '../../../lib/useDebouncedValue'
 import { useTaxonomy } from '../../../lib/taxonomy'
 import { EmptyState, ErrorBanner, PageHeader, Spinner, fmtDateTime } from '../../../components/ui'
 import { ConfirmDialog } from '../../../components/ui/dialog'
+import { Pagination } from '../../../components/ui/table'
 import { exportPdf, downloadAuthFile } from '../../../lib/export'
 
 interface AttendeeRow {
@@ -131,33 +132,33 @@ export default function AttendeesPage() {
       ) : (
         <div className="card overflow-x-auto">
           <table className="w-full min-w-[900px] text-start text-sm">
-            <thead className="border-b border-line bg-ink-850 text-xs uppercase tracking-wide text-ink-400">
+            <thead className="border-b border-line-soft bg-elevated text-[11px] font-mono uppercase tracking-[0.14em] text-ink-3">
               <tr>
-                <th className="px-4 py-3 font-medium">Name</th>
-                <th className="px-4 py-3 font-medium">Contact</th>
-                <th className="px-4 py-3 font-medium">Attendee type</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Tickets</th>
-                <th className="px-4 py-3 font-medium">Scans</th>
-                <th className="px-4 py-3 font-medium">Registered</th>
-                <th className="px-4 py-3 font-medium"></th>
+                <th scope="col" className="px-4 py-3 font-medium">Name</th>
+                <th scope="col" className="px-4 py-3 font-medium">Contact</th>
+                <th scope="col" className="px-4 py-3 font-medium">Attendee type</th>
+                <th scope="col" className="px-4 py-3 font-medium">Status</th>
+                <th scope="col" className="px-4 py-3 font-medium">Tickets</th>
+                <th scope="col" className="px-4 py-3 font-medium">Scans</th>
+                <th scope="col" className="px-4 py-3 font-medium">Registered</th>
+                <th scope="col" className="px-4 py-3 font-medium"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-line">
+            <tbody className="divide-y divide-line-soft">
               {query.data?.rows.map((a) => (
-                <tr key={a.id} className="transition-colors hover:bg-ink-850">
-                  <td className="px-4 py-3 font-medium text-ink-50">{a.name}</td>
-                  <td className="px-4 py-3 text-ink-300">
+                <tr key={a.id} className="transition-colors hover:bg-elevated/60">
+                  <td className="px-4 py-3 font-medium text-ink-0">{a.name}</td>
+                  <td className="px-4 py-3 text-ink-2">
                     {a.email}
-                    {a.phone ? <span className="ms-2 text-ink-400">{a.phone}</span> : null}
+                    {a.phone ? <span className="ms-2 text-ink-3">{a.phone}</span> : null}
                   </td>
-                  <td className="px-4 py-3 text-ink-300">{typeLabel(a.attendeeType)}</td>
+                  <td className="px-4 py-3 text-ink-2">{typeLabel(a.attendeeType)}</td>
                   <td className="px-4 py-3">
                     <span className={statusClass[a.status] ?? 'badge-neutral'}>{a.status}</span>
                   </td>
-                  <td className="px-4 py-3 text-ink-300">{a._count.tickets}</td>
-                  <td className="px-4 py-3 text-ink-300">{a._count.accessLogs}</td>
-                  <td className="px-4 py-3 text-ink-400">{fmtDateTime(a.createdAt)}</td>
+                  <td className="px-4 py-3 text-ink-2">{a._count.tickets}</td>
+                  <td className="px-4 py-3 text-ink-2">{a._count.accessLogs}</td>
+                  <td className="px-4 py-3 text-ink-3">{fmtDateTime(a.createdAt)}</td>
                   <td className="px-4 py-3 text-end">
                     {a._count.tickets === 0 && a._count.credentials === 0 && a._count.accessLogs === 0 && (
                       <ConfirmDialog title="Delete attendee?" body={`Delete ${a.name}? This cannot be undone.`} confirmLabel="Delete" onConfirm={() => remove.mutate(a.id)}>
@@ -173,21 +174,11 @@ export default function AttendeesPage() {
       )}
 
       {query.data && query.data.total > query.data.pageSize && (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-ink-400">
-          <span>Page {query.data.page}</span>
-          <div className="flex gap-2">
-            <button className="btn-ghost min-h-11 text-xs" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              Previous
-            </button>
-            <button
-              className="btn-ghost min-h-11 text-xs"
-              disabled={page * query.data.pageSize >= query.data.total}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next
-            </button>
-          </div>
-        </div>
+        <Pagination
+          page={query.data.page}
+          pages={Math.ceil(query.data.total / query.data.pageSize)}
+          onPage={setPage}
+        />
       )}
     </div>
   )

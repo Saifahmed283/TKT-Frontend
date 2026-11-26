@@ -1,4 +1,4 @@
-﻿import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
+﻿import { Children, cloneElement, isValidElement, useId, type InputHTMLAttributes, type ReactElement, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
 import { cn } from '@/lib/utils'
 
 const base =
@@ -31,13 +31,26 @@ export function Field({
   children: ReactNode
   className?: string
 }) {
+  const generatedId = useId()
+  const hintId = `${generatedId}-hint`
+  const child = Children.count(children) === 1 && isValidElement(children)
+    ? children as ReactElement<{ id?: string; 'aria-describedby'?: string }>
+    : null
+  const controlId = child?.props.id ?? generatedId
+  const describedBy = hint
+    ? [child?.props['aria-describedby'], hintId].filter(Boolean).join(' ')
+    : child?.props['aria-describedby']
+  const control = child
+    ? cloneElement(child, { id: controlId, 'aria-describedby': describedBy })
+    : children
+
   return (
-    <label className={cn('block', className)}>
+    <label htmlFor={controlId} className={cn('block', className)}>
       <span className="mb-1.5 flex items-baseline justify-between">
         <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-2">{label}</span>
-        {hint && <span className="text-[11px] text-ink-3">{hint}</span>}
+        {hint && <span id={hintId} className="text-[11px] text-ink-3">{hint}</span>}
       </span>
-      {children}
+      {control}
     </label>
   )
 }

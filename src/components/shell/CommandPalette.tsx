@@ -50,7 +50,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   )
 
   const filtered = useMemo(() => {
-    const moduleHints = ['tickets', 'reservations', 'payments', 'staff', 'workforce', 'access', 'devices', 'integrations', 'reports', 'audit']
+    const moduleHints = ['tickets', 'reservations', 'payments', 'staff', 'workforce', 'access', 'devices', 'integrations', 'reports', 'audit', 'settings']
     const eventModules = eventItems.flatMap((i) => moduleHints.map((m) => ({ ...i, to: `${i.to}/${m}`, label: `${i.label} → ${m[0].toUpperCase()}${m.slice(1)}`, icon: Users, hint: 'Event module' })))
     const staticItems = items.filter((item) => !item.perm || user?.platformRole === 'super_admin')
     const all = [...staticItems, ...eventItems, ...eventModules]

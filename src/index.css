@@ -54,6 +54,15 @@
 
   --color-ink-0: #fffdf8;
 
+  /* Semantic aliases for call sites that still use the older names. They
+     follow the v2 tokens above so both themes stay in sync. */
+  --color-panel: var(--color-raised);
+  --color-gold: var(--color-signal);
+  --color-stroke: var(--color-line-soft);
+  --color-ink-1: var(--color-ink);
+  --color-amber: var(--color-warn);
+  --color-structure: var(--color-line-soft);
+
   --shadow-float: 0 24px 60px -20px rgba(0, 0, 0, 0.72);
   --shadow-panel: 0 12px 40px -16px rgba(0, 0, 0, 0.58);
   --shadow-glow: 0 0 36px -10px rgba(232, 208, 139, 0.38);
@@ -100,7 +109,11 @@
 @layer base {
   html {
     color-scheme: dark;
-    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
   }
   :root {
     --upcoming-count-label: var(--color-signal);
@@ -253,37 +266,37 @@
     background: rgba(45, 35, 20, 0.035);
   }
   .btn-primary {
-    @apply btn bg-signal text-on-signal hover:bg-signal-400 active:scale-[0.98];
+    @apply btn border border-transparent bg-signal text-on-signal hover:bg-signal/90 active:scale-[0.98];
   }
   .btn-primary:hover {
     box-shadow: var(--shadow-glow);
   }
   .btn-ghost {
-    @apply btn border border-line bg-transparent text-ink-2 hover:bg-elevated hover:text-ink-0;
+    @apply btn border border-line-soft bg-transparent text-ink-2 hover:bg-elevated hover:text-ink-0;
   }
   .btn-danger {
-    @apply btn border border-err-400/30 text-err-400 hover:bg-err-400/10;
+    @apply btn border border-danger/30 bg-danger/10 text-danger hover:bg-danger/15 active:bg-danger/20;
   }
   .input {
-    @apply w-full border border-line-soft bg-elevated px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-3 focus:border-signal/50 focus:ring-2 focus:ring-signal/15;
+    @apply w-full min-h-10 border border-line-soft bg-elevated px-3.5 py-2 text-[13px] text-ink outline-none transition-colors placeholder:text-ink-3 focus:border-signal/50 focus:ring-2 focus:ring-signal/15;
   }
   .label {
-    @apply font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-3;
+    @apply font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-3;
   }
   .badge-ok {
-    @apply badge border-ok-400/25 bg-ok-400/10 text-ok-400;
+    @apply badge border-ok/30 bg-ok/10 text-ok;
   }
   .badge-warn {
-    @apply badge border-warn-400/25 bg-warn-400/10 text-warn-400;
+    @apply badge border-warn/30 bg-warn/10 text-warn;
   }
   .badge-err {
-    @apply badge border-err-400/25 bg-err-400/10 text-err-400;
+    @apply badge border-danger/30 bg-danger/10 text-danger;
   }
   .badge-signal {
-    @apply badge border-signal-500/25 bg-signal-500/10 text-signal-400;
+    @apply badge border-signal/30 bg-signal/10 text-signal;
   }
   .badge-neutral {
-    @apply badge border-line bg-elevated text-ink-2;
+    @apply badge border-line-soft bg-elevated text-ink-2;
   }
   .kbd {
     @apply border border-line bg-elevated px-1.5 py-0.5 font-mono text-[10px] text-ink-2;
@@ -322,7 +335,7 @@
 }
 
 @utility badge {
-  @apply inline-flex items-center gap-1.5 border border-line px-2.5 py-0.5 text-xs font-medium;
+  @apply inline-flex items-center gap-1.5 border border-line-soft px-2.5 py-0.5 text-[11px] font-medium;
 }
 
 /* Touch devices: keep every interactive control comfortably tappable. */
@@ -422,6 +435,19 @@
 }
 .tkt-bloom[data-tone='warm'] {
   background: radial-gradient(circle, rgba(200, 162, 92, 0.12) 0%, transparent 70%);
+}
+
+/* Dense tables trade vertical padding for horizontal room, not just width. */
+table[data-dense='true'] th,
+table[data-dense='true'] td {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+/* Keyboard focus must stay visible even when a component sets outline-none. */
+:where(a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

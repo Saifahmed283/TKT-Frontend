@@ -13,7 +13,7 @@ export function PageHeader({
   actions?: ReactNode
 }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-3 border-b border-line-soft px-0 pb-4 pt-6 sm:px-6">
+    <div className="flex flex-wrap items-end justify-between gap-3 border-b border-line-soft pb-4">
       <div className="flex min-w-0 items-start gap-3">
         {icon && (
           <span className="relative mt-0.5 grid size-9 shrink-0 place-items-center border border-signal/30 bg-signal-soft text-signal">

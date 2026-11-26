@@ -1,4 +1,4 @@
-import { ExternalLink, ShieldCheck } from 'lucide-react'
+import { CreditCard, ExternalLink, ShieldCheck } from 'lucide-react'
 import { FileUploadField } from '../../ui/file-upload'
 import type { ReservationWizard } from './useReservationWizard'
 import { money } from './shared'
@@ -23,8 +23,14 @@ export function PaymentStep({ w }: { w: ReservationWizard }) {
   const providers = event.paymentProviders ?? []
   return (
     <div data-testid="wizard-step-payment" className="space-y-4">
-      <div className="border border-line-soft bg-elevated/20 p-4">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-signal">{isAr ? 'إتمام الدفع' : 'Complete payment'}</p>
+      <div className="border border-signal/20 bg-signal/5 p-5">
+        <div className="flex items-center gap-3">
+          <CreditCard className="size-6 shrink-0 text-signal" />
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-signal">{isAr ? 'إتمام الدفع' : 'Complete payment'}</p>
+            <p className="mt-0.5 text-[12px] text-ink-3">{isAr ? 'راجع المبلغ ثم أرسل إثبات العملية.' : 'Review the amount, then submit your payment proof.'}</p>
+          </div>
+        </div>
         <div className="mt-3 flex items-center justify-between gap-3 text-sm">
           <span className="text-ink-2">{selected?.name}</span>
           <span className="font-mono font-semibold text-ink-0">{money(String(ticketPrice), lang, selected?.currency ?? 'EGP')}</span>
@@ -73,7 +79,17 @@ export function PaymentStep({ w }: { w: ReservationWizard }) {
         />
         <p className="text-[10px] leading-relaxed text-ink-3">{isAr ? 'لا ترسل كلمة مرور أو رمز تحقق OTP أو بيانات البطاقة. نحتاج فقط رقم العملية وإيصال الدفع.' : 'Never submit a password, OTP, or card details. Only the transaction reference and payment receipt are required.'}</p>
       </div>
-      {!canContinue && <p className="text-[11px] text-danger">{isAr ? 'اختر مزود الدفع وأدخل رقم العملية وارفع الإيصال قبل المتابعة.' : 'Select a provider, enter the transaction reference, and upload the receipt before continuing.'}</p>}
+      {!canContinue && (
+        <div className="border border-danger/25 bg-danger/5 p-3 text-[11px] text-danger">
+          <p className="font-semibold">{isAr ? 'قبل المتابعة:' : 'Before you continue:'}</p>
+          <ul className="mt-1 space-y-0.5">
+            {!selectedProvider && <li>• {isAr ? 'اختر وسيلة الدفع.' : 'Select a payment provider.'}</li>}
+            {!paymentReference.trim() && <li>• {isAr ? 'أدخل رقم العملية.' : 'Enter the transaction reference.'}</li>}
+            {!paymentProofUrl && <li>• {isAr ? 'ارفع إيصال الدفع.' : 'Upload the payment receipt.'}</li>}
+            {selectedProvider && paymentReference.trim() && paymentProofUrl && <li>• {isAr ? 'راجع بيانات الحامل في العمود الأول.' : 'Check the attendee details in the first column.'}</li>}
+          </ul>
+        </div>
+      )}
     </div>
   )
 }

@@ -90,7 +90,7 @@ export function IntegrationsPage() {
                   <div className="flex justify-end gap-1">
                     <Button size="sm" variant="ghost" icon={<Send className="size-4" />} onClick={() => testHook.mutate(w.id)}>Test</Button>
                     <ConfirmDialog title="Delete webhook?" body={`Delete webhook "${w.name}"?`} confirmLabel="Delete" onConfirm={() => removeHook.mutate(w.id)}>
-                      <Button size="sm" variant="ghost" className="text-danger" icon={<Trash2 className="size-4" />} />
+                      <Button size="sm" variant="ghost" className="text-danger" aria-label={`Delete webhook ${w.name}`} icon={<Trash2 className="size-4" />} />
                     </ConfirmDialog>
                   </div>
                 </Td>
@@ -118,7 +118,7 @@ export function IntegrationsPage() {
                   <Td>
                     <div className="flex justify-end">
                       <ConfirmDialog title="Delete insurance policy?" body={`Delete ${i.provider} ${i.policyNumber}?`} confirmLabel="Delete" onConfirm={() => removeInsurance.mutate(i.id)}>
-                        <Button size="sm" variant="ghost" className="text-danger" icon={<Trash2 className="size-4" />} />
+                        <Button size="sm" variant="ghost" className="text-danger" aria-label={`Delete ${i.provider} ${i.policyNumber}`} icon={<Trash2 className="size-4" />} />
                       </ConfirmDialog>
                     </div>
                   </Td>

@@ -1,5 +1,5 @@
-﻿import { AnimatePresence, motion } from 'motion/react'
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+﻿import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { Children, cloneElement, createContext, isValidElement, useCallback, useContext, useEffect, useId, useRef, useState, type MouseEvent, type ReactElement, type ReactNode } from 'react'
 import { AlertTriangle, Info, Trash2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from './button'
@@ -20,18 +20,53 @@ export function Dialog({
   wide?: boolean
   className?: string
 }) {
+  const titleId = useId()
+  const panelRef = useRef<HTMLDivElement>(null)
+  const reduceMotion = useReducedMotion()
+  // Inline onClose callbacks change identity every render; keep the effect
+  // stable so typing in the dialog never re-runs focus setup.
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
+
   useEffect(() => {
     if (!open) return
+    const trigger = document.activeElement as HTMLElement | null
+    const panel = panelRef.current
+    const focusable = () => Array.from(
+      panel?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])') ?? [],
+    )
+    ;(focusable()[0] ?? panel)?.focus()
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') {
+        onCloseRef.current()
+        return
+      }
+      if (e.key !== 'Tab' || !panel) return
+      const items = focusable()
+      if (items.length === 0) {
+        e.preventDefault()
+        panel.focus()
+        return
+      }
+      const first = items[0]
+      const last = items[items.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
     }
     document.addEventListener('keydown', onKey)
     document.body.style.overflow = 'hidden'
     return () => {
       document.removeEventListener('keydown', onKey)
       document.body.style.overflow = ''
+      trigger?.focus?.()
     }
-  }, [open, onClose])
+  }, [open])
 
   return (
     <AnimatePresence>
@@ -42,24 +77,27 @@ export function Dialog({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.12 }}
+            transition={reduceMotion ? { duration: 0 } : { duration: 0.12 }}
             onClick={onClose}
           />
           <motion.div
+            ref={panelRef}
             role="dialog"
             aria-modal="true"
+            aria-labelledby={titleId}
+            tabIndex={-1}
             className={cn(
-              'tkt-window relative max-h-[calc(100dvh-1rem)] w-full overflow-hidden border border-signal/35 bg-elevated shadow-float sm:max-h-[calc(100dvh-2rem)]',
+              'tkt-window relative max-h-[calc(100dvh-1rem)] w-full overflow-hidden border border-signal/35 bg-elevated shadow-float outline-none sm:max-h-[calc(100dvh-2rem)]',
               wide ? 'max-w-2xl' : 'max-w-md',
               className,
             )}
             initial={{ opacity: 0, scale: 0.97, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, y: 6 }}
-            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className="flex items-center justify-between border-b border-signal/20 bg-raised/40 px-5 py-3.5">
-              <h2 className="font-display text-lg font-semibold uppercase tracking-wide">{title}</h2>
+              <h2 id={titleId} className="font-display text-lg font-semibold uppercase tracking-wide">{title}</h2>
               <button
                 onClick={onClose}
                 aria-label="Close dialog"
@@ -185,7 +223,20 @@ export function ConfirmDialog({
   tone?: DialogTone
 }) {
   const confirm = useConfirm()
-  return (
-    <span onClick={async () => { if (await confirm({ title, body, confirmLabel, tone })) await onConfirm() }}>{children}</span>
-  )
+  const run = async () => {
+    if (await confirm({ title, body, confirmLabel, tone })) await onConfirm()
+  }
+
+  // Reuse the caller's control when possible so keyboard users get a real
+  // button instead of a click-only span and we avoid nested <button>s.
+  if (Children.count(children) === 1 && isValidElement(children)) {
+    const child = children as ReactElement<{ onClick?: (event: MouseEvent) => void }>
+    return cloneElement(child, {
+      onClick: (event: MouseEvent) => {
+        child.props.onClick?.(event)
+        void run()
+      },
+    })
+  }
+  return <button type="button" onClick={() => void run()} className="text-start">{children}</button>
 }

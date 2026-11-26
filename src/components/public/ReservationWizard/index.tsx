@@ -14,7 +14,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
   const { t, lang, done, stepId, activeStep, steps, selected, totalPrice, selectedSeatIds, selectedBus, holdExpiresAt, holdExpiring, holdCountdown, confirmDiscard, setConfirmDiscard, reserve, existingReservation, duplicateLoading, resending, resendMessage, openExisting, resendTicket, canGoBack, goBack, goNext, canContinue, onSubmit, requestClose } = w
 
   return (
-    <Modal open onClose={requestClose} title={done ? (done.approval === 'APPROVED' ? t('reservationConfirmed') : t('reservationPending')) : `${t('reserveFor')} ${event.name}`} wide={!!done || stepId === 'details' || stepId === 'review'} extraWide={stepId === 'details' || stepId === 'review'}>
+    <Modal open onClose={requestClose} title={done ? (done.approval === 'APPROVED' ? t('reservationConfirmed') : t('reservationPending')) : `${t('reserveFor')} ${event.name}`} wide extraWide>
       {done ? (
         <DoneScreen w={w} onClose={onClose} />
       ) : (
@@ -38,7 +38,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
                 <p className="mt-1 truncate text-sm font-semibold text-ink-0" data-testid="wizard-current-step">{steps[activeStep]?.label}</p>
               </div>
               <span className="shrink-0 font-mono text-[10px] tabular-nums text-ink-3">
-                {Math.round(((activeStep + 1) / steps.length) * 100)}%
+                {Math.round((activeStep / steps.length) * 100)}%
               </span>
             </div>
             <div
@@ -51,10 +51,10 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
             >
               <div
                 className="h-full rounded-full bg-signal transition-[width] duration-300"
-                style={{ width: ((activeStep + 1) / steps.length) * 100 + '%' }}
+                style={{ width: (activeStep / steps.length) * 100 + '%' }}
               />
             </div>
-            <div className="hidden flex-wrap items-center gap-2 sm:flex">
+            <div className="flex flex-wrap items-center gap-2">
               {steps.map((step, index) => {
                 const Icon = step.icon
                 return (
@@ -132,7 +132,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
 
           {stepId === 'ticket' && <TicketStep w={w} />}
           {stepId === 'details' && (
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-2 xl:items-start">
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:items-start">
               <DetailsStep w={w} />
               <PaymentStep w={w} />
             </div>

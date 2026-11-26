@@ -2,6 +2,7 @@ import { Ticket } from 'lucide-react'
 import { resolveUploadPreviewUrl } from '../../ui/file-upload'
 import type { ReservationWizard } from './useReservationWizard'
 import { DesignStep } from './DesignStep'
+import { money } from './shared'
 
 export function ReviewStep({ w }: { w: ReservationWizard }) {
   const {
@@ -18,20 +19,20 @@ export function ReviewStep({ w }: { w: ReservationWizard }) {
   const maskedIdentityValue = identityValue ? '•'.repeat(Math.max(0, identityValue.length - 4)) + identityValue.slice(-4) : ''
   return (
     <div data-testid="wizard-review" className="space-y-4">
+      <div className="flex items-start justify-between gap-3 border-b border-line-soft pb-3">
+        <div><h3 className="font-semibold text-ink-0">{isAr ? 'راجع بياناتك قبل الإرسال' : 'Review every detail before submitting'}</h3><p className="mt-1 text-[11px] text-ink-3">{isAr ? 'استخدم زر الرجوع لتصحيح أي معلومة.' : 'Use Back to correct anything that is not exact.'}</p></div>
+        <span className="shrink-0 border border-ok/30 bg-ok/5 px-2.5 py-1 text-[10px] font-semibold text-ok">{isAr ? 'مكتمل' : 'READY'}</span>
+      </div>
       <details data-testid="optional-ticket-customization" className="group border border-line-soft bg-elevated/20">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-ink-0">
           <span>{isAr ? 'خصّص شكل تذكرتك (اختياري)' : 'Customize your ticket (optional)'}</span>
-          <span className="text-[10px] font-normal text-ink-3 group-open:hidden">{isAr ? 'فتح' : 'Customize'}</span>
-          <span className="hidden text-[10px] font-normal text-ink-3 group-open:inline">{isAr ? 'إغلاق' : 'Close'}</span>
+          <span className="text-[10px] font-normal text-ink-3 group-open:hidden">{isAr ? 'افتح' : 'Customize'}</span>
+          <span className="hidden text-[10px] font-normal text-ink-3 group-open:inline">{isAr ? 'أغلق' : 'Close'}</span>
         </summary>
         <div className="border-t border-line-soft p-4">
           <DesignStep w={w} />
         </div>
       </details>
-      <div className="flex items-start justify-between gap-3 border-b border-line-soft pb-3">
-        <div><h3 className="font-semibold text-ink-0">{isAr ? 'راجع بياناتك قبل الإرسال' : 'Review every detail before submitting'}</h3><p className="mt-1 text-[11px] text-ink-3">{isAr ? 'استخدم زر الرجوع لتصحيح أي معلومة.' : 'Use Back to correct anything that is not exact.'}</p></div>
-        <span className="shrink-0 rounded-full border border-ok/30 bg-ok/5 px-2.5 py-1 text-[10px] font-semibold text-ok">{isAr ? 'مكتمل' : 'READY'}</span>
-      </div>
       <section className="space-y-2 border border-line-soft bg-elevated/20 p-4">
         <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-signal">{isAr ? 'البيانات الشخصية' : 'Personal information'}</p>
         {[
@@ -54,9 +55,9 @@ export function ReviewStep({ w }: { w: ReservationWizard }) {
         {isPaid ? <>
           <div className="flex items-center justify-between gap-3 text-[12px]"><span className="text-ink-3">{isAr ? 'مزود الدفع' : 'Provider'}</span><b className="text-ink-0">{selectedProvider?.name ?? '—'}</b></div>
           <div className="flex items-center justify-between gap-3 text-[12px]"><span className="text-ink-3">{isAr ? 'رقم العملية' : 'Reference ID'}</span><bdi className="font-mono text-ink-0">{paymentReference.trim()}</bdi></div>
-          {paymentProofUrl && <div className="space-y-2 border-t border-line-soft pt-2" data-testid="review-payment-proof"><div className="flex items-center justify-between gap-2"><span className="text-[11px] font-semibold text-ink-2">{isAr ? 'إثبات الدفع' : 'Payment proof'}</span><a href={proofPreviewUrl} target="_blank" rel="noreferrer" className="text-[11px] text-signal hover:underline">{isAr ? 'فتح الملف' : 'Open proof'}</a></div>{proofIsImage ? <img src={proofPreviewUrl} alt={isAr ? 'إثبات الدفع' : 'Payment proof'} className="max-h-64 w-full rounded border border-line-soft bg-canvas object-contain" /> : <p className="text-[11px] text-ink-3">{isAr ? 'ملف الإيصال مرفق.' : 'Receipt file attached.'}</p>}</div>}
+          {paymentProofUrl && <div className="space-y-2 border-t border-line-soft pt-2" data-testid="review-payment-proof"><div className="flex items-center justify-between gap-2"><span className="text-[11px] font-semibold text-ink-2">{isAr ? 'إثبات الدفع' : 'Payment proof'}</span><a href={proofPreviewUrl} target="_blank" rel="noreferrer" className="text-[11px] text-signal hover:underline">{isAr ? 'فتح الملف' : 'Open proof'}</a></div>{proofIsImage ? <img src={proofPreviewUrl} alt={isAr ? 'إثبات الدفع' : 'Payment proof'} className="max-h-64 w-full border border-line-soft bg-canvas object-contain" /> : <p className="text-[11px] text-ink-3">{isAr ? 'ملف الإيصال مرفق.' : 'Receipt file attached.'}</p>}</div>}
         </> : <p className="text-[12px] text-ok">{isAr ? 'لا يلزم دفع لهذه التذكرة.' : 'No payment is required for this ticket.'}</p>}
-        <div className="flex items-center justify-between gap-3 border-t border-line-soft pt-3 text-sm font-semibold"><span>{t('total')}</span><span className="font-mono text-signal">{selected?.currency ?? selectedBus?.currency ?? 'EGP'} {totalPrice.toLocaleString()}</span></div>
+        <div className="flex items-center justify-between gap-3 border-t border-line-soft pt-3 text-sm font-semibold"><span>{t('total')}</span><span className="font-mono text-signal">{money(String(totalPrice), lang, selected?.currency ?? selectedBus?.currency ?? 'EGP')}</span></div>
       </section>
       <section className="space-y-2 border border-line-soft bg-elevated/20 p-4">
         <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-signal">{isAr ? 'تصميم التذكرة' : 'Ticket design'}</p>

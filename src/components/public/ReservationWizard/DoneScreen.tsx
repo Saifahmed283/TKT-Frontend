@@ -75,7 +75,7 @@ export function DoneScreen({ w, onClose }: { w: ReservationWizard; onClose: () =
             </div>
             <div className="border border-line-soft bg-elevated/30 p-3">
               <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">{t('price')}</p>
-              <p className="mt-1 text-sm text-ink-0">{money(done.price, lang)}</p>
+              <p className="mt-1 text-sm text-ink-0">{money(done.price, lang, selected?.currency)}</p>
             </div>
           </div>
           {done.seats && done.seats.length > 0 && (
@@ -85,11 +85,11 @@ export function DoneScreen({ w, onClose }: { w: ReservationWizard; onClose: () =
             </div>
           )}
           {done.approval === 'APPROVED' && done.qr && (
-        <a href={`/my-ticket#code=${encodeURIComponent(done.reservationCode)}`} className="inline-flex w-full items-center justify-center gap-2 border border-signal/30 bg-signal/8 px-4 py-3 text-xs font-semibold text-signal transition-colors hover:bg-signal/15">
-          <QrCode size={15} /> {lang === 'ar' ? 'افتح تذكرتي على الهاتف' : 'Open my ticket on phone'}
-        </a>
-      )}
-      <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">
+            <a href={`/my-ticket#code=${encodeURIComponent(done.reservationCode)}`} className="inline-flex w-full items-center justify-center gap-2 border border-signal/30 bg-signal/8 px-4 py-3 text-xs font-semibold text-signal transition-colors hover:bg-signal/15">
+              <QrCode size={15} /> {lang === 'ar' ? 'افتح تذكرتي على الهاتف' : 'Open my ticket on phone'}
+            </a>
+          )}
+          <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3">
             <ShieldCheck size={13} className="text-signal" /> {t('secureBooking')}
           </div>
         </div>

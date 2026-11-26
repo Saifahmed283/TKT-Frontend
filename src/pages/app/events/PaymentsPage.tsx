@@ -158,14 +158,14 @@ export function PaymentsPage() {
               <div className="mb-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-3">By category</div>
               <Table headers={['Category', 'Count', 'Revenue']}>
                 {summary.byCategory.map(c => <tr key={c.category}><Td>{c.category}</Td><Td>{c.count}</Td><Td>{fmtMoney(c.revenue, summary.currency)}</Td></tr>)}
-                {summary.byCategory.length === 0 && <tr><td colSpan={3}><EmptyState colSpan={3} title="No payment categories" /></td></tr>}
+                {summary.byCategory.length === 0 && <EmptyState colSpan={3} title="No payment categories" />}
               </Table>
             </Panel>
             <Panel>
               <div className="mb-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-3">By ticket type / remaining</div>
               <Table headers={['Ticket type', 'Sold', 'Remaining', 'Revenue']}>
                 {summary.byTicketType.map(t => <tr key={t.id}><Td>{t.name}<div className="text-[11px] text-ink-3">{t.category}</div></Td><Td>{t.sold}</Td><Td>{t.remaining == null ? '—' : t.remaining}</Td><Td>{fmtMoney(t.sold * t.price, summary.currency)}</Td></tr>)}
-                {summary.byTicketType.length === 0 && <tr><td colSpan={4}><EmptyState colSpan={4} title="No ticket types" /></td></tr>}
+                {summary.byTicketType.length === 0 && <EmptyState colSpan={4} title="No ticket types" />}
               </Table>
             </Panel>
           </div>
@@ -208,7 +208,7 @@ export function PaymentsPage() {
                 const proof = proofSource(r.paymentProofUrl || meta.paymentProofUrl)
                 return <tr key={r.id}><Td className="font-mono text-xs">{String(meta.paymentReference ?? '—')}</Td><Td>{r.reservationCode ?? r.id.slice(0, 8)}</Td><Td>{r.attendee?.name ?? '—'}</Td><Td>{proof ? <a className="text-signal hover:underline" href={proof.url} target="_blank" rel="noreferrer">Open proof</a> : '—'}</Td><Td><Badge tone={String(r.paymentStatus ?? meta.paymentStatus) === 'CONFIRMED' ? 'ok' : 'warn'}>{String(r.paymentStatus ?? meta.paymentStatus ?? '—')}</Badge></Td></tr>
               })}
-              {(refQ.data ?? []).length === 0 && <tr><td colSpan={5}><EmptyState colSpan={5} title="No reference match" body="Check reference number and event scope." /></td></tr>}
+              {(refQ.data ?? []).length === 0 && <EmptyState colSpan={5} title="No reference match" body="Check reference number and event scope." />}
             </Table>
           )}
         </Panel>
@@ -235,7 +235,7 @@ export function PaymentsPage() {
                 </tr>
               )
             })}
-            {pending.length === 0 && <tr><td colSpan={7}><EmptyState colSpan={7} title="No pending payments" body="Submitted payment proofs will appear here." /></td></tr>}
+            {pending.length === 0 && <EmptyState colSpan={7} title="No pending payments" body="Submitted payment proofs will appear here." />}
           </Table>
         </Panel>
 
@@ -248,10 +248,10 @@ export function PaymentsPage() {
                 <Td><div>{p.accountName ?? '—'}</div><div className="text-[11px] text-ink-3">{p.accountNumber ?? ''}</div></Td>
                 <Td><div>{p.paymentPhone ?? '—'}</div>{p.paymentLink && <a className="text-[11px] text-signal hover:underline" href={p.paymentLink} target="_blank" rel="noreferrer">Payment link</a>}</Td>
                 <Td><Badge tone={p.isActive ? 'ok' : 'default'}>{p.isActive ? 'Active' : 'Inactive'}</Badge></Td>
-                <Td><Button size="sm" variant="ghost" className="text-danger" onClick={() => setDeleteProviderId(p.id)}><Trash2 size={14} /></Button></Td>
+                <Td><Button size="sm" variant="ghost" className="text-danger" aria-label={`Delete ${p.name}`} onClick={() => setDeleteProviderId(p.id)}><Trash2 size={14} /></Button></Td>
               </tr>
             ))}
-            {providers.length === 0 && <tr><td colSpan={5}><EmptyState colSpan={5} title="No providers" body="Add manual or online payment providers for this event." /></td></tr>}
+            {providers.length === 0 && <EmptyState colSpan={5} title="No providers" body="Add manual or online payment providers for this event." />}
           </Table>
         </Panel>
       </div>

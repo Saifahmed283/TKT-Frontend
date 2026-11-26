@@ -52,16 +52,19 @@ function money(price: string, lang: string, currency = 'EGP') {
 function AvailabilityBadge({ availability }: { availability: ReservationAvailability }) {
   const { t } = useLanguage()
   const map = {
-    open: { label: t('reservationsOpen'), cls: 'badge badge-ok', blink: true },
-    upcoming: { label: t('openingSoon'), cls: 'badge badge-signal', blink: true },
-    sold_out: { label: t('soldOut'), cls: 'badge badge-err', blink: false },
-    locked: { label: t('reservationsLocked'), cls: 'badge badge-err', blink: false },
-    closed: { label: t('reservationsClosed'), cls: 'badge badge-err', blink: false },
+    open: { label: t('reservationsOpen'), cls: 'badge badge-ok', icon: null },
+    upcoming: { label: t('openingSoon'), cls: 'badge badge-signal', icon: null },
+    sold_out: { label: t('soldOut'), cls: 'badge badge-neutral', icon: null },
+    locked: { label: t('reservationsLocked'), cls: 'badge badge-neutral', icon: Lock },
+    closed: { label: t('reservationsClosed'), cls: 'badge badge-neutral', icon: null },
   } as const
   const cfg = map[availability]
+  const Icon = cfg.icon
   return (
     <span className={cfg.cls}>
-      {cfg.blink ? <Blink className={availability === 'open' ? 'bg-ok' : 'bg-signal'} /> : <Lock size={10} />}
+      {availability === 'open' || availability === 'upcoming'
+        ? <Blink className={availability === 'open' ? 'bg-ok' : 'bg-signal'} />
+        : Icon ? <Icon size={10} /> : null}
       {cfg.label}
     </span>
   )
@@ -142,7 +145,7 @@ export function EventCard({ e, i, onReserve }: { e: PublicEvent; i: number; onRe
         {/* Content */}
         <div className="min-w-0 p-5 sm:p-6 lg:p-7">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="badge badge-signal">{e.type.replace('_', ' ')}</span>
+            <span className="badge badge-signal">{e.type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}</span>
             <span className="badge badge-neutral">{e.organization.name}</span>
             <AvailabilityBadge availability={avail} />
           </div>
@@ -193,6 +196,11 @@ export function EventCard({ e, i, onReserve }: { e: PublicEvent; i: number; onRe
                   </div>
                 ))}
               </div>
+              {e.ticketTypes.length > 3 && (
+                <p className="mt-2 text-[11px] text-ink-3">
+                  {lang === 'ar' ? `و${e.ticketTypes.length - 3} خيارات أخرى` : `+${e.ticketTypes.length - 3} more options`}
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -339,9 +347,6 @@ export default function UpcomingEvents() {
                       placeholder={t('searchEventsPlaceholder')}
                     />
                   </label>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
-                    {filtered.length} / {events.length} {t('eventsAvailable')}
-                  </p>
                 </div>
               )}
 
@@ -355,6 +360,7 @@ export default function UpcomingEvents() {
               ) : filtered.length === 0 ? (
                 <div className="panel relative overflow-hidden px-6 py-16 text-center sm:py-20">
                   <Corners />
+                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(232,208,139,0.06),transparent_55%)]" />
                   <p className="relative font-display text-3xl font-semibold tracking-tight text-ink-0 sm:text-4xl">{t('noSearchResults')}</p>
                   <p className="relative mx-auto mt-4 max-w-md text-sm leading-relaxed text-ink-3">{t('noSearchResultsBody')}</p>
                   <button type="button" className="btn-ghost relative mt-6" onClick={() => { setQuery(''); setPage(1) }}>

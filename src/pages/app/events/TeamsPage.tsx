@@ -5,7 +5,7 @@ import { useToast } from '@/components/ui/toast'
 import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Input, Field } from '@/components/ui/input'
-import { EmptyState } from '@/components/ui/table'
+import { EmptyState } from '@/components/ui'
 import { Dialog, ConfirmDialog } from '@/components/ui/dialog'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { useState, type FormEvent } from 'react'
@@ -76,7 +76,7 @@ export function TeamsPage() {
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {data.length === 0 && (
             <div className="col-span-full">
-              <EmptyState colSpan={1} title="No teams yet" />
+              <EmptyState icon={<UsersRound className="size-6" />} title="No teams yet" />
             </div>
           )}
           {data.map((t) => (

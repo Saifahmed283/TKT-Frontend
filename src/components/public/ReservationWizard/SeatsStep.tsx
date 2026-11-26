@@ -10,7 +10,7 @@ export function SeatsStep({ w }: { w: ReservationWizard }) {
   const {
     t, buses, busId, setBusId, selectedSeatIds, setSelectedSeatIds,
     holding, holdExpiresAt, holdError, setHoldAttempt,
-    seatView3d, setSeatView3d,
+    seatView3d, setSeatView3d, seatScrollRef, seatScroll,
   } = w
 
   const toggleSeat = (seatId: string) => {
@@ -35,7 +35,7 @@ export function SeatsStep({ w }: { w: ReservationWizard }) {
             const model = resolveBusLayout(bus.layout)
             return (
               <div>
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line-soft bg-panel/60 px-3 py-3">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border border-line-soft bg-panel/60 px-3 py-3">
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-ink-0">{bus.name}</p>
                     <p className="mt-1 text-[11px] text-ink-3">{w.lang === 'ar' ? model.nameAr : model.name}</p>
@@ -49,9 +49,9 @@ export function SeatsStep({ w }: { w: ReservationWizard }) {
                     <p className="flex items-baseline justify-end gap-1 font-mono text-sm font-semibold tabular-nums text-ink-0">{bus.availableSeats}<span className="text-[10px] font-normal text-ink-3">{w.lang === 'ar' ? 'متاح' : 'available'}</span></p>
                     <p className="mt-0.5 text-[10px] text-ink-3">{bus.totalSeats} {w.lang === 'ar' ? 'مقعد إجمالي' : 'seats total'}</p>
                   </div>
-                  <div className="ml-auto inline-flex items-center gap-1 rounded-lg border border-line-soft bg-panel/50 p-1">
-                    <button type="button" aria-pressed={!seatView3d} onClick={() => setSeatView3d(false)} className={`inline-flex items-center gap-1 rounded px-2 py-1.5 text-[10px] ${!seatView3d ? 'bg-signal text-black' : 'text-ink-3'}`}><Grid3X3 size={12} /> 2D</button>
-                    <button type="button" aria-pressed={seatView3d} onClick={() => setSeatView3d(true)} className={`inline-flex items-center gap-1 rounded px-2 py-1.5 text-[10px] ${seatView3d ? 'bg-signal text-black' : 'text-ink-3'}`}><Box size={12} /> 3D</button>
+                  <div className="inline-flex items-center gap-1 border border-line-soft bg-panel/50 p-1">
+                    <button type="button" aria-pressed={!seatView3d} onClick={() => setSeatView3d(false)} className={`inline-flex min-h-9 items-center gap-1 px-2 py-1 text-[10px] ${!seatView3d ? 'bg-signal/10 text-signal' : 'text-ink-3 hover:text-ink'}`}><Grid3X3 size={12} /> 2D</button>
+                    <button type="button" aria-pressed={seatView3d} onClick={() => setSeatView3d(true)} className={`inline-flex min-h-9 items-center gap-1 px-2 py-1 text-[10px] ${seatView3d ? 'bg-signal/10 text-signal' : 'text-ink-3 hover:text-ink'}`}><Box size={12} /> 3D</button>
                   </div>
                 </div>
                 {seatView3d ? (
@@ -65,15 +65,24 @@ export function SeatsStep({ w }: { w: ReservationWizard }) {
                     />
                   </Suspense>
                 ) : (
-                  <BusSeatMap2D
-                    layout={bus.layout}
-                    seats={bus.seats}
-                    selectedSeatIds={selectedSeatIds}
-                    onSeatClick={(seat) => toggleSeat(seat.id)}
-                    language={w.lang}
-                    maxSelectable={1}
-                    disabled={holding}
-                  />
+                  <>
+                    <div ref={seatScrollRef} className="overflow-x-auto">
+                      <BusSeatMap2D
+                        layout={bus.layout}
+                        seats={bus.seats}
+                        selectedSeatIds={selectedSeatIds}
+                        onSeatClick={(seat) => toggleSeat(seat.id)}
+                        language={w.lang}
+                        maxSelectable={1}
+                        disabled={holding}
+                      />
+                    </div>
+                    {seatScroll.overflow && !seatScroll.atEnd && (
+                      <p className="mt-2 text-center text-[10px] uppercase tracking-[0.12em] text-ink-3">
+                        {w.lang === 'ar' ? '← اسحب لعرض بقية المقاعد' : 'Swipe to see more seats →'}
+                      </p>
+                    )}
+                  </>
                 )}
                 <div className="mt-4 space-y-3">
                   <section className="space-y-2 sm:hidden" data-testid="mobile-seat-picker" aria-label={w.lang === 'ar' ? 'اختيار المقعد' : 'Seat picker'}>
@@ -94,7 +103,7 @@ export function SeatsStep({ w }: { w: ReservationWizard }) {
                             aria-pressed={active}
                             disabled={holding || !available}
                             onClick={() => toggleSeat(seat.id)}
-                            className={`min-h-11 rounded-md border px-2 py-2 text-sm font-semibold tabular-nums transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${active ? 'border-signal bg-signal text-black shadow-sm' : available ? 'border-line-soft bg-panel text-ink-1 hover:border-signal/50' : 'border-line-soft bg-elevated/60 text-ink-3'}`}
+                            className={`min-h-11 border px-2 py-2 text-sm font-semibold tabular-nums transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${active ? 'border-signal bg-signal/10 text-signal' : available ? 'border-line-soft bg-panel/60 text-ink hover:border-signal/50' : 'border-line-soft bg-elevated/60 text-ink-3'}`}
                           >
                             {seat.label}
                           </button>
@@ -103,19 +112,22 @@ export function SeatsStep({ w }: { w: ReservationWizard }) {
                     </div>
                     <p className="text-[10px] text-ink-3">{w.lang === 'ar' ? 'يمكنك اختيار المقعد من المخطط أو من القائمة هنا.' : 'Select a seat from the map or this list.'}</p>
                   </section>
-                  <div className="flex flex-wrap items-center gap-2 text-[11px] text-ink-2">
-                    <span>{t('selectedSeats')}: {bus.seats.filter(s => selectedSeatIds.includes(s.id)).map(s => s.label).join(', ') || '—'}</span>
-                    {holding && <span className="inline-flex items-center gap-1 text-signal"><Clock3 size={12} /> {t('holding')}</span>}
-                    {holdExpiresAt && !holding && <span className="inline-flex items-center gap-1 text-ok"><Clock3 size={12} /> {t('heldUntil')} {new Date(holdExpiresAt).toLocaleTimeString()}</span>}
-                    {holdError && <span className="text-danger">{holdError}</span>}
+                  <div className="mt-3 space-y-2 border-t border-line-soft pt-3 text-[11px] text-ink-2">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <span>{t('selectedSeats')}: <bdi className="font-mono text-ink-0">{bus.seats.filter(s => selectedSeatIds.includes(s.id)).map(s => s.label).join(', ') || '—'}</bdi></span>
+                      {holding && <span className="inline-flex items-center gap-1 text-signal"><Clock3 size={12} /> {t('holding')}</span>}
+                      {holdExpiresAt && !holding && <span className="inline-flex items-center gap-1 text-ok"><Clock3 size={12} /> {t('heldUntil')} {new Date(holdExpiresAt).toLocaleTimeString(w.lang === 'ar' ? 'ar' : undefined)}</span>}
+                      {selectedSeatIds.length !== 1 && <span className="text-danger">{t('seatRequired')}</span>}
+                    </div>
                     {holdError && (
-                      <button type="button" data-testid="retry-hold" className="btn-ghost !px-2 !py-1 text-[11px]" onClick={() => setHoldAttempt((n) => n + 1)}>
-                        {t('retryHold')}
-                      </button>
+                      <div className="flex flex-wrap items-center gap-2 text-danger">
+                        <span>{holdError}</span>
+                        <button type="button" data-testid="retry-hold" className="btn-ghost !px-2 !py-1 text-[11px]" onClick={() => setHoldAttempt((n) => n + 1)}>
+                          {t('retryHold')}
+                        </button>
+                      </div>
                     )}
-                    {selectedSeatIds.length !== 1 && <span className="text-danger">{t('seatRequired')}</span>}
                   </div>
-
                 </div>
               </div>
             )

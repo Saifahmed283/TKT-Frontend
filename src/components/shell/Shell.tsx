@@ -87,7 +87,7 @@ function Clock() {
   const pad = (n: number) => String(n).padStart(2, '0')
   return (
     <span className="font-mono text-[11px] tabular-nums tracking-[0.15em] text-ink-2">
-      {pad(now.getHours())}:{pad(now.getMinutes())}:{pad(now.getSeconds())} UTC
+      {pad(now.getHours())}:{pad(now.getMinutes())}:{pad(now.getSeconds())} LOCAL
     </span>
   )
 }

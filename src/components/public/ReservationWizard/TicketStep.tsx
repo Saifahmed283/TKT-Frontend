@@ -26,8 +26,8 @@ export function TicketStep({ w }: { w: ReservationWizard }) {
           </p>
           <p className="mt-1 text-ink-2">
             {lang === 'ar'
-              ? 'منظّم الفعالية لم يفعّل وسيلة دفع لهذا الحدث بعد. هنوقف الانتقال قبل إدخال بياناتك لحد ما يتم إعداد الدفع.'
-              : 'The event organizer has not enabled a payment method for this event. Booking is paused before collecting your details until payment is configured.'}
+              ? 'منظّم الفعالية لم يفعّل وسيلة دفع لهذا الحدث بعد. الباقات المدفوعة متوقفة مؤقتًا، والباقات المجانية متاحة للحجز.'
+              : 'The event organizer has not enabled a payment method for this event. Paid ticket options are paused until payment is configured; free tickets can still be booked.'}
           </p>
         </div>
       )}
@@ -51,7 +51,7 @@ export function TicketStep({ w }: { w: ReservationWizard }) {
               disabled={disabled}
               aria-pressed={active}
               onClick={() => { setTicketTypeId(tt.id); setSelectedSeatIds([]); setHoldExpiresAt(null) }}
-              className={`relative overflow-hidden border p-3 text-start transition-all ${active ? 'border-signal/60 bg-signal/10 shadow-[inset_3px_0_0_var(--color-signal)]' : 'border-line-soft bg-elevated/20 hover:border-signal/30'} ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
+              className={`relative overflow-hidden border p-3 text-start transition-all ${active ? 'border-signal/60 bg-signal/10 shadow-[inset_3px_0_0_var(--color-signal)]' : 'border-line-soft bg-elevated/20 hover:border-signal/30'} ${disabled ? 'cursor-not-allowed opacity-60' : ''}`}
             >
               <span className="flex items-center justify-between gap-2 text-[13px] font-medium text-ink-0">
                 <span className="truncate">{tt.name}</span>
