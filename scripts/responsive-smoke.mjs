@@ -1,7 +1,7 @@
 import { chromium } from '@playwright/test'
 
 const baseURL = process.env.TKT_PREVIEW_URL ?? 'http://127.0.0.1:4173'
-const routes = ['/', '/upcoming', '/past', '/about', '/contact', '/login', '/app', '/reservation/TKT-RESPONSIVE-CHECK']
+const routes = ['/', '/upcoming', '/past', '/about', '/contact', '/login', '/app', '/reservation/TKT-RESPONSIVE-CHECK', '/my-ticket']
 const viewports = [
   { name: 'small-mobile', width: 360, height: 800 },
   { name: 'mobile', width: 390, height: 844 },
@@ -33,6 +33,32 @@ try {
   } else {
     console.log('PASS sitemap.xml content and content type')
   }
+  const manifestResponse = await utilityContext.request.get(new URL('/manifest.webmanifest', baseURL).toString())
+  const manifestText = await manifestResponse.text()
+  if (!manifestResponse.ok() || !manifestText.includes('"start_url": "/my-ticket"') || !manifestText.includes('"display": "standalone"')) {
+    console.error('FAIL manifest.webmanifest: expected an installable standalone TKT ticket app')
+    failures++
+  } else {
+    console.log('PASS PWA manifest and standalone ticket start URL')
+  }
+
+  const workerResponse = await utilityContext.request.get(new URL('/sw.js', baseURL).toString())
+  const workerText = await workerResponse.text()
+  if (!workerResponse.ok() || !workerText.includes('PRECACHE_STATIC') || !workerText.includes("url.pathname.startsWith('/api/')") || !workerText.includes("url.pathname.startsWith('/public/')")) {
+    console.error('FAIL sw.js: expected static asset precaching without caching private API traffic')
+    failures++
+  } else {
+    console.log('PASS PWA service worker excludes private API responses')
+  }
+
+  const iconResponse = await utilityContext.request.get(new URL('/apple-touch-icon.png', baseURL).toString())
+  if (!iconResponse.ok() || !iconResponse.headers()['content-type']?.includes('image/png') || (await iconResponse.body()).length < 100) {
+    console.error('FAIL apple-touch-icon.png: expected a valid home-screen PNG icon')
+    failures++
+  } else {
+    console.log('PASS Apple home-screen icon is served as PNG')
+  }
+
   await utilityContext.close()
   for (const viewport of viewports) {
     const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height }, deviceScaleFactor: viewport.width <= 390 ? 2 : 1, hasTouch: viewport.name.startsWith('tablet') })
@@ -100,7 +126,7 @@ try {
       } else if (!validAppPath || metrics.pathname !== expectedPath || new URL(metrics.canonical, baseURL).pathname !== expectedPath) {
         console.error(`FAIL ${viewport.name} ${route}: current route or canonical URL is incorrect (path=${metrics.pathname}, canonical=${metrics.canonical})`)
         failures++
-      } else if ((route.startsWith('/app') || route.startsWith('/reservation/') || route === '/login') && metrics.robots !== 'noindex, nofollow') {
+      } else if ((route.startsWith('/app') || route.startsWith('/reservation/') || route === '/my-ticket' || route === '/login') && metrics.robots !== 'noindex, nofollow') {
         console.error(`FAIL ${viewport.name} ${route}: private route must be noindex, nofollow`)
         failures++
       } else if (route === '/' && metrics.mainCount !== 1) {
@@ -153,4 +179,4 @@ try {
   await browser.close()
 }
 if (failures) throw new Error(`Responsive smoke test found ${failures} failure(s)`)
-console.log(`Responsive smoke passed: ${viewports.length} viewports × ${routes.length} public routes, plus reduced-motion check`)
+console.log(`Responsive smoke passed: ${viewports.length} viewports × ${routes.length} routes, plus PWA assets and reduced-motion checks`)
