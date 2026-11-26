@@ -260,6 +260,9 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
       // when the wizard later unmounts.
       activeSeatHoldRef.current = null
       rememberReservationAccessToken(data.reservationCode, data.accessToken)
+      // Start status polling immediately so the async QR issuance (free tickets)
+      // and payment approval (paid tickets) are reflected in the result screen.
+      setCheckingCode(data.reservationCode)
       setDone(data)
       setExistingReservation(null)
       void qc.invalidateQueries({ queryKey: ['public-events'] })
