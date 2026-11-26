@@ -14,7 +14,7 @@ self.addEventListener('message', (event) => {
   if (event.data?.type !== 'PRECACHE_STATIC' || !Array.isArray(event.data.urls)) return
   const urls = [...new Set(event.data.urls)]
     .filter((value) => typeof value === 'string' && value.startsWith('/') && !value.startsWith('/api/') && !value.startsWith('/public/'))
-    .filter((value) => /\\.(?:js|css|png|svg|webp|woff2?)$/i.test(value))
+    .filter((value) => /\.(?:js|css|png|svg|webp|woff2?)$/i.test(value))
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) =>
       Promise.allSettled(urls.map((value) => cache.add(value))),

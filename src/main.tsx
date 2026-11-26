@@ -54,7 +54,7 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
               const url = new URL(entry.name)
               if (url.origin !== window.location.origin) return null
               if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/public/')) return null
-              return /\\.(?:js|css|png|svg|webp|woff2?)$/i.test(url.pathname) ? url.pathname : null
+              return /\.(?:js|css|png|svg|webp|woff2?)$/i.test(url.pathname) ? url.pathname : null
             } catch {
               return null
             }
