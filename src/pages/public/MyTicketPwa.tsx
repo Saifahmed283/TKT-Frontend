@@ -35,7 +35,7 @@ function formatDate(value: string, lang: string, timezone: string) {
 export default function MyTicketPwaPage() {
   const { lang, toggle } = useLanguage()
   const isAr = lang === 'ar'
-  const [code, setCode] = useState(() => new URLSearchParams(window.location.search).get('code') ?? loadSaved()?.reservationCode ?? '')
+  const [code, setCode] = useState(() => new URLSearchParams(window.location.hash.replace(/^#/, '')).get('code') ?? loadSaved()?.reservationCode ?? '')
   const initialSaved = loadSaved()
   const matchingSaved = initialSaved && (!code || initialSaved.reservationCode === code) ? initialSaved : null
   const [ticket, setTicket] = useState<TicketData | null>(matchingSaved)

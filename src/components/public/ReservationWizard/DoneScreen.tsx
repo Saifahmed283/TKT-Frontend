@@ -59,7 +59,7 @@ export function DoneScreen({ w, onClose }: { w: ReservationWizard; onClose: () =
             </div>
           )}
           {done.approval === 'APPROVED' && done.qr && (
-        <a href={`/my-ticket?code=${encodeURIComponent(done.reservationCode)}`} className="inline-flex w-full items-center justify-center gap-2 border border-signal/30 bg-signal/8 px-4 py-3 text-xs font-semibold text-signal transition-colors hover:bg-signal/15">
+        <a href={`/my-ticket#code=${encodeURIComponent(done.reservationCode)}`} className="inline-flex w-full items-center justify-center gap-2 border border-signal/30 bg-signal/8 px-4 py-3 text-xs font-semibold text-signal transition-colors hover:bg-signal/15">
           <QrCode size={15} /> {lang === 'ar' ? 'افتح تذكرتي على الهاتف' : 'Open my ticket on phone'}
         </a>
       )}
