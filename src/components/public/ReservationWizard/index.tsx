@@ -30,22 +30,49 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
               </div>
             </div>
           )}
-          <div className="flex flex-wrap items-center gap-2 border-b border-line-soft pb-4">
-            {steps.map((s, i) => {
-              const Icon = s.icon
-              return (
-                <button
-                  key={s.id}
-                  type="button"
-                  disabled={i > activeStep}
-                  onClick={() => w.setStepIndex(i)}
-                  className={`inline-flex items-center gap-1.5 border px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] ${i === activeStep ? 'border-signal/40 bg-signal/10 text-signal' : i < activeStep ? 'border-ok/30 text-ok' : 'border-line-soft text-ink-3'}`}
-                >
-                  <Icon size={12} /> {i + 1}. {s.label}
-                </button>
-              )
-            })}
-          </div>
+          <section className="space-y-3 border-b border-line-soft pb-4" aria-label={lang === 'ar' ? 'تقدم الحجز' : 'Reservation progress'}>
+            <div className="flex items-end justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.16em] text-signal">
+                  {lang === 'ar' ? 'الخطوة' : 'Step'} {activeStep + 1} / {steps.length}
+                </p>
+                <p className="mt-1 truncate text-sm font-semibold text-ink-0" data-testid="wizard-current-step">{steps[activeStep]?.label}</p>
+              </div>
+              <span className="shrink-0 font-mono text-[10px] tabular-nums text-ink-3">
+                {Math.round(((activeStep + 1) / steps.length) * 100)}%
+              </span>
+            </div>
+            <div
+              role="progressbar"
+              aria-label={lang === 'ar' ? 'تقدم الحجز' : 'Booking progress'}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(((activeStep + 1) / steps.length) * 100)}
+              className="h-1.5 overflow-hidden rounded-full bg-line-soft"
+            >
+              <div
+                className="h-full rounded-full bg-signal transition-[width] duration-300"
+                style={{ width: ((activeStep + 1) / steps.length) * 100 + '%' }}
+              />
+            </div>
+            <div className="hidden flex-wrap items-center gap-2 sm:flex">
+              {steps.map((step, index) => {
+                const Icon = step.icon
+                return (
+                  <button
+                    key={step.id}
+                    type="button"
+                    disabled={index > activeStep}
+                    aria-current={index === activeStep ? 'step' : undefined}
+                    onClick={() => w.setStepIndex(index)}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-medium transition-colors disabled:cursor-default ${index === activeStep ? 'border-signal/40 bg-signal/10 text-signal' : index < activeStep ? 'border-ok/30 text-ok hover:border-ok/50' : 'border-line-soft text-ink-3'}`}
+                  >
+                    <Icon size={12} /> {step.label}
+                  </button>
+                )
+              })}
+            </div>
+          </section>
 
           {activeStep >= 1 && (
             <div data-testid="wizard-summary" className="flex flex-wrap items-center justify-between gap-2 border border-line-soft bg-elevated/20 px-3 py-2 text-[11px] text-ink-2">
