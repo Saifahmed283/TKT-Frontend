@@ -284,7 +284,7 @@ test.describe('TKT E2E — public site', () => {
     await expect(dialog).toBeHidden()
   })
 
-  test('pending reservation auto-polls until approval', async ({ page, request }) => {
+  test('pending reservation auto-polls until approval in the five-stage wizard', async ({ page, request }) => {
     const name = `E2E Auto Poll ${Date.now()}`
     await seedPublicEvent(request, name)
     const code = 'TKT-E2E-POLL'
@@ -306,18 +306,11 @@ test.describe('TKT E2E — public site', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           data: {
-            reservationCode: code,
-            ticketId: 'poll-ticket',
-            attendeeId: 'poll-attendee',
-            approval: approved ? 'APPROVED' : 'PENDING',
-            paymentStatus: 'NOT_REQUIRED',
-            deliveryStatus: null,
-            ticketStatus: 'CONFIRMED',
-            price: '0',
-            ticketName: 'General Admission',
-            attendeeName: 'E2E Poller',
-            qr: approved ? 'TKT-E2E-POLL-QR' : null,
-            seats: [],
+            reservationCode: code, ticketId: 'poll-ticket', attendeeId: 'poll-attendee',
+            approval: approved ? 'APPROVED' : 'PENDING', paymentStatus: 'NOT_REQUIRED',
+            deliveryStatus: null, ticketStatus: 'CONFIRMED', price: '0',
+            ticketName: 'General Admission', attendeeName: 'E2E Poller',
+            qr: approved ? 'TKT-E2E-POLL-QR' : null, seats: [],
           },
         }),
       })
@@ -331,7 +324,11 @@ test.describe('TKT E2E — public site', () => {
     await page.getByLabel(/Full name|الاسم/i).fill('E2E Poller')
     await page.getByLabel(/Email|البريد/i).fill(`e2e.poll+${Date.now()}@example.com`)
     await page.getByTestId('reservation-phone').fill('+20 100 000 0002')
+    await page.getByTestId('reservation-identity').fill('29901011234567')
     await page.getByTestId('wizard-next').click()
+    await page.getByTestId('wizard-next').click()
+    await page.getByTestId('wizard-next').click()
+    await expect(page.getByTestId('wizard-review')).toBeVisible()
     await page.getByTestId('wizard-submit').click()
 
     await expect(page.getByText(/Reservation pending|قيد المراجعة/i).first()).toBeVisible({ timeout: 10_000 })
@@ -339,7 +336,7 @@ test.describe('TKT E2E — public site', () => {
     await expect(page.getByText(/Ticket ready|تذكرتك جاهزة/i).first()).toBeVisible({ timeout: 15_000 })
   })
 
-  test('seat hold failure offers a retry that enables the wizard', async ({ page, request }) => {
+  test('seat hold failure offers a retry inside the ticket-selection stage', async ({ page, request }) => {
     const name = `E2E Hold Retry ${Date.now()}`
     await seedPaidTransportEvent(request, name)
     let holdCalls = 0
@@ -366,11 +363,7 @@ test.describe('TKT E2E — public site', () => {
     const card = await findUpcomingEvent(page, name)
     await card.getByRole('button', { name: /Reserve|احجز/i }).first().click()
     await page.getByTestId('ticket-option').filter({ hasText: 'Conference + Bus' }).click()
-    await page.getByTestId('wizard-next').click()
-    await page.getByLabel(/Full name|الاسم/i).fill('E2E Hold Retry')
-    await page.getByLabel(/Email|البريد/i).fill(`e2e.hold+${Date.now()}@example.com`)
-    await page.getByTestId('reservation-phone').fill('+20 100 000 0003')
-    await page.getByTestId('wizard-next').click()
+    await expect(page.getByTestId('wizard-step-seats')).toBeVisible()
     await page.getByTestId('seat-option').first().click()
 
     await expect(page.getByTestId('retry-hold')).toBeVisible({ timeout: 10_000 })
@@ -378,6 +371,9 @@ test.describe('TKT E2E — public site', () => {
     await page.getByTestId('retry-hold').click()
     await expect.poll(() => holdCalls).toBeGreaterThanOrEqual(2)
     await expect(page.getByTestId('wizard-next')).toBeEnabled({ timeout: 10_000 })
+    await page.getByTestId('wizard-next').click()
+    await expect(page.getByTestId('wizard-step-details')).toBeVisible()
     await expect(page.getByTestId('wizard-summary')).toContainText(/Held until|محجوز حتى/i)
   })
+
 })
