@@ -35,6 +35,23 @@ type Summary = {
 
 const fmtMoney = (n: number, currency = 'EGP') => `${currency} ${n.toLocaleString()}`
 
+// Uploaded proofs are short-lived signed links served by our own API. Only
+// those are safe to embed; arbitrary external URLs stay as plain links so an
+// admin never silently loads an attacker-controlled image while reviewing.
+type ProofSource = { url: string; trusted: boolean }
+
+function proofSource(raw: unknown): ProofSource | null {
+  const url = typeof raw === 'string' ? raw.trim() : ''
+  if (!url) return null
+  if (url.startsWith('/api/uploads/blob/') || url.startsWith('/uploads/')) return { url, trusted: true }
+  if (/^https?:\/\//i.test(url) || url.startsWith('data:image/')) return { url, trusted: false }
+  return null
+}
+
+function isImageProof(url: string) {
+  return /\.(jpe?g|png|webp|gif|svg|avif)(\?|$)/i.test(url)
+}
+
 export function PaymentsPage() {
   const { eventId = '' } = useParams()
   const qc = useQueryClient()
@@ -42,6 +59,7 @@ export function PaymentsPage() {
   const [providerOpen, setProviderOpen] = useState(false)
   const [deleteProviderId, setDeleteProviderId] = useState<string | null>(null)
   const [refLookup, setRefLookup] = useState('')
+  const [reviewTarget, setReviewTarget] = useState<PendingPayment | null>(null)
   const debouncedRef = useDebouncedValue(refLookup)
   const [form, setForm] = useState({ name: '', accountName: '', accountNumber: '', paymentPhone: '', paymentLink: '', instructions: '', imageUrl: '', fetchUrlTemplate: '', fetchAuthHeader: '', fetchAuthValue: '' })
   const [fetchResult, setFetchResult] = useState<{ message: string; localMatchCount: number; external: any; providerName?: string } | null>(null)
@@ -70,7 +88,7 @@ export function PaymentsPage() {
         headers: { 'Idempotency-Key': crypto.randomUUID() },
         body: JSON.stringify({ action }),
       }),
-    onSuccess: (_, v) => { toast.success(v.action === 'CONFIRM' ? 'Payment confirmed' : 'Payment rejected'); refresh() },
+    onSuccess: (_, v) => { toast.success(v.action === 'CONFIRM' ? 'Payment confirmed' : 'Payment rejected'); setReviewTarget(null); refresh() },
     onError: (e: any) => toast.error(e?.message ?? 'Review failed'),
   })
 
@@ -99,6 +117,8 @@ export function PaymentsPage() {
   const providers = providersQ.data ?? []
   const pending = pendingQ.data ?? []
   const summary = summaryQ.data
+  const reviewMeta = (reviewTarget?.metadata ?? {}) as Record<string, unknown>
+  const reviewProof = proofSource(reviewMeta.paymentProofUrl ?? reviewTarget?.paymentProofUrl)
 
   return (
     <div>
@@ -181,16 +201,17 @@ export function PaymentsPage() {
             {pending.map(p => {
               const meta = (p.metadata ?? {}) as Record<string, unknown>
               const paymentStatus = String(p.paymentStatus ?? meta.paymentStatus ?? 'PENDING')
+              const hasProof = Boolean(proofSource(meta.paymentProofUrl ?? p.paymentProofUrl))
               return (
                 <tr key={p.id} data-testid="pending-payment-row">
                   <Td><div className="font-medium text-ink">{p.reservationCode ?? p.id.slice(0, 8)}</div><div className="text-[11px] text-ink-3">{p.ticketType?.name}</div></Td>
                   <Td><div>{p.attendee?.name}</div><div className="text-[11px] text-ink-3">{p.attendee?.email ?? p.attendee?.phone}</div></Td>
                   <Td>{p.price}</Td>
                   <Td className="font-mono text-xs">{String(meta.paymentReference ?? p.paymentReference ?? '—')}</Td>
-                  <Td>{(meta.paymentProofUrl || p.paymentProofUrl) ? <a className="inline-flex items-center gap-1 text-signal hover:underline" href={String(meta.paymentProofUrl || p.paymentProofUrl)} target="_blank" rel="noreferrer"><ExternalLink size={12} /> Proof</a> : '—'}</Td>
+                  <Td>{hasProof ? <button type="button" data-testid="payment-proof-open" onClick={() => setReviewTarget(p)} className="inline-flex items-center gap-1 text-signal hover:underline"><ExternalLink size={12} /> Preview proof</button> : <span className="text-ink-3">No file</span>}</Td>
                   <Td><Badge tone={paymentStatus === 'CONFIRMED' ? 'ok' : 'warn'}>{paymentStatus}</Badge></Td>
                   <Td><div className="flex gap-2">
-                    <Button data-testid="payment-confirm" size="sm" variant="ghost" disabled={review.isPending} loading={review.isPending} onClick={() => review.mutate({ ticketId: p.id, action: 'CONFIRM' })}><Check size={14} /> Confirm</Button>
+                    <Button data-testid="payment-confirm" size="sm" variant="ghost" disabled={review.isPending} onClick={() => setReviewTarget(p)}><Check size={14} /> Review & confirm</Button>
                     <Button data-testid="payment-reject" size="sm" variant="ghost" className="text-danger" disabled={review.isPending} loading={review.isPending} onClick={() => review.mutate({ ticketId: p.id, action: 'REJECT' })}><X size={14} /> Reject</Button>
                   </div></Td>
                 </tr>
@@ -244,6 +265,60 @@ export function PaymentsPage() {
       </Dialog>
 
       {deleteProviderId && <Dialog open={!!deleteProviderId} onClose={() => setDeleteProviderId(null)} title="Delete provider"><p className="text-sm text-ink-2">This payment provider will be removed from the event.</p><div className="mt-4 flex justify-end gap-2"><Button variant="ghost" onClick={() => setDeleteProviderId(null)}>Cancel</Button><Button className="text-danger" variant="ghost" loading={deleteProvider.isPending} onClick={() => { if (deleteProviderId) deleteProvider.mutate(deleteProviderId) }}>Delete</Button></div></Dialog>}
+
+      <Dialog
+        open={!!reviewTarget}
+        onClose={() => { if (!review.isPending) setReviewTarget(null) }}
+        title="Review payment proof"
+        wide
+      >
+        {reviewTarget && (
+          <div data-testid="payment-proof-dialog" className="space-y-4">
+            <p className="text-[13px] leading-relaxed text-ink-2">
+              Inspect the submitted proof before confirming. Confirming this payment immediately approves the reservation and emails the QR ticket.
+            </p>
+            <dl className="grid gap-3 border border-line-soft bg-elevated/30 p-3 sm:grid-cols-2">
+              <div><dt className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3">Reservation</dt><dd className="mt-0.5 text-[13px] text-ink">{reviewTarget.reservationCode ?? reviewTarget.id.slice(0, 8)}</dd></div>
+              <div><dt className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3">Attendee</dt><dd className="mt-0.5 text-[13px] text-ink">{reviewTarget.attendee?.name ?? '—'}</dd></div>
+              <div><dt className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3">Amount</dt><dd className="mt-0.5 text-[13px] text-ink">{reviewTarget.price}</dd></div>
+              <div><dt className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3">Reference</dt><dd className="mt-0.5 break-all font-mono text-[12px] text-ink">{String(reviewMeta.paymentReference ?? reviewTarget.paymentReference ?? '—')}</dd></div>
+            </dl>
+            {reviewProof ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3">Submitted proof</span>
+                  <a href={reviewProof.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-signal hover:underline"><ExternalLink size={12} /> Open full size</a>
+                </div>
+                {reviewProof.trusted ? (
+                  <div className="flex min-h-64 items-center justify-center overflow-hidden border border-line-soft bg-canvas p-3">
+                    {isImageProof(reviewProof.url) ? (
+                      <img data-testid="payment-proof-preview" src={reviewProof.url} alt={`Payment proof for reservation ${reviewTarget.reservationCode ?? reviewTarget.id}`} className="max-h-[55vh] max-w-full object-contain" />
+                    ) : (
+                      <object data-testid="payment-proof-preview" data={reviewProof.url} aria-label="Submitted payment proof" className="h-[55vh] w-full">
+                        <a href={reviewProof.url} target="_blank" rel="noreferrer" className="text-signal hover:underline">Open proof in a new tab</a>
+                      </object>
+                    )}
+                  </div>
+                ) : (
+                  <div className="border border-line-soft bg-canvas p-4">
+                    <p className="text-[13px] text-ink-2">This proof was submitted as an external link. Open it to inspect before confirming.</p>
+                    <a data-testid="payment-proof-preview" href={reviewProof.url} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-signal hover:underline"><ExternalLink size={12} /> Open external proof</a>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div data-testid="payment-proof-missing" className="border border-amber/30 bg-amber/5 p-4 text-[13px] text-ink-2">
+                No proof file was uploaded for this reservation. Only payment details were submitted — check the reference before confirming.
+              </div>
+            )}
+            <div className="flex flex-wrap justify-end gap-2 border-t border-line-soft pt-4">
+              <Button variant="ghost" disabled={review.isPending} onClick={() => setReviewTarget(null)}>Cancel</Button>
+              <Button data-testid="payment-review-reject" size="sm" variant="ghost" className="!text-danger" disabled={review.isPending} loading={review.isPending && review.variables?.action === 'REJECT'} onClick={() => review.mutate({ ticketId: reviewTarget.id, action: 'REJECT' })}><X size={14} /> Reject payment</Button>
+              <Button data-testid="payment-review-confirm" size="sm" disabled={review.isPending} loading={review.isPending && review.variables?.action === 'CONFIRM'} onClick={() => review.mutate({ ticketId: reviewTarget.id, action: 'CONFIRM' })}><Check size={14} /> Confirm &amp; approve reservation</Button>
+            </div>
+          </div>
+        )}
+      </Dialog>
     </div>
   )
 }

@@ -23,14 +23,14 @@ Set before running `npm run test:e2e`:
 | 4 | Phone required | Leave phone empty or short on details step and try to continue | Inline phone error; Next disabled; cannot advance | `public.spec.ts` |
 | 5 | Exactly one seat for transport | Select 0 seats, then 2 seats, then 1 seat | 0 and 2 keep Next disabled; 1 seat enables Next/review | `public.spec.ts` |
 | 6 | Review before submit | Fill valid details → click Next until review → intercept `POST /public/events/*/reservations` | No reservation POST before review; review summary shows name, email, phone, ticket, seats, total; Back preserves values; submit from review only | `public.spec.ts` |
-| 7 | Payment CONFIRM fully approves and issues QR | Create paid reservation with reference/proof → admin `/app/events/:id/payments` → `Confirm` | Payment `CONFIRMED`, reservation `APPROVED`, attendee confirmed, QR issued; QR visible on reservation and in Credentials dialog | `reservations-api.test.ts`; `pending-payment-row`, `payment-confirm` |
-| 8 | Payment REJECT permanently purges reservation | Same setup → `Reject` | Payment rejected; ticket, attendee, credentials, access logs, delivery attempts, seat holds removed; proof file deleted; no QR issued or delivery attempt recorded | `reservations-api.test.ts`; `pending-payment-row`, `payment-reject` |
+| 7 | Payment review previews proof before approving | Create paid reservation with reference/proof → admin `/app/events/:id/payments` → `Review & confirm` → preview dialog → `Confirm & approve reservation` | Uploaded proof is shown in the dialog with booking details; no review call is made by the row button alone; payment `CONFIRMED`, reservation `APPROVED`, attendee confirmed, QR issued | `reservations-api.test.ts`; `pending-payment-row`, `payment-confirm`, `payment-proof-dialog`, `payment-proof-preview`, `payment-review-confirm` |
+| 8 | Payment REJECT permanently purges reservation | Same setup → `Reject` from the row or the review dialog | Payment rejected; ticket, attendee, credentials, access logs, delivery attempts, seat holds removed; proof file deleted; no QR issued or delivery attempt recorded | `reservations-api.test.ts`; `pending-payment-row`, `payment-reject`, `payment-review-reject` |
 | 9 | Paid manual approval blocked while payment pending | Paid reservation with `paymentStatus=PENDING` → admin `/app/events/:id/reservations` → `Approve` | Approval refused (`manual-approve` disabled or API 409); no credential/QR issued; remains pending | `reservations-api.test.ts`; `manual-approve` added |
 | 10 | Pending attendees hidden by default | Seed pending reservation → open `/app/events/:id/attendees` with no filters | Pending attendee absent by default; appears only when pending status is explicitly selected | `reservations-api.test.ts`; UI scope selector added |
 | 11 | Credential visibility | Approve reservation → `/app/events/:id/credentials` → open QR dialog | Short code visible in list; signed QR payload hidden until reveal and shown only for issued credentials | `credential-reveal` / `qr-payload` added |
 | 12 | Dashboard route smoke | Login as admin → visit `/app`, `/app/events`, `/app/organizations`, `/app/profile`, `/app/guide`, `/app/scanner` and every event module route | No `Access denied`, `Could not load`, runtime error, or 5xx | `dashboard-smoke.spec.ts`, `dashboard-audit.spec.ts` |
 | 13 | Auth + negative login | Login as staff/admin via `/login`; submit admin email with deliberately invalid password | Valid credentials reach `/app`; invalid password shows `Invalid email or password`; missing env vars fail before login | `app.spec.ts`, `journeys.spec.ts`, `auth.ts` |
-| 14 | Pending payments list | Create paid reservation with explicit or metadata `paymentStatus=PENDING` → open `/app/events/:id/payments` | Reservation appears under `pending-payments` with status and confirm/reject actions; actions disabled while reviewing | `reservations-api.test.ts`; `pending-payments`, `pending-payment-row` |
+| 14 | Pending payments list | Create paid reservation with explicit or metadata `paymentStatus=PENDING` → open `/app/events/:id/payments` | Reservation appears under `pending-payments` with status and review actions; `Preview proof` and `Review & confirm` open the proof dialog; actions disabled while reviewing | `reservations-api.test.ts`; `pending-payments`, `pending-payment-row`, `payment-proof-open` |
 | 15 | Public payment proof upload | Submit multipart proof to `/uploads/proof` without auth; submit to `/uploads` without auth | Public endpoint returns a stored `/uploads/...` URL; authenticated endpoint denies anonymous callers | `reservations-api.test.ts`; `payment-proof` |
 | 16 | Startup cleanup of stale rejected/cancelled reservations | Seed rejected/cancelled public reservations → restart backend outside tests | Stale tickets, attendees, credentials, access logs, seat holds, and uploaded proofs are purged; test runs are unaffected | `reservations-api.test.ts`; `purge.ts` |
 
@@ -47,8 +47,9 @@ Set before running `npm run test:e2e`:
 
 - `manual-approve` on paid pending reservations; disabled until payment proof is confirmed.
 - `pending-payments` lists metadata/explicit pending payments; `pending-payment-row` exposes status.
-- `payment-confirm` approves, issues QR, and closes the pending row.
-- `payment-reject` purges the reservation and closes the pending row.
+- `payment-proof-open` and `payment-confirm` open `payment-proof-dialog`; `payment-proof-preview` renders the uploaded image/PDF, or `payment-proof-missing` warns when only a reference was submitted.
+- `payment-review-confirm` approves, issues QR, and closes the pending row; `payment-review-reject` purges the reservation and closes the dialog.
+- `payment-reject` on the row purges the reservation without opening the preview.
 - `credential-reveal` opens the credential QR dialog.
 - `qr-payload` is present only after reveal, for issued credentials.
 
