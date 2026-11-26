@@ -111,7 +111,7 @@ test.describe('TKT E2E — public site', () => {
     await expect(page.getByText(/Reservations open|الحجز مفتوح|Reserve|احجز/i).first()).toBeVisible({ timeout: 20_000 })
   })
 
-  test('free reserve wizard requires phone, review, then confirms with a code', async ({ page, request }) => {
+  test('free reserve wizard follows five clear stages and validates attendee data', async ({ page, request }) => {
     const name = `E2E Film Nights ${Date.now()}`
     await seedPublicEvent(request, name)
     const email = `e2e.tester+${Date.now()}@example.com`
@@ -121,27 +121,47 @@ test.describe('TKT E2E — public site', () => {
     await expect(page.getByTestId('wizard-step-ticket')).toBeVisible()
     await page.getByTestId('ticket-option').first().click()
     await page.getByTestId('wizard-next').click()
+
     await expect(page.getByTestId('wizard-step-details')).toBeVisible()
     await page.getByLabel(/Full name|الاسم/i).fill('E2E Tester')
     await page.getByLabel(/Email|البريد/i).fill(email)
     await page.getByTestId('reservation-phone').fill('123')
     await expect(page.getByTestId('wizard-next')).toBeDisabled()
     await page.getByTestId('reservation-phone').fill('+20 100 000 0000')
+    await page.getByTestId('reservation-identity').fill('29901011234567')
     await page.getByTestId('reservation-notes').fill('Window seat if possible')
     await page.getByTestId('wizard-next').click()
+
+    await expect(page.getByTestId('wizard-step-payment')).toBeVisible()
+    await expect(page.getByTestId('wizard-step-payment')).toContainText('No payment required')
+    await page.getByTestId('wizard-next').click()
+    await expect(page.getByTestId('wizard-step-design')).toBeVisible()
+    await expect(page.getByTestId('ticket-designer')).toBeVisible()
+    await page.getByTestId('ticket-template-editorial-wide').click()
+    await page.getByTestId('wizard-next').click()
+
     await expect(page.getByTestId('wizard-review')).toBeVisible()
     await expect(page.getByTestId('wizard-review')).toContainText('E2E Tester')
     await expect(page.getByTestId('wizard-review')).toContainText('+20 100 000 0000')
+    await expect(page.getByTestId('wizard-review')).toContainText('29901011234567')
+
+    // Back navigation must preserve every entered field.
+    await page.getByTestId('wizard-back').click()
+    await expect(page.getByTestId('wizard-step-design')).toBeVisible()
+    await page.getByTestId('wizard-back').click()
+    await expect(page.getByTestId('wizard-step-payment')).toBeVisible()
     await page.getByTestId('wizard-back').click()
     await expect(page.getByTestId('wizard-step-details')).toBeVisible()
     await expect(page.getByTestId('reservation-phone')).toHaveValue('+20 100 000 0000')
+    await expect(page.getByTestId('reservation-identity')).toHaveValue('29901011234567')
+    await page.getByTestId('wizard-next').click()
+    await page.getByTestId('wizard-next').click()
     await page.getByTestId('wizard-next').click()
     await page.getByTestId('wizard-submit').click()
     await expect(page.getByText(/Reservation confirmed|Reservation pending|Ticket ready|تم تأكيد|قيد المراجعة/i).first()).toBeVisible({ timeout: 25_000 })
     await expect(page.getByText(/Reservation code|رمز الحجز|TKT-/i).first()).toBeVisible({ timeout: 25_000 })
   })
-
-  test('mobile transport reservation filters packages, customizes its ticket, and books one seat', async ({ page, request }) => {
+  test('mobile transport reservation embeds seat selection and requires payment proof', async ({ page, request }) => {
     const name = `E2E Transport Summit ${Date.now()}`
     await seedPaidTransportEvent(request, name)
     const email = `e2e.transport+${Date.now()}@example.com`
@@ -159,42 +179,54 @@ test.describe('TKT E2E — public site', () => {
     await page.getByTestId('ticket-filter-bus').click()
     await page.getByTestId('ticket-option').filter({ hasText: 'Conference + Bus' }).click()
 
-    await expect(page.getByTestId('ticket-designer')).toBeVisible()
-    await page.getByTestId('ticket-template-editorial-wide').click()
-    await expect(page.getByTestId('ticket-template-editorial-wide')).toHaveAttribute('aria-pressed', 'true')
-    await page.getByTestId('ticket-palette-rose-noir').click()
-    await expect(page.getByTestId('ticket-palette-rose-noir')).toHaveAttribute('aria-pressed', 'true')
-    await page.getByTestId('wizard-next').click()
-
-    // The mobile seat picker is available before asking for attendee details.
+    // The seat map stays within step one, directly under the transport ticket.
     await expect(page.getByTestId('wizard-step-seats')).toBeVisible()
     await expect(page.getByTestId('mobile-seat-picker')).toBeVisible()
     await expect(page.getByTestId('wizard-next')).toBeDisabled()
     await page.locator('[data-testid^="mobile-seat-"]').first().click()
-    await expect(page.getByTestId('wizard-next')).toBeEnabled()
+    await expect(page.getByTestId('wizard-next')).toBeEnabled({ timeout: 10_000 })
     await page.getByTestId('wizard-next').click()
 
     await expect(page.getByTestId('wizard-step-details')).toBeVisible()
     await page.getByLabel(/Full name|الاسم/i).fill('E2E Transit')
     await page.getByLabel(/Email|البريد/i).fill(email)
     await page.getByTestId('reservation-phone').fill('+20 100 000 0001')
+    await page.getByTestId('reservation-identity').fill('29901011234567')
     await page.getByTestId('wizard-next').click()
 
     await expect(page.getByTestId('wizard-step-payment')).toBeVisible()
     await expect(page.getByTestId('payment-instructions')).toContainText('Transfer the total to the account')
     await expect(page.getByTestId('wizard-next')).toBeDisabled()
     await page.getByTestId('payment-reference').fill('E2E-TRANSFER-REF')
+    await page.route('**/uploads/proof', async (route) => {
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: { url: '/api/uploads/blob/uploads/e2e-receipt.png?token=preview', path: 'uploads/e2e-receipt.png', name: 'e2e-receipt.png', mimeType: 'image/png', size: 128 } }),
+      })
+    })
+    await page.locator('input[type="file"]').last().setInputFiles({
+      name: 'e2e-receipt.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from('mock receipt image'),
+    })
+    await expect(page.getByTestId('wizard-next')).toBeEnabled({ timeout: 10_000 })
+    await page.getByTestId('wizard-next').click()
+
+    await expect(page.getByTestId('wizard-step-design')).toBeVisible()
+    await page.getByTestId('ticket-template-editorial-wide').click()
+    await page.getByTestId('ticket-palette-rose-noir').click()
+    await expect(page.getByTestId('ticket-palette-rose-noir')).toHaveAttribute('aria-pressed', 'true')
     await page.getByTestId('wizard-next').click()
 
     await expect(page.getByTestId('wizard-review')).toBeVisible()
     await expect(page.getByTestId('wizard-review')).toContainText('Conference + Bus')
-    // The seat is included in the selected package and must not be charged again.
+    await expect(page.getByTestId('wizard-review')).toContainText('E2E-TRANSFER-REF')
     await expect(page.getByTestId('wizard-review')).toContainText('100')
     await page.getByTestId('wizard-submit').click()
     await expect(page.getByText(/Reservation pending|قيد المراجعة/i).first()).toBeVisible({ timeout: 25_000 })
     await expect(page.getByText(/Reservation code|رمز الحجز|TKT-/i).first()).toBeVisible({ timeout: 25_000 })
   })
-
   test('past works page shows completed and archived events', async ({ page }) => {
     await page.goto('/past')
     await expect(page.getByText(/Nights we’ve|ليالٍ|Past|Archive/i).first()).toBeVisible({ timeout: 15_000 })
