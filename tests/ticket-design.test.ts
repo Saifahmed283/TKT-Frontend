@@ -6,6 +6,7 @@ describe('ticket design payload contract', () => {
     expect(normalizeTicketDesign(DEFAULT_TICKET_DESIGN)).toEqual({
       templateId: 'signature-split',
       paletteId: 'obsidian-gold',
+      stickerId: 'none',
       panelColor: '#0B0B0C',
       accentColor: '#C8A25C',
       backgroundColor: '#F1EDE4',
@@ -24,6 +25,7 @@ describe('ticket design payload contract', () => {
     expect(normalizeTicketDesign(value)).toEqual({
       templateId: 'editorial-wide',
       paletteId: 'rose-noir',
+      stickerId: 'none',
       panelColor: '#350D24',
       accentColor: '#F22586',
       backgroundColor: '#FFF2F7',
@@ -35,15 +37,19 @@ describe('ticket design payload contract', () => {
       'paletteId',
       'panelColor',
       'templateId',
+      'stickerId',
       'textColor',
     ])
   })
 
-  it('offers the three supplied TKT color directions', () => {
+  it('offers six supplied TKT color directions', () => {
     expect(TICKET_DESIGN_PALETTES.map((palette) => palette.id)).toEqual([
       'obsidian-gold',
       'rose-noir',
       'champagne',
+      'midnight-azure',
+      'emerald-ink',
+      'lavender-silk',
     ])
   })
 })
