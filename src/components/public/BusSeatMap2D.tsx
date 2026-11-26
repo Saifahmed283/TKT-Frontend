@@ -277,6 +277,37 @@ function BusSeatMap2D({
           })}
         </svg>
       </div>
+      {missing && (
+        <div className="space-y-2 border-t border-[#ded8cc] bg-[#f7f3eb] p-3" data-testid="unmapped-seat-fallback">
+          <p className="text-[11px] font-semibold text-[#514b42]">
+            {language === 'ar' ? 'مقاعد إضافية من سجل الباص' : 'Additional seats from the bus inventory'}
+          </p>
+          <div className="grid grid-cols-4 gap-2 min-[420px]:grid-cols-5">
+            {seats.filter((seat) => !model.seats.some((placement) => placement.label === seat.label)).map((seat) => {
+              const isSelected = selected.has(seat.id)
+              const state = isSelected ? 'SELECTED' : seat.state
+              const palette = PALETTE[state] ?? PALETTE.UNAVAILABLE
+              const interactive = !disabled && canInteract?.(seat) !== false && (allowStatusSelection || seat.state === 'AVAILABLE' || isSelected)
+              return (
+                <button
+                  key={seat.id}
+                  type="button"
+                  data-testid="unmapped-seat-option"
+                  aria-label={model.name + ': ' + seat.label + ' — ' + statusLabel(state, text)}
+                  aria-pressed={isSelected}
+                  aria-disabled={!interactive}
+                  disabled={!interactive}
+                  onClick={() => activate(seat)}
+                  className="min-h-11 rounded-lg border px-2 py-2 text-xs font-bold tabular-nums disabled:cursor-not-allowed disabled:opacity-40"
+                  style={{ color: palette.text, backgroundColor: palette.fill, borderColor: palette.stroke }}
+                >
+                  {seat.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
       {!compact && (
         <footer className="tc-footer">
           <div><strong>{selectedSeatIds.length}</strong><span>{text.chosen}</span></div>
