@@ -4,7 +4,7 @@ import type { ReservationWizard } from './useReservationWizard'
 
 export function ReviewStep({ w }: { w: ReservationWizard }) {
   const {
-    t, name, email, phone, notes, selected, selectedBus, selectedProvider,
+    t, lang, name, email, phone, notes, selected, selectedBus, selectedProvider,
     paymentReference, paymentProofUrl, isPaid, totalPrice, selectedSeatIds,
   } = w
   const proofPreviewUrl = paymentProofUrl ? resolveUploadPreviewUrl(paymentProofUrl) : ''
