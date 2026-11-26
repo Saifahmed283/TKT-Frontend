@@ -91,6 +91,22 @@ describe('BusSeatMap2D', () => {
     expect(onSeatClick).toHaveBeenCalledTimes(1)
   })
 
+  it('keeps database seats visible when an older drawing has no matching placement', () => {
+    const layout = createBusLayout('mect49')
+    const seats = [...seatsFor(layout), { id: 'seat-50', label: '50', row: 14, col: 1, state: 'AVAILABLE' as const }]
+    const onSeatClick = vi.fn()
+
+    render(
+      <BusSeatMap2D layout={layout} seats={seats} selectedSeatIds={[]} onSeatClick={onSeatClick} />,
+    )
+
+    expect(screen.getAllByTestId('seat-option')).toHaveLength(49)
+    expect(screen.getByTestId('unmapped-seat-fallback')).toBeTruthy()
+    expect(screen.getByTestId('unmapped-seat-option').textContent).toBe('50')
+    fireEvent.click(screen.getByTestId('unmapped-seat-option'))
+    expect(onSeatClick).toHaveBeenCalledWith(seats[49])
+  })
+
   it('uses the canonical template registry as the single geometry source', () => {
     const mect = BUS_TEMPLATES.find((template) => template.id === 'mect49')
     expect(mect?.modelCode).toBe('TKT VOYAGER 49')

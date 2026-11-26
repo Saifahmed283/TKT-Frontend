@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Bus, ClipboardList, CreditCard, Ticket, UserRound } from 'lucide-react'
 import { api, ApiError } from '../../../lib/api'
 import { useLanguage } from '../../../lib/i18n'
-import { fetchReservationStatus, rememberReservationAccessToken, resendReservationTicket, useReservationStatus, type PublicEvent, type ReservationResult } from '../../../lib/public'
+import { DEFAULT_TICKET_DESIGN, fetchReservationStatus, normalizeTicketDesign, rememberReservationAccessToken, resendReservationTicket, useReservationStatus, type PublicEvent, type ReservationResult, type TicketDesignSelection } from '../../../lib/public'
 import { useQrDataUrl } from './shared'
 
 /**
@@ -19,6 +19,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   const [notes, setNotes] = useState('')
   const availableTypes = event.ticketTypes.filter((x) => x.isPublic !== false)
   const [ticketTypeId, setTicketTypeId] = useState(availableTypes.find((x) => !x.soldOut)?.id ?? availableTypes[0]?.id ?? '')
+  const [ticketDesign, setTicketDesign] = useState<TicketDesignSelection>(DEFAULT_TICKET_DESIGN)
   const [paymentProviderId, setPaymentProviderId] = useState(event.paymentProviders?.[0]?.id ?? '')
   const [paymentReference, setPaymentReference] = useState('')
   const [paymentProofUrl, setPaymentProofUrl] = useState<string | null>(null)
@@ -56,14 +57,15 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   const selectedProvider = event.paymentProviders?.find((p) => p.id === paymentProviderId) ?? null
   const selectedBus = buses.find(b => b.id === busId) ?? buses[0]
   const seatUnitPrice = Number(selectedBus?.seatPrice ?? 0)
-  const seatTotal = selected?.transportIncluded ? selectedSeatIds.length * (Number.isFinite(seatUnitPrice) ? seatUnitPrice : 0) : 0
+  // The bus seat is included in transport-inclusive ticket types, not an extra line item.
+  const seatTotal = 0
   const ticketPrice = Number(selected?.price ?? 0)
   const totalPrice = (Number.isFinite(ticketPrice) ? ticketPrice : 0) + seatTotal
   const isPaid = totalPrice > 0
   const steps = [
     { id: 'ticket', label: t('stepTicket'), icon: Ticket },
-    { id: 'details', label: t('stepDetails'), icon: UserRound },
     ...(selected?.transportIncluded ? [{ id: 'seats', label: t('stepSeats'), icon: Bus }] : []),
+    { id: 'details', label: t('stepDetails'), icon: UserRound },
     ...(isPaid ? [{ id: 'payment', label: t('stepPayment'), icon: CreditCard }] : []),
     { id: 'review', label: t('stepReview'), icon: ClipboardList },
   ]
@@ -229,6 +231,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
         phone: phone.trim(),
         notes: notes.trim() || undefined,
         ticketTypeId,
+        ticketDesign: normalizeTicketDesign(ticketDesign),
         paymentProviderId: isPaid && paymentProviderId ? paymentProviderId : undefined,
         paymentReference: isPaid && paymentReference.trim() ? paymentReference.trim() : undefined,
         paymentProofUrl: isPaid && paymentProofUrl ? paymentProofUrl : undefined,
@@ -338,7 +341,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   return {
     event, t, lang, qc,
     name, setName, email, setEmail, phone, setPhone, notes, setNotes,
-    availableTypes, ticketTypeId, setTicketTypeId,
+    availableTypes, ticketTypeId, setTicketTypeId, ticketDesign, setTicketDesign,
     paymentProviderId, setPaymentProviderId, paymentReference, setPaymentReference,
     paymentProofUrl, setPaymentProofUrl,
     done, checkingCode, setCheckingCode, copied, existingReservation,
