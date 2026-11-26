@@ -57,17 +57,25 @@ function CameraRig({ preset, scale, target, controls }: {
   target: Position3D
   controls: React.RefObject<any>
 }) {
-  const { camera, invalidate } = useThree()
+  const { camera, invalidate, size } = useThree()
   useEffect(() => {
     const base = PRESET_POSITIONS[preset]
-    camera.position.set(base[0] * scale, base[1] * scale, base[2] * scale)
+    const aspect = size.height > 0 ? size.width / size.height : 1
+    // Portrait viewports need a little more camera distance to fit the cabin
+    // without clipping the front/rear rows.
+    const fit = Math.min(2.1, Math.max(1, 1.02 / Math.max(aspect, 0.55)))
+    camera.position.set(
+      target[0] + base[0] * scale * fit,
+      target[1] + (base[1] - 0.85) * scale * fit,
+      target[2] + base[2] * scale * fit,
+    )
     camera.lookAt(target[0], target[1], target[2])
     if (controls.current) {
       controls.current.target.set(target[0], target[1], target[2])
       controls.current.update()
     }
     invalidate()
-  }, [preset, scale, target, camera, invalidate, controls])
+  }, [preset, scale, target, camera, invalidate, controls, size.width, size.height])
   return null
 }
 
@@ -390,7 +398,31 @@ function Scene({ model, seats, statuses, onSeatClick, preset, roof, controls, di
   canInteract?: (seat: PublicSeat) => boolean
 }) {
   const project = useMemo(() => cabinProjection(model), [model])
-  const placements = useMemo(() => new Map(model.seats.map((placement) => [placement.label, placement])), [model])
+  const placements = useMemo(() => {
+    const result = new Map(model.seats.map((placement) => [placement.label, placement]))
+    const extra = seats.filter((seat) => !result.has(seat.label))
+    if (!extra.length) return result
+
+    // Older/custom buses can have seat inventory records not represented in
+    // the saved drawing. Place those seats using their row/column data rather
+    // than silently hiding them from the 3D view.
+    const maxRow = Math.max(1, ...seats.map((seat) => seat.row || 1))
+    const maxCol = Math.max(1, ...seats.map((seat) => seat.col || 1))
+    const seatWidth = Math.min(0.46, 1.72 / maxCol)
+    extra.forEach((seat, index) => {
+      const row = seat.row || Math.floor(index / maxCol) + 1
+      const col = seat.col || (index % maxCol) + 1
+      result.set(seat.label, {
+        label: seat.label,
+        row,
+        col,
+        mx: (col - (maxCol + 1) / 2) * seatWidth,
+        z: -model.cabin.length / 2 + 0.85 + ((row - 1) / Math.max(1, maxRow - 1)) * (model.cabin.length - 1.7),
+        width: seatWidth,
+      })
+    })
+    return result
+  }, [model, seats])
   const scale = model.cabin.length / 11.9
   const target = useMemo<Position3D>(() => [0, 0.85 * scale, 0], [scale])
 
@@ -434,7 +466,7 @@ function Scene({ model, seats, statuses, onSeatClick, preset, roof, controls, di
         enableDamping
         dampingFactor={0.075}
         minDistance={3.2 * scale}
-        maxDistance={26 * scale}
+        maxDistance={32 * scale}
         minPolarAngle={0.12}
         maxPolarAngle={Math.PI / 2.05}
       />
@@ -481,7 +513,7 @@ export default function BusSeatMap3D({
       <div className="relative h-[430px] w-full overflow-hidden rounded-lg border border-line-soft bg-[#0f1115] sm:h-[480px]" role="img" aria-label="Interactive 3D coach cabin. Use the 2D map for keyboard seat selection.">
         <Canvas
           shadows
-          dpr={[1, 1.4]}
+          dpr={[1, 1.25]}
           frameloop="demand"
           camera={{ position: cameraPosition, fov: 42, near: 0.1, far: 120 }}
           gl={{ antialias: true, powerPreference: 'high-performance' }}
