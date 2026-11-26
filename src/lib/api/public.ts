@@ -1,6 +1,49 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from './api'
 
+export interface TicketDesignSelection {
+  templateId: 'signature-split' | 'editorial-wide'
+  paletteId: 'obsidian-gold' | 'rose-noir' | 'champagne' | 'custom'
+  panelColor: string
+  accentColor: string
+  backgroundColor: string
+  textColor: string
+}
+
+export const DEFAULT_TICKET_DESIGN: TicketDesignSelection = {
+  templateId: 'signature-split',
+  paletteId: 'obsidian-gold',
+  panelColor: '#0B0B0C',
+  accentColor: '#C8A25C',
+  backgroundColor: '#F1EDE4',
+  textColor: '#171717',
+}
+
+export const TICKET_DESIGN_PALETTES: Array<{
+  id: TicketDesignSelection['paletteId']
+  label: string
+  panelColor: string
+  accentColor: string
+  backgroundColor: string
+  textColor: string
+}> = [
+  { id: 'obsidian-gold', label: 'Obsidian Gold', panelColor: '#0B0B0C', accentColor: '#C8A25C', backgroundColor: '#F1EDE4', textColor: '#171717' },
+  { id: 'rose-noir', label: 'Rose Noir', panelColor: '#350D24', accentColor: '#F22586', backgroundColor: '#FFF2F7', textColor: '#2A1020' },
+  { id: 'champagne', label: 'Champagne', panelColor: '#9B7A42', accentColor: '#E7C984', backgroundColor: '#FCF8F0', textColor: '#332918' },
+]
+
+/** Keep the public API payload limited to the fields accepted by the backend. */
+export function normalizeTicketDesign(value: TicketDesignSelection): TicketDesignSelection {
+  return {
+    templateId: value.templateId,
+    paletteId: value.paletteId,
+    panelColor: value.panelColor,
+    accentColor: value.accentColor,
+    backgroundColor: value.backgroundColor,
+    textColor: value.textColor,
+  }
+}
+
 export interface PublicTicketType {
   id: string
   name: string
