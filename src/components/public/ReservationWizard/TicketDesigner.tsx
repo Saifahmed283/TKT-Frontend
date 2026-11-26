@@ -1,6 +1,25 @@
 import { useState } from 'react'
+import { Crown, Flower2, Heart, Sparkles, Star, Zap, type LucideIcon } from 'lucide-react'
 import type { PublicEvent, PublicTicketType, TicketDesignSelection } from '../../../lib/public'
 import { TICKET_DESIGN_PALETTES } from '../../../lib/public'
+
+const STICKER_ICONS: Record<Exclude<TicketDesignSelection['stickerId'], 'none'>, LucideIcon> = {
+  sparkle: Sparkles,
+  star: Star,
+  flower: Flower2,
+  heart: Heart,
+  bolt: Zap,
+  crown: Crown,
+}
+const STICKER_OPTIONS: Array<{ id: TicketDesignSelection['stickerId']; label: string; labelAr: string }> = [
+  { id: 'none', label: 'No sticker', labelAr: 'بدون ملصق' },
+  { id: 'sparkle', label: 'Sparkle', labelAr: 'بريق' },
+  { id: 'star', label: 'Star', labelAr: 'نجمة' },
+  { id: 'flower', label: 'Bloom', labelAr: 'زهرة' },
+  { id: 'heart', label: 'Heart', labelAr: 'قلب' },
+  { id: 'bolt', label: 'Energy', labelAr: 'طاقة' },
+  { id: 'crown', label: 'Crown', labelAr: 'تاج' },
+]
 
 type TicketCardPreviewProps = {
   event: PublicEvent
@@ -79,6 +98,7 @@ export function TicketCardPreview({
   const [flipped, setFlipped] = useState(false)
   const dateLabel = dateTimeLabel(event, lang)
   const isAr = lang === 'ar'
+  const StickerIcon = design.stickerId === 'none' ? null : STICKER_ICONS[design.stickerId]
   const panel = design.panelColor
   const accent = design.accentColor
   const surface = design.backgroundColor
@@ -189,6 +209,7 @@ export function TicketCardPreview({
             </div>
           </>
         )}
+        {StickerIcon && <div className="pointer-events-none absolute right-3 top-3 z-10 rounded-full border p-1.5" style={{ color: accent, borderColor: accent, backgroundColor: surface }}><StickerIcon size={14} strokeWidth={1.8} /></div>}
         <div className="pointer-events-none absolute inset-0 opacity-[.06]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, ${ink} 1px, transparent 0)`, backgroundSize: '14px 14px' }} />
         {flipped && (
           <div className="absolute inset-0 z-20 flex flex-col justify-between p-4 sm:p-6" style={{ backgroundColor: panel, color: '#fff' }}>
@@ -227,8 +248,10 @@ export function TicketDesigner({
   design,
   onChange,
   lang,
+  recommendedPaletteId,
 }: TicketCardPreviewProps & {
   onChange: (value: TicketDesignSelection) => void
+  recommendedPaletteId?: TicketDesignSelection['paletteId']
 }) {
   const isAr = lang === 'ar'
   return (
@@ -284,8 +307,34 @@ export function TicketDesigner({
               </span>
             </span>
             <span className="block truncate text-[9px] font-semibold text-ink-2">{palette.label}</span>
+            {recommendedPaletteId === palette.id && <span className="mt-1 block text-[8px] font-semibold uppercase tracking-wider text-signal">{isAr ? 'مقترح لك' : 'Suggested'}</span>}
           </button>
         ))}
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[10px] font-semibold uppercase tracking-[.15em] text-ink-2">{isAr ? 'ملصق اختياري' : 'Optional sticker'}</p>
+          <span className="text-[9px] text-ink-3">{isAr ? 'يمكنك إزالته' : 'Can be removed'}</span>
+        </div>
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+          {STICKER_OPTIONS.map((sticker) => {
+            const Sticker = sticker.id === 'none' ? null : STICKER_ICONS[sticker.id]
+            return (
+              <button
+                key={sticker.id}
+                type="button"
+                data-testid={`ticket-sticker-${sticker.id}`}
+                aria-pressed={design.stickerId === sticker.id}
+                onClick={() => onChange({ ...design, stickerId: sticker.id })}
+                className={`flex min-h-14 flex-col items-center justify-center gap-1 border px-2 py-2 transition-colors ${design.stickerId === sticker.id ? 'border-signal/60 bg-signal/10 text-signal' : 'border-line-soft bg-paper text-ink-2 hover:border-signal/30'}`}
+              >
+                {Sticker ? <Sticker size={16} /> : <span className="text-[14px]">—</span>}
+                <span className="text-[9px] font-medium">{isAr ? sticker.labelAr : sticker.label}</span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">

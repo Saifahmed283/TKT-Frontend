@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Field, Input, Textarea } from '@/components/ui/input'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { useToast } from '@/components/ui/toast'
+import { FileUploadField } from '@/components/ui/file-upload'
 
 type Section = 'team' | 'partners' | 'reports'
 
@@ -242,6 +243,13 @@ export function SiteContentPage() {
                 <LocalizedField label="Name" value={member.name} onChange={(name) => setForm({ ...form, members: updateAt(form.members, index, { name }) })} />
                 <LocalizedField label="Role" value={member.role} onChange={(role) => setForm({ ...form, members: updateAt(form.members, index, { role }) })} />
                 <LocalizedField label="Bio" multiline value={member.bio} onChange={(bio) => setForm({ ...form, members: updateAt(form.members, index, { bio }) })} />
+                <FileUploadField
+                  label="Team member photo"
+                  value={member.imageUrl ?? ''}
+                  onChange={(imageUrl) => setForm({ ...form, members: updateAt(form.members, index, { imageUrl: imageUrl || null }) })}
+                  accept="image/jpeg,image/png,image/webp"
+                  hint="Optional · square portrait"
+                />
               </div>
             ))}
             <Button
@@ -276,6 +284,15 @@ export function SiteContentPage() {
               <div key={partner.id} className="flex items-start gap-4 border border-line bg-raised/60 p-5">
                 <div className="flex-1">
                   <LocalizedField label="Partner name" value={partner.name} onChange={(name) => setForm({ ...form, partners: updateAt(form.partners, index, { name }) })} />
+                  <div className="mt-4">
+                    <FileUploadField
+                      label="Partner logo"
+                      value={partner.imageUrl ?? ''}
+                      onChange={(imageUrl) => setForm({ ...form, partners: updateAt(form.partners, index, { imageUrl: imageUrl || null }) })}
+                      accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                      hint="Optional · transparent logo recommended"
+                    />
+                  </div>
                 </div>
                 <ItemToolbar
                   index={index}

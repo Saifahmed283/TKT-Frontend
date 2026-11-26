@@ -12,6 +12,7 @@ import SpotlightCard from '../../components/reactbits/SpotlightCard'
 import ShinyText from '../../components/reactbits/ShinyText'
 import BlurText from '../../components/reactbits/BlurText'
 import { PageAccents } from '../../components/public/PlayfulBits'
+import { resolveUploadPreviewUrl } from '../../components/ui/file-upload'
 
 // Keeps the page intact if the content API is briefly unavailable. Editors
 // change the live copy from /app/site-content.
@@ -262,8 +263,12 @@ export default function About() {
                     <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-signal/0 to-transparent transition-all duration-500 group-hover:via-signal/45" />
 
                     <div className="mb-6 flex items-start justify-between gap-4">
-                      <div className="grid h-16 w-16 place-items-center border border-signal/20 bg-signal/[0.07] text-signal">
-                        <UserRound size={28} strokeWidth={1.5} />
+                      <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden border border-signal/20 bg-signal/[0.07] text-signal">
+                        {member.imageUrl ? (
+                          <img src={resolveUploadPreviewUrl(member.imageUrl)} alt={pick(member.name)} className="h-full w-full object-cover" loading="lazy" />
+                        ) : (
+                          <UserRound size={28} strokeWidth={1.5} />
+                        )}
                       </div>
                       <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-3">0{i + 1}</span>
                     </div>
@@ -297,7 +302,8 @@ export default function About() {
           <div className="mt-10 grid grid-cols-2 gap-px border border-line-soft bg-line-soft sm:grid-cols-3 lg:grid-cols-6">
             {content.partners.map((partner, i) => (
               <Reveal key={partner.id} delay={i * 0.04}>
-                <div className="bg-paper/90 px-4 py-6 text-center transition-colors duration-200 hover:bg-raised/60">
+                <div className="flex min-h-28 flex-col items-center justify-center gap-3 bg-paper/90 px-4 py-6 text-center transition-colors duration-200 hover:bg-raised/60">
+                  {partner.imageUrl && <img src={resolveUploadPreviewUrl(partner.imageUrl)} alt="" className="max-h-12 max-w-full object-contain" loading="lazy" />}
                   <p className="font-display text-xs font-semibold tracking-[0.18em] text-ink-2 sm:text-sm">{pick(partner.name)}</p>
                 </div>
               </Reveal>

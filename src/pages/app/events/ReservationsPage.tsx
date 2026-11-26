@@ -28,7 +28,7 @@ type ReservationRow = {
   approvedAt?: string | null
   rejectedReason?: string | null
   seats?: { id: string; label: string; busId: string; passengerName?: string | null; busName?: string | null }[]
-  attendee: { id: string; name: string; email: string | null; phone: string | null; status: string }
+  attendee: { id: string; name: string; email: string | null; phone: string | null; status: string; gender?: string; nationality?: string; identityType?: 'NATIONAL_ID' | 'PASSPORT'; identityNumber?: string }
   ticketType: { id: string; name: string; price: string | null }
   credential: { id: string; code: string; status: string } | null
 }
@@ -163,6 +163,16 @@ export function ReservationsPage() {
               <Td>
                 <p className="text-[13px]">{r.attendee.name}</p>
                 <p className="font-mono text-[10px] text-ink-3">{r.attendee.email}</p>
+                {r.attendee.identityNumber && (
+                  <details className="mt-1 text-[10px]">
+                    <summary className="cursor-pointer text-signal">{r.attendee.identityType === 'NATIONAL_ID' ? 'National ID details' : 'Passport details'}</summary>
+                    <div className="mt-1 space-y-0.5 border-s border-line-soft ps-2 text-ink-2">
+                      <p>Gender: {r.attendee.gender ?? '—'}</p>
+                      <p>Nationality: {r.attendee.nationality === 'EG' ? 'Egyptian' : 'Non-Egyptian'}</p>
+                      <p className="break-all font-mono">{r.attendee.identityNumber}</p>
+                    </div>
+                  </details>
+                )}
               </Td>
               <Td>
                 <p className="text-[13px]">{r.ticketType.name}{(r.ticketType as any).tier ? <span className="ml-1 font-mono text-[10px] text-ink-3">{(r.ticketType as any).tier}</span> : null}</p>
