@@ -8,7 +8,8 @@ export function ReviewStep({ w }: { w: ReservationWizard }) {
     paymentReference, paymentProofUrl, isPaid, totalPrice, selectedSeatIds,
   } = w
   const proofPreviewUrl = paymentProofUrl ? resolveUploadPreviewUrl(paymentProofUrl) : ''
-  const proofIsImage = /\\.(jpg|jpeg|png|webp|gif|svg)(?:[?#]|$)/i.test(paymentProofUrl ?? '')
+  const proofPath = (paymentProofUrl ?? '').split(/[?#]/, 1)[0].toLowerCase()
+  const proofIsImage = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg'].some((extension) => proofPath.endsWith(extension))
   return (
     <div data-testid="wizard-review" className="space-y-3 border border-line-soft bg-elevated/20 px-4 py-3 text-sm">
       <div className="flex items-center justify-between gap-3"><span className="text-ink-3">{t('fullName')}</span><span className="text-ink-0">{name.trim()}</span></div>
