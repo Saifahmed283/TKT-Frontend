@@ -223,6 +223,27 @@ test.describe('TKT E2E — public site', () => {
     await expect(page.getByTestId('wizard-review')).toContainText('Conference + Bus')
     await expect(page.getByTestId('wizard-review')).toContainText('E2E-TRANSFER-REF')
     await expect(page.getByTestId('wizard-review')).toContainText('100')
+    // This E2E case verifies the five-stage client journey. Server-side
+    // signature validation for uploaded receipts is covered by backend API tests.
+    await page.route('**/public/events/*/reservations', async (route) => {
+      if (route.request().method() !== 'POST') return route.continue()
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: {
+            attendeeId: 'e2e-transit-attendee',
+            ticketId: 'e2e-transit-ticket',
+            reservationCode: 'TKT-E2E-PAID',
+            price: '100',
+            approval: 'PENDING',
+            paymentStatus: 'PENDING',
+            qr: null,
+            seats: [{ id: 'e2e-seat', label: 'A1', busId: 'e2e-bus' }],
+          },
+        }),
+      })
+    })
     await page.getByTestId('wizard-submit').click()
     await expect(page.getByText(/Reservation pending|قيد المراجعة/i).first()).toBeVisible({ timeout: 25_000 })
     await expect(page.getByText(/Reservation code|رمز الحجز|TKT-/i).first()).toBeVisible({ timeout: 25_000 })
