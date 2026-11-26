@@ -7,7 +7,7 @@ import PublicNav from '../../components/public/PublicNav'
 import { api } from '../../lib/api'
 import { useLanguage } from '../../lib/i18n'
 import { rememberReservationAccessToken, usePublicEvents, type PublicBus, type PublicSeat } from '../../lib/public'
-import { normalizeBusLayout } from '../../lib/busLayouts'
+import BusSeatMap2D from '../../components/public/BusSeatMap2D'
 import SpotlightCard from '../../components/reactbits/SpotlightCard'
 import { Button } from '../../components/ui/button'
 import { Corners, Blink } from '../../components/instruments'
@@ -16,7 +16,6 @@ import { FileUploadField } from '../../components/ui/file-upload'
 import { ApiError } from '../../lib/api'
 
 const BusSeatMap3D = lazy(() => import('../../components/public/BusSeatMap3D'))
-const MECT49SeatMap = lazy(() => import('../../components/public/MECT49SeatMap'))
 
 function fmtMoney(value: number | string | null | undefined, currency = 'EGP'): string {
   const n = Number(value ?? 0)
@@ -24,7 +23,7 @@ function fmtMoney(value: number | string | null | undefined, currency = 'EGP'): 
   return `${currency} ${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
-function SeatMap2D({ bus, selectedSeats, onSeatClick, heldSeats, reservedSeats, className }: {
+function SeatMap2D({ bus, selectedSeats, onSeatClick, className }: {
   bus: PublicBus
   selectedSeats: string[]
   onSeatClick: (seat: PublicSeat) => void
@@ -32,77 +31,17 @@ function SeatMap2D({ bus, selectedSeats, onSeatClick, heldSeats, reservedSeats, 
   reservedSeats: Set<string>
   className?: string
 }) {
-  const reduce = useReducedMotion()
   const { lang } = useLanguage()
-  const layout = normalizeBusLayout(bus.layout)
-  if (layout.template === 'mect49') {
-    return (
-      <div className={className}>
-        <MECT49SeatMap
-          seats={bus.seats}
-          selectedSeatIds={selectedSeats}
-          onSeatClick={onSeatClick}
-          language={lang}
-          maxSelectable={1}
-        />
-      </div>
-    )
-  }
-  const cols = layout.cols
-  const aisleAfter = layout.aisleAfterCol
-  const rows = layout.rows
-
   return (
     <div className={className}>
-      <div className="overflow-x-auto">
-        <div className="grid w-fit gap-1.5" style={{ gridTemplateColumns: `repeat(${cols + (aisleAfter > 0 && aisleAfter < cols ? 1 : 0)}, minmax(0,1fr))` }}>
-          {Array.from({ length: rows }).flatMap((_, r) => {
-            const row = r + 1
-            const cells: React.ReactNode[] = []
-            for (let c = 1; c <= cols; c++) {
-              const seat = bus.seats.find(s => s.row === row && s.col === c)
-              if (!seat) {
-                cells.push(<div key={`${row}-${c}`} />)
-              } else {
-                const isSelected = selectedSeats.includes(seat.id)
-                const isHeld = heldSeats.has(seat.id)
-                const isReserved = reservedSeats.has(seat.id)
-                const isAvailable = seat.state === 'AVAILABLE' && !isHeld && !isReserved
-
-                let cls = 'grid h-10 w-10 place-items-center rounded-none border text-[11px] font-semibold transition-all duration-150 '
-                if (isSelected) cls += 'border-signal bg-signal text-black shadow-glow'
-                else if (isAvailable) cls += 'border-ok/40 bg-ok/15 text-ok hover:bg-ok/25 cursor-pointer'
-                else if (isHeld) cls += 'border-amber/40 bg-amber/15 text-amber cursor-not-allowed'
-                else if (isReserved) cls += 'border-danger/40 bg-danger/15 text-danger cursor-not-allowed'
-                else cls += 'border-line bg-ink-3/20 text-ink-3 cursor-not-allowed'
-
-                cells.push(
-                  <motion.button
-                    key={seat.id}
-                    type="button"
-                    disabled={!isAvailable && !isSelected}
-                    onClick={() => onSeatClick(seat)}
-                    className={cls}
-                    title={isHeld ? `Held · ${seat.label}` : seat.label}
-                    whileTap={reduce ? undefined : { scale: 0.95 }}
-                  >
-                    {seat.label}
-                  </motion.button>
-                )
-              }
-              if (aisleAfter === c && c < cols) cells.push(<div key={`a-${row}-${c}`} className="w-4" />)
-            }
-            return cells
-          })}
-        </div>
-      </div>
-      <div className="mt-3 flex flex-wrap items-center gap-4 text-[11px] text-ink-3">
-        <span className="inline-flex items-center gap-1.5"><span className="size-3 border border-signal bg-signal/15" /> Selected</span>
-        <span className="inline-flex items-center gap-1.5"><span className="size-3 border border-ok/40 bg-ok/15" /> Available</span>
-        <span className="inline-flex items-center gap-1.5"><span className="size-3 border border-amber/40 bg-amber/15" /> Held</span>
-        <span className="inline-flex items-center gap-1.5"><span className="size-3 border border-danger/40 bg-danger/15" /> Reserved</span>
-        <span className="inline-flex items-center gap-1.5"><span className="size-3 border border-line bg-ink-3/20" /> Unavailable</span>
-      </div>
+      <BusSeatMap2D
+        layout={bus.layout}
+        seats={bus.seats}
+        selectedSeatIds={selectedSeats}
+        onSeatClick={onSeatClick}
+        language={lang}
+        maxSelectable={1}
+      />
     </div>
   )
 }

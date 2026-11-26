@@ -1,7 +1,7 @@
 ﻿import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
-import { useState, type FormEvent } from 'react'
-import { BusFront, Plus, Trash2, Armchair, Users, Download } from 'lucide-react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { BusFront, Pencil, Plus, Trash2, Users, Download } from 'lucide-react'
 import { api, ApiError } from '@/lib/api'
 import { downloadAuthFile } from '@/lib/export'
 import { useToast } from '@/components/ui/toast'
@@ -12,26 +12,31 @@ import { Dialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { Panel } from '@/components/motion/primitives'
-import { BUS_TEMPLATES, getBusTemplate, normalizeBusLayout, type BusTemplateId } from '@/lib/busLayouts'
-import MECT49SeatMap from '@/components/public/MECT49SeatMap'
+import { BUS_TEMPLATES, createBusLayout, getBusTemplate, normalizeBusLayout, type BusTemplateId } from '@/lib/busLayouts'
+import BusSeatMap2D from '@/components/public/BusSeatMap2D'
 
-type Seat = { id: string; label: string; row: number; col: number; state: 'AVAILABLE' | 'HELD' | 'RESERVED' | 'UNAVAILABLE'; holderName?: string | null; passengerName?: string | null; groupId?: string | null; ticketId?: string | null }
+type Seat = {
+  id: string
+  label: string
+  row: number
+  col: number
+  state: 'AVAILABLE' | 'HELD' | 'RESERVED' | 'UNAVAILABLE'
+  holderName?: string | null
+  passengerName?: string | null
+  groupId?: string | null
+  ticketId?: string | null
+}
 type BusLayout = { template?: BusTemplateId; look?: string; rows: number; cols: number; aisleAfterCol?: number; seats?: { label: string; row: number; col: number; state?: string }[] }
 type Bus = { id: string; name: string; isActive: boolean; seatPrice?: string | number; currency?: string; layout: BusLayout; seats?: Seat[]; _count?: { seats: number } }
 
-function seatClass(state: Seat['state'], selected: boolean) {
-  if (selected) return 'border-signal bg-signal text-black'
-  if (state === 'AVAILABLE') return 'border-ok/40 bg-ok/15 text-ok hover:bg-ok/25'
-  if (state === 'HELD') return 'border-amber/40 bg-amber/15 text-amber'
-  if (state === 'RESERVED') return 'border-danger/40 bg-danger/15 text-danger'
-  return 'border-line bg-ink-3/20 text-ink-3 cursor-not-allowed'
-}
+const MAX_LAYOUT_SEATS = 200
 
 export function BusesPage() {
   const { eventId = '' } = useParams()
   const qc = useQueryClient()
   const toast = useToast()
-  const [createOpen, setCreateOpen] = useState(false)
+  const [editorOpen, setEditorOpen] = useState(false)
+  const [editingBusId, setEditingBusId] = useState<string | null>(null)
   const [activeBusId, setActiveBusId] = useState<string | null>(null)
   const [selected, setSelected] = useState<string[]>([])
   const [holderName, setHolderName] = useState('')
@@ -40,21 +45,70 @@ export function BusesPage() {
   const busesQ = useQuery({ queryKey: ['events', eventId, 'buses'], queryFn: () => api.get<Bus[]>(`/events/${eventId}/buses`), enabled: !!eventId })
   const seatsQ = useQuery({ queryKey: ['events', eventId, 'buses', activeBusId, 'seats'], queryFn: () => api.get<Bus & { seats: Seat[] }>(`/events/${eventId}/buses/${activeBusId}/seats`), enabled: !!eventId && !!activeBusId })
 
+  const buses = busesQ.data ?? []
+  useEffect(() => {
+    if (!activeBusId && buses.length) setActiveBusId(buses[0].id)
+  }, [activeBusId, buses])
+
+  const previewLayout = useMemo(() => createBusLayout(form.template, {
+    rows: form.rows, cols: form.cols, aisleAfterCol: form.aisleAfterCol, name: form.name || undefined,
+  }), [form])
+  const previewSeats = useMemo(() => previewLayout.seats.map((seat) => ({
+    id: `preview-${seat.label}`, label: seat.label, row: seat.row, col: seat.col,
+    state: 'AVAILABLE' as const,
+  })), [previewLayout])
+
   const refresh = () => { void qc.invalidateQueries({ queryKey: ['events', eventId, 'buses'] }) }
-  const createBus = useMutation({
+
+  const openCreate = () => {
+    setEditingBusId(null)
+    setForm({ name: '', template: 'grid', rows: 10, cols: 4, aisleAfterCol: 2, seatPrice: 0, currency: 'EGP' })
+    setEditorOpen(true)
+  }
+
+  const openEditor = (bus: Bus) => {
+    const layout = normalizeBusLayout(bus.layout)
+    setEditingBusId(bus.id)
+    setForm({
+      name: bus.name,
+      template: layout.template,
+      rows: layout.rows,
+      cols: layout.cols,
+      aisleAfterCol: layout.aisleAfterCol,
+      seatPrice: Number(bus.seatPrice ?? 0),
+      currency: bus.currency ?? 'EGP',
+    })
+    setEditorOpen(true)
+  }
+
+  const saveBus = useMutation({
     mutationFn: () => {
-      const tpl = getBusTemplate(form.template)
-      const layoutSeats = form.template === 'grid'
-        ? Array.from({ length: form.rows * form.cols }, (_, i) => { const r = Math.floor(i / form.cols) + 1; const c = (i % form.cols) + 1; return { label: String(i + 1), row: r, col: c, state: 'AVAILABLE' } })
-        : (tpl.seats.length ? tpl.seats.map(s => ({ ...s, state: s.state ?? 'AVAILABLE' })) : [])
-      return api.post(`/events/${eventId}/buses`, {
-        name: form.name, seatPrice: form.seatPrice, currency: form.currency,
-        layout: { template: form.template, look: tpl.look, rows: form.template === 'grid' ? form.rows : tpl.rows, cols: form.template === 'grid' ? form.cols : tpl.cols, aisleAfterCol: form.template === 'grid' ? form.aisleAfterCol : (tpl.aisleAfterCol ?? 0), seats: layoutSeats },
+      if (form.template === 'grid' && form.rows * form.cols > MAX_LAYOUT_SEATS) {
+        throw new Error(`Custom grids are limited to ${MAX_LAYOUT_SEATS} seats.`)
+      }
+      const layout = createBusLayout(form.template, {
+        rows: form.rows, cols: form.cols, aisleAfterCol: form.aisleAfterCol, name: form.name || undefined,
       })
+      const payload = {
+        name: form.name,
+        seatPrice: Number(form.seatPrice) || 0,
+        currency: form.currency.trim() || 'EGP',
+        layout,
+      }
+      return editingBusId
+        ? api.patch<Bus>(`/events/${eventId}/buses/${editingBusId}`, payload)
+        : api.post<Bus>(`/events/${eventId}/buses`, payload)
     },
-    onSuccess: (b: any) => { toast.success('Bus created'); setCreateOpen(false); setActiveBusId(b.id); refresh() },
-    onError: (e) => toast.error(e instanceof ApiError ? e.message : 'Failed to create bus'),
+    onSuccess: (bus) => {
+      toast.success(editingBusId ? 'Bus layout updated' : 'Bus created')
+      setEditorOpen(false)
+      setEditingBusId(null)
+      if (bus?.id) setActiveBusId(bus.id)
+      refresh()
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'Failed to save bus'),
   })
+
   const deleteBus = useMutation({
     mutationFn: (id: string) => api.delete(`/events/${eventId}/buses/${id}`),
     onSuccess: () => { toast.success('Bus deleted'); if (activeBusId) setActiveBusId(null); refresh() },
@@ -78,21 +132,14 @@ export function BusesPage() {
 
   if (busesQ.isLoading) return <FullPageSpinner />
   if (busesQ.error) return <InlineError message={busesQ.error instanceof Error ? busesQ.error.message : 'Failed to load buses'} />
-  const buses = busesQ.data ?? []
+
   const bus = seatsQ.data
   const seats = bus?.seats ?? []
   const normLayout = normalizeBusLayout(bus?.layout ?? {})
-  const cols = normLayout.cols
-  const aisleAfter = normLayout.aisleAfterCol
-  const layoutRows = normLayout.rows
-  const busLook = normLayout.look
-  void layoutRows; void busLook
-
-  const toggleSelect = (s: Seat) => {
-    if (s.state === 'UNAVAILABLE' || s.ticketId) return
-    setSelected(prev => prev.includes(s.id) ? prev.filter(x => x !== s.id) : [...prev, s.id])
+  const toggleSelect = (seat: Seat) => {
+    if (seat.state === 'UNAVAILABLE' || seat.ticketId) return
+    setSelected(prev => prev.includes(seat.id) ? prev.filter(id => id !== seat.id) : [...prev, seat.id])
   }
-
   const selectedSeatRecords = seats.filter((seat) => selected.includes(seat.id))
   const canReserveSelected = selectedSeatRecords.length > 0 && selectedSeatRecords.every((seat) => seat.state === 'AVAILABLE')
   const canReleaseSelected = selectedSeatRecords.length > 0 && selectedSeatRecords.every((seat) => (
@@ -101,19 +148,24 @@ export function BusesPage() {
 
   return (
     <div>
-      <PageHeader title="Bus seats" subtitle="2D vertical seat maps — green available, red reserved, grey unavailable." icon={<BusFront className="size-5" />}
-        actions={<Button onClick={() => setCreateOpen(true)}><Plus size={15} /> Add bus</Button>} />
+      <PageHeader
+        title="Bus seats"
+        subtitle="One canonical coach plan powers this dashboard, the public 2D map and the 3D cabin."
+        icon={<BusFront className="size-5" />}
+        actions={<Button onClick={openCreate}><Plus size={15} /> Add bus</Button>}
+      />
       <div className="grid gap-6 p-6 lg:grid-cols-[280px_1fr]">
         <Panel>
           <div className="mb-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-3">Buses</div>
           <div className="space-y-2">
-            {buses.map(b => (
-              <div key={b.id} className={`flex items-center justify-between rounded-none border px-3 py-2 ${activeBusId === b.id ? 'border-signal/40 bg-signal/5' : 'border-line'}`}>
-                <button className="text-left" onClick={() => { setActiveBusId(b.id); setSelected([]) }}>
-                  <div className="text-[13px] font-medium text-ink">{b.name}</div>
-                  <div className="text-[11px] text-ink-3">{b._count?.seats ?? 0} seats</div>
+            {buses.map((item) => (
+              <div key={item.id} className={`flex items-center justify-between gap-1 rounded-none border px-3 py-2 ${activeBusId === item.id ? 'border-signal/40 bg-signal/5' : 'border-line'}`}>
+                <button className="min-w-0 flex-1 text-left" onClick={() => { setActiveBusId(item.id); setSelected([]) }}>
+                  <div className="truncate text-[13px] font-medium text-ink">{item.name}</div>
+                  <div className="text-[11px] text-ink-3">{item._count?.seats ?? 0} seats · {item.currency ?? 'EGP'} {Number(item.seatPrice ?? 0).toFixed(2)}</div>
                 </button>
-                <Button size="sm" variant="ghost" className="text-danger" onClick={() => deleteBus.mutate(b.id)}><Trash2 size={14} /></Button>
+                <Button size="sm" variant="ghost" title="Redesign bus" aria-label={`Redesign ${item.name}`} onClick={() => openEditor(item)}><Pencil size={14} /></Button>
+                <Button size="sm" variant="ghost" className="text-danger" aria-label={`Delete ${item.name}`} onClick={() => deleteBus.mutate(item.id)}><Trash2 size={14} /></Button>
               </div>
             ))}
             {buses.length === 0 && <div className="text-sm text-ink-3">No buses yet.</div>}
@@ -124,62 +176,33 @@ export function BusesPage() {
           {!activeBusId ? <div className="py-16 text-center text-sm text-ink-3">Select or create a bus to manage seats.</div> : seatsQ.isLoading ? <FullPageSpinner /> : (
             <div className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2"><Armchair size={16} className="text-signal" /><span className="font-display text-lg font-semibold">{bus?.name}</span></div>
-                {normLayout.template !== 'mect49' && (
-                  <div className="flex items-center gap-3 text-[11px] text-ink-3">
-                    <span className="inline-flex items-center gap-1"><span className="size-3 rounded-none bg-ok/40" /> Available</span>
-                    <span className="inline-flex items-center gap-1"><span className="size-3 rounded-none bg-amber/40" /> Held</span>
-                    <span className="inline-flex items-center gap-1"><span className="size-3 rounded-none bg-danger/40" /> Reserved</span>
-                    <span className="inline-flex items-center gap-1"><span className="size-3 rounded-none bg-ink-3/40" /> Unavailable</span>
+                <div className="flex items-center gap-2">
+                  <ArmchairIcon />
+                  <div>
+                    <div className="font-display text-lg font-semibold">{bus?.name}</div>
+                    <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">{normLayout.modelCode} · {normLayout.template}</div>
                   </div>
-                )}
+                </div>
+                <Button size="sm" variant="ghost" onClick={() => bus && openEditor(bus)}><Pencil size={14} /> Redesign</Button>
               </div>
 
-              {normLayout.template === 'mect49' ? (
-                <MECT49SeatMap
-                  seats={seats}
-                  selectedSeatIds={selected}
-                  onSeatClick={toggleSelect}
-                  language="en"
-                  maxSelectable={49}
-                  allowStatusSelection
-                  canInteract={(seat) => !seat.ticketId}
-                  onSeatContextMenu={(seat) => {
-                    if (seat.state !== 'AVAILABLE' && seat.state !== 'UNAVAILABLE') return
-                    toggleUnavailable.mutate({
-                      seatId: seat.id,
-                      state: seat.state === 'UNAVAILABLE' ? 'AVAILABLE' : 'UNAVAILABLE',
-                    })
-                  }}
-                />
-              ) : (
-                <div className="mx-auto w-fit rounded-none border-2 border-line bg-raised/60 p-4">
-                  <div className="mb-3 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3">Front</div>
-                <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${cols + (aisleAfter > 0 && aisleAfter < cols ? 1 : 0)}, minmax(0,1fr))` }}>
-                  {Array.from({ length: bus?.layout?.rows ?? 0 }).flatMap((_, r) => {
-                    const row = r + 1
-                    const cells = []
-                    for (let c = 1; c <= cols; c++) {
-                      const seat = seats.find(s => s.row === row && s.col === c)
-                      if (!seat) { cells.push(<div key={`${row}-${c}`} />); }
-                      else {
-                        const isSelected = selected.includes(seat.id)
-                        cells.push(
-                          <button key={seat.id} type="button" title={seat.holderName ? `${seat.label} · ${seat.holderName}` : seat.label}
-                            onClick={() => toggleSelect(seat)}
-                            onContextMenu={(e) => { e.preventDefault(); if (seat.state === 'AVAILABLE' || seat.state === 'UNAVAILABLE') toggleUnavailable.mutate({ seatId: seat.id, state: seat.state === 'UNAVAILABLE' ? 'AVAILABLE' : 'UNAVAILABLE' }) }}
-                            className={`grid h-10 w-10 place-items-center rounded-none border text-[11px] font-semibold transition-colors ${seatClass(seat.state, isSelected)}`}>
-                            {seat.label}
-                          </button>
-                        )
-                      }
-                      if (aisleAfter === c && c < cols) cells.push(<div key={`aisle-${row}-${c}`} className="w-4" />)
-                    }
-                    return cells
-                  })}
-                </div>
-                </div>
-              )}
+              <BusSeatMap2D
+                layout={bus?.layout ?? {}}
+                seats={seats}
+                selectedSeatIds={selected}
+                onSeatClick={toggleSelect}
+                language="en"
+                maxSelectable={Math.max(1, seats.length)}
+                allowStatusSelection
+                canInteract={(seat) => !seat.ticketId}
+                onSeatContextMenu={(seat) => {
+                  if (seat.state !== 'AVAILABLE' && seat.state !== 'UNAVAILABLE') return
+                  toggleUnavailable.mutate({
+                    seatId: seat.id,
+                    state: seat.state === 'UNAVAILABLE' ? 'AVAILABLE' : 'UNAVAILABLE',
+                  })
+                }}
+              />
 
               <div className="flex flex-wrap items-end gap-3">
                 <Field label="Holder / group name"><Input value={holderName} onChange={e => setHolderName(e.target.value)} placeholder="Name shown on seat" /></Field>
@@ -203,38 +226,56 @@ export function BusesPage() {
         </Panel>
       </div>
 
-      <Dialog open={createOpen} onClose={() => setCreateOpen(false)} title="Add bus">
-        <form onSubmit={(e: FormEvent) => { e.preventDefault(); createBus.mutate() }} className="space-y-4">
+      <Dialog open={editorOpen} onClose={() => setEditorOpen(false)} title={editingBusId ? 'Redesign bus' : 'Add bus'}>
+        <form onSubmit={(e: FormEvent) => { e.preventDefault(); saveBus.mutate() }} className="space-y-4">
           <Field label="Bus name"><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required /></Field>
-          <Field label="Bus template / look">
-            <select className="input" value={form.template} onChange={e => {
-              const template = e.target.value as BusTemplateId
-              const tpl = getBusTemplate(template)
-              setForm(f => ({ ...f, template, rows: tpl.rows, cols: tpl.cols, aisleAfterCol: tpl.aisleAfterCol ?? 0 }))
-            }}>
+          <Field label="Bus model / layout">
+            <select
+              className="input"
+              value={form.template}
+              onChange={e => {
+                const template = e.target.value as BusTemplateId
+                const tpl = getBusTemplate(template)
+                setForm(f => ({ ...f, template, rows: tpl.rows, cols: tpl.cols, aisleAfterCol: tpl.aisleAfterCol ?? 0 }))
+              }}
+            >
               {BUS_TEMPLATES.map(t => <option key={t.id} value={t.id}>{t.name} — {t.totalBookableSeats || 'custom'} seats</option>)}
             </select>
           </Field>
           <div className="rounded-none border border-line-soft bg-elevated/20 p-3 text-[11px] text-ink-2">
             {getBusTemplate(form.template).description}
-            {form.template === 'coaster21' && <div className="mt-1 text-amber-300">Confirm physical seat numbering with the bus operator before paid bookings.</div>}
-            {form.template === 'mect49' && <div className="mt-1 text-ink-3">1B/2B auxiliary positions are non-bookable and not exposed.</div>}
+            {form.template === 'coaster21' && <div className="mt-1 text-amber-300">Confirm physical seat numbering with the operator before paid bookings.</div>}
+            {form.template === 'mect49' && <div className="mt-1 text-ink-3">1B/2B auxiliary positions, TV, WC and exits are non-bookable cabin features.</div>}
           </div>
           {form.template === 'grid' && (
             <div className="grid grid-cols-3 gap-3">
-              <Field label="Rows"><Input type="number" min={1} max={60} value={form.rows} onChange={e => setForm({ ...form, rows: Number(e.target.value) })} /></Field>
+              <Field label="Rows"><Input type="number" min={1} max={Math.floor(MAX_LAYOUT_SEATS / Math.max(1, form.cols))} value={form.rows} onChange={e => setForm({ ...form, rows: Number(e.target.value) })} /></Field>
               <Field label="Cols"><Input type="number" min={1} max={8} value={form.cols} onChange={e => setForm({ ...form, cols: Number(e.target.value) })} /></Field>
-              <Field label="Aisle after col"><Input type="number" min={0} max={8} value={form.aisleAfterCol} onChange={e => setForm({ ...form, aisleAfterCol: Number(e.target.value) })} /></Field>
+              <Field label="Aisle after col"><Input type="number" min={0} max={form.cols} value={form.aisleAfterCol} onChange={e => setForm({ ...form, aisleAfterCol: Number(e.target.value) })} /></Field>
             </div>
           )}
           <div className="grid grid-cols-2 gap-3">
             <Field label="Seat price"><Input type="number" min={0} step="0.01" value={form.seatPrice} onChange={e => setForm({ ...form, seatPrice: Number(e.target.value) })} /></Field>
             <Field label="Currency"><Input value={form.currency} onChange={e => setForm({ ...form, currency: e.target.value })} /></Field>
           </div>
-          <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={() => setCreateOpen(false)}>Cancel</Button><Button type="submit" loading={createBus.isPending}>Create bus</Button></div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-[11px] text-ink-3">
+              <span>Live blueprint · {previewSeats.length} bookable seats</span>
+              <span className="font-mono uppercase tracking-widest">{previewLayout.modelCode}</span>
+            </div>
+            <BusSeatMap2D layout={previewLayout} seats={previewSeats} selectedSeatIds={[]} onSeatClick={() => {}} language="en" compact disabled />
+          </div>
+          {editingBusId && <p className="text-[11px] text-amber-300">Redesign rebuilds the seat inventory. Reserved and actively held seats must be released first.</p>}
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={() => setEditorOpen(false)}>Cancel</Button>
+            <Button type="submit" loading={saveBus.isPending}>{editingBusId ? 'Save layout' : 'Create bus'}</Button>
+          </div>
         </form>
       </Dialog>
     </div>
   )
 }
 
+function ArmchairIcon() {
+  return <span className="grid size-8 place-items-center rounded-lg border border-signal/30 bg-signal/10 text-signal"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 11V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v6" /><path d="M4 11a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v5H4z" /><path d="M6 16v3m12-3v3" /></svg></span>
+}

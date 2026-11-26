@@ -33,7 +33,31 @@ export interface PublicPaymentProvider {
 }
 
 export interface PublicSeat { id: string; label: string; row: number; col: number; state: 'AVAILABLE' | 'HELD' | 'RESERVED' | 'UNAVAILABLE'; holdExpiresAt?: string | null }
-export interface PublicBusLayout { template?: 'grid' | 'mect49' | 'coaster21' | 'custom'; look?: string; rows: number; cols: number; aisleAfterCol?: number; seats?: Array<{ label: string; row: number; col: number; state?: string; kind?: 'seat' | 'driver' | 'door' | 'aux'; x?: number; y?: number }>; viewBox?: { w: number; h: number } }
+export interface PublicBusLayout {
+  schemaVersion?: number
+  template?: 'grid' | 'mect49' | 'coaster21' | 'custom'
+  name?: string
+  look?: string
+  rows: number
+  cols: number
+  aisleAfterCol?: number
+  seats?: Array<{
+    label: string
+    row: number
+    col: number
+    state?: string
+    kind?: 'seat' | 'driver' | 'door' | 'aux'
+    x?: number
+    y?: number
+    mx?: number
+    z?: number
+    width?: number
+    side?: 'left' | 'right' | 'center'
+  }>
+  viewBox?: { w: number; h: number }
+  features?: Array<{ id: string; kind: string; label: string; labelAr?: string; x: number; y: number; w: number; h: number }>
+  cabin?: { width: number; length: number; height: number }
+}
 export interface PublicBus { id: string; name: string; seatPrice?: string; currency?: string; layout: PublicBusLayout; totalSeats: number; availableSeats: number; seats: PublicSeat[] }
 
 export interface PublicEvent {
