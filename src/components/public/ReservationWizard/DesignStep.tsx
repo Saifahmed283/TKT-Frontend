@@ -2,8 +2,9 @@ import type { ReservationWizard } from './useReservationWizard'
 import { TicketDesigner } from './TicketDesigner'
 
 export function DesignStep({ w }: { w: ReservationWizard }) {
-  const { selected, event, name, ticketDesign, setTicketDesign, lang, selectedBus, selectedSeatIds } = w
+  const { selected, event, name, ticketDesign, setTicketDesign, lang, selectedBus, selectedSeatIds, gender } = w
   if (!selected) return null
+  const recommendedPaletteId = gender === 'female' ? 'rose-noir' : gender === 'male' ? 'obsidian-gold' : 'champagne'
   const seatLabel = selectedSeatIds
     .map((id) => selectedBus?.seats.find((seat) => seat.id === id)?.label)
     .filter(Boolean)
@@ -22,6 +23,7 @@ export function DesignStep({ w }: { w: ReservationWizard }) {
         design={ticketDesign}
         onChange={setTicketDesign}
         lang={lang}
+        recommendedPaletteId={recommendedPaletteId}
       />
     </div>
   )
