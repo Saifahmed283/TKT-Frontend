@@ -30,7 +30,7 @@ function DesktopWebsiteIntroGate() {
 
   return isDesktop ? (
     <Suspense fallback={null}>
-      <DesktopWebsiteIntroGate />
+      <WebsiteIntro />
     </Suspense>
   ) : null
 }
@@ -131,7 +131,7 @@ function LegacyBusTicketsRedirect() {
 export default function App() {
   return (
     <>
-      <WebsiteIntro />
+      <DesktopWebsiteIntroGate />
       <ScrollToTop />
       <Suspense fallback={<BootSplash />}>
         <Routes>
