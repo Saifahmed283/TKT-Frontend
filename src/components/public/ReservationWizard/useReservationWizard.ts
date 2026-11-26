@@ -56,14 +56,15 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   const selectedProvider = event.paymentProviders?.find((p) => p.id === paymentProviderId) ?? null
   const selectedBus = buses.find(b => b.id === busId) ?? buses[0]
   const seatUnitPrice = Number(selectedBus?.seatPrice ?? 0)
-  const seatTotal = selected?.transportIncluded ? selectedSeatIds.length * (Number.isFinite(seatUnitPrice) ? seatUnitPrice : 0) : 0
+  // The bus seat is included in transport-inclusive ticket types, not an extra line item.
+  const seatTotal = 0
   const ticketPrice = Number(selected?.price ?? 0)
   const totalPrice = (Number.isFinite(ticketPrice) ? ticketPrice : 0) + seatTotal
   const isPaid = totalPrice > 0
   const steps = [
     { id: 'ticket', label: t('stepTicket'), icon: Ticket },
-    { id: 'details', label: t('stepDetails'), icon: UserRound },
     ...(selected?.transportIncluded ? [{ id: 'seats', label: t('stepSeats'), icon: Bus }] : []),
+    { id: 'details', label: t('stepDetails'), icon: UserRound },
     ...(isPaid ? [{ id: 'payment', label: t('stepPayment'), icon: CreditCard }] : []),
     { id: 'review', label: t('stepReview'), icon: ClipboardList },
   ]
