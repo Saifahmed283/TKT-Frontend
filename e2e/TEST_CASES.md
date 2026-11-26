@@ -33,6 +33,7 @@ Set before running `npm run test:e2e`:
 | 14 | Pending payments list | Create paid reservation with explicit or metadata `paymentStatus=PENDING` → open `/app/events/:id/payments` | Reservation appears under `pending-payments` with status and review actions; `Preview proof` and `Review & confirm` open the proof dialog; actions disabled while reviewing | `reservations-api.test.ts`; `pending-payments`, `pending-payment-row`, `payment-proof-open` |
 | 15 | Public payment proof upload | Submit multipart proof to `/uploads/proof` without auth; submit to `/uploads` without auth | Public endpoint returns a stored `/uploads/...` URL; authenticated endpoint denies anonymous callers | `reservations-api.test.ts`; `payment-proof` |
 | 16 | Startup cleanup of stale rejected/cancelled reservations | Seed rejected/cancelled public reservations → restart backend outside tests | Stale tickets, attendees, credentials, access logs, seat holds, and uploaded proofs are purged; test runs are unaffected | `reservations-api.test.ts`; `purge.ts` |
+| 17 | My ticket save options | Open `/my-ticket#code=...` with an approved reservation → find ticket → open `ticket-save-menu` | Menu offers PDF, image, wallet-style home-screen install, and offline copy; PDF/image downloads contain the same signed QR and booking details | `ticket-save-menu`, `ticket-save-options`, `ticket-download-pdf`, `ticket-download-image`, `ticket-home-screen` |
 
 ## Wizard selectors in use
 
@@ -52,5 +53,13 @@ Set before running `npm run test:e2e`:
 - `payment-reject` on the row purges the reservation without opening the preview.
 - `credential-reveal` opens the credential QR dialog.
 - `qr-payload` is present only after reveal, for issued credentials.
+
+## Public ticket selectors in use
+
+- `ticket-save-menu` opens the save/download choices on `/my-ticket`.
+- `ticket-download-pdf` downloads the ticket as a PDF.
+- `ticket-download-image` downloads the ticket as a PNG.
+- `ticket-home-screen` adds the TKT ticket app to the device home screen (wallet-style access; not a signed Apple/Google Wallet pass).
+- `ticket-offline-save` keeps the read-only offline copy.
 
 Full E2E execution requires the four environment variables above and a backend reachable at `http://localhost:4000`.

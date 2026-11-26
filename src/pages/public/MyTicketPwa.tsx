@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { ArrowDownToLine, CheckCircle2, Copy, Download, LockKeyhole, QrCode, RefreshCw, ShieldCheck, Trash2, Wifi, WifiOff } from 'lucide-react'
+import { ArrowDownToLine, CheckCircle2, Copy, Download, FileImage, FileText, LockKeyhole, QrCode, RefreshCw, ShieldCheck, Smartphone, Trash2, Wifi, WifiOff } from 'lucide-react'
 import QRCode from 'qrcode'
 import { fetchPwaReservationTicket, type PwaReservationTicket } from '../../lib/api/public'
+import { downloadTicketImage, downloadTicketPdf } from '../../lib/domain/pwaTicketExport'
 import { useLanguage } from '../../lib/i18n'
 
 const STORAGE_KEY = 'tkt-pwa-saved-ticket-v1'
@@ -48,6 +49,8 @@ export default function MyTicketPwaPage() {
   const [copied, setCopied] = useState(false)
   const [installPrompt, setInstallPrompt] = useState<InstallPrompt | null>(null)
   const [installHelp, setInstallHelp] = useState(false)
+  const [saveMenuOpen, setSaveMenuOpen] = useState(false)
+  const [actionError, setActionError] = useState('')
   const isValid = Boolean(ticket && valid(ticket))
 
   useEffect(() => {
@@ -136,6 +139,23 @@ export default function MyTicketPwaPage() {
     setInstallPrompt(null)
   }
 
+  const exportTicket = async (kind: 'pdf' | 'image') => {
+    if (!ticket || !valid(ticket)) return
+    setSaveMenuOpen(false)
+    setActionError('')
+    try {
+      if (kind === 'pdf') await downloadTicketPdf(ticket, lang)
+      else await downloadTicketImage(ticket, lang)
+    } catch {
+      setActionError(isAr ? 'تعذر إنشاء الملف. حاول مرة أخرى.' : 'Could not create the file. Please try again.')
+    }
+  }
+
+  const addToWallet = async () => {
+    setSaveMenuOpen(false)
+    await install()
+  }
+
   const words = {
     intro: isAr ? 'احتفظ بتذكرتك على هاتفك، حتى عندما لا يتوفر اتصال بالإنترنت.' : 'Keep your ticket on your phone, even when you are offline.',
     lookup: isAr ? 'أدخل رقم الحجز والبريد المستخدم عند التسجيل.' : 'Enter your reservation code and booking email.',
@@ -144,9 +164,14 @@ export default function MyTicketPwaPage() {
     find: isAr ? 'عرض التذكرة' : 'Find my ticket',
     refresh: isAr ? 'تحديث الحالة' : 'Refresh status',
     install: isAr ? 'تثبيت تطبيق TKT' : 'Install TKT app',
-    save: isAr ? 'حفظ على هذا الجهاز' : 'Save on this device',
-    saved: isAr ? 'محفوظ على هذا الجهاز' : 'Saved on this device',
+    save: isAr ? 'حفظ التذكرة' : 'Save ticket',
+    saved: isAr ? 'محفوظة دون اتصال' : 'Offline copy saved',
+    pdf: isAr ? 'تحميل PDF' : 'Download as PDF',
+    image: isAr ? 'تحميل صورة' : 'Download as image',
+    homeScreen: isAr ? 'حفظ كمحفظة على الشاشة الرئيسية' : 'Save as wallet / home screen',
+    offlineCopy: isAr ? 'حفظ نسخة دون اتصال' : 'Save offline copy',
     remove: isAr ? 'حذف النسخة المحفوظة' : 'Remove offline copy',
+    exportFailed: isAr ? 'تعذر إنشاء الملف. حاول مرة أخرى.' : 'Could not create the file. Please try again.',
     guest: isAr ? 'اسم صاحب الحجز' : 'Guest',
     type: isAr ? 'نوع التذكرة' : 'Ticket type',
     venue: isAr ? 'المكان' : 'Venue',
@@ -217,9 +242,21 @@ export default function MyTicketPwaPage() {
                 <div><p className="text-[10px] uppercase tracking-[0.18em] text-[#77766F]">{words.code}</p><p className="mt-1 font-mono text-sm font-bold tracking-[0.12em]">{ticket.reservationCode}</p></div>
                 <button type="button" onClick={() => void copyCode()} className="inline-flex items-center gap-2 rounded-full border border-[#C9C7C0] px-3 py-2 text-xs font-semibold"><Copy size={14} />{copied ? (isAr ? 'تم النسخ' : 'Copied') : (isAr ? 'نسخ الرقم' : 'Copy code')}</button>
               </div>
-              <div className="mt-5 flex flex-wrap gap-2">
-                {isValid && <button type="button" onClick={saveOffline} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#171A20] px-4 py-3 text-xs font-bold text-white"><ArrowDownToLine size={15} />{saved ? words.saved : words.save}</button>}
-                {saved && <button type="button" onClick={removeOffline} className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#D8D6CF] px-4 py-3 text-xs font-semibold text-[#5A5B5D]"><Trash2 size={14} />{words.remove}</button>}
+              <div className="mt-5 space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  {isValid && <button type="button" data-testid="ticket-save-menu" aria-expanded={saveMenuOpen} onClick={() => setSaveMenuOpen((open) => !open)} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#171A20] px-4 py-3 text-xs font-bold text-white"><ArrowDownToLine size={15} />{words.save}</button>}
+                  {saved && <button type="button" onClick={removeOffline} className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#D8D6CF] px-4 py-3 text-xs font-semibold text-[#5A5B5D]"><Trash2 size={14} />{words.remove}</button>}
+                </div>
+                {saveMenuOpen && isValid && (
+                  <div data-testid="ticket-save-options" className="grid gap-2 rounded-2xl border border-[#D8D6CF] bg-white p-2">
+                    <button type="button" data-testid="ticket-download-pdf" onClick={() => void exportTicket('pdf')} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[#101216] hover:bg-[#F4F2ED]"><FileText size={16} className="text-[#FFB020]" />{words.pdf}</button>
+                    <button type="button" data-testid="ticket-download-image" onClick={() => void exportTicket('image')} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[#101216] hover:bg-[#F4F2ED]"><FileImage size={16} className="text-[#FFB020]" />{words.image}</button>
+                    <button type="button" data-testid="ticket-home-screen" onClick={() => void addToWallet()} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[#101216] hover:bg-[#F4F2ED]"><Smartphone size={16} className="text-[#FFB020]" />{words.homeScreen}</button>
+                    <div className="my-1 border-t border-[#E4E2DC]" />
+                    <button type="button" data-testid="ticket-offline-save" disabled={saved} onClick={() => { saveOffline(); setSaveMenuOpen(false) }} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[#101216] hover:bg-[#F4F2ED] disabled:cursor-default disabled:text-[#8A8983]"><Download size={16} className="text-[#FFB020]" />{saved ? words.saved : words.offlineCopy}</button>
+                  </div>
+                )}
+                {actionError && <p role="alert" className="text-xs text-rose-700">{actionError}</p>}
               </div>
             </div>
           </section>
