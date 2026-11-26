@@ -36,8 +36,8 @@ describe('ticket design payload contract', () => {
       'backgroundColor',
       'paletteId',
       'panelColor',
-      'templateId',
       'stickerId',
+      'templateId',
       'textColor',
     ])
   })
