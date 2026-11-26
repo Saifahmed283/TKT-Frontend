@@ -113,7 +113,7 @@ test.describe('TKT E2E — public site', () => {
 
   test('free reserve wizard follows five clear stages and validates attendee data', async ({ page, request }) => {
     const name = `E2E Film Nights ${Date.now()}`
-    await seedPublicEvent(request, name)
+    const eventId = await seedPublicEvent(request, name)
     const email = `e2e.tester+${Date.now()}@example.com`
     await page.goto('/upcoming')
     const card = await findUpcomingEvent(page, name)
@@ -157,9 +157,22 @@ test.describe('TKT E2E — public site', () => {
     await page.getByTestId('wizard-next').click()
     await page.getByTestId('wizard-next').click()
     await page.getByTestId('wizard-next').click()
+    // A successful free reservation creates the credential asynchronously.
+    // The result screen must poll the status endpoint until the QR is available.
+    const statusWithQr = page.waitForResponse(async (response) => {
+      if (
+        response.request().method() !== 'GET'
+        || !response.url().includes(`/public/events/${eventId}/reservations/status?`)
+        || !response.ok()
+      ) return false
+      const body = await response.json().catch(() => null)
+      return Boolean(body?.data?.qr)
+    }, { timeout: 30_000 })
     await page.getByTestId('wizard-submit').click()
     await expect(page.getByText(/Reservation confirmed|Reservation pending|Ticket ready|تم تأكيد|قيد المراجعة/i).first()).toBeVisible({ timeout: 25_000 })
     await expect(page.getByText(/Reservation code|رمز الحجز|TKT-/i).first()).toBeVisible({ timeout: 25_000 })
+    await statusWithQr
+    await expect(page.getByRole('img', { name: 'Ticket QR' })).toBeVisible()
   })
   test('mobile transport reservation embeds seat selection and requires payment proof', async ({ page, request }) => {
     const name = `E2E Transport Summit ${Date.now()}`
