@@ -7,7 +7,7 @@ type TicketFilter = 'all' | 'program' | 'bus'
 
 export function TicketStep({ w }: { w: ReservationWizard }) {
   const {
-    t, lang, event, availableTypes, ticketTypeId, setTicketTypeId,
+    t, lang, availableTypes, ticketTypeId, setTicketTypeId,
     setSelectedSeatIds, setHoldExpiresAt, selected,
   } = w
   const [filter, setFilter] = useState<TicketFilter>('all')
