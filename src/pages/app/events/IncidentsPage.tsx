@@ -114,7 +114,7 @@ export function IncidentsPage() {
         }
       />
 
-      <div className="grid gap-4 px-6 pb-6 pt-5 lg:grid-cols-2">
+      <div className="grid gap-4 pb-6 pt-5 lg:grid-cols-2">
         {data.length === 0 && (
           <div className="col-span-full rounded-none border border-dashed border-line py-16 text-center">
             <Siren className="mx-auto size-7 text-ink-3" />

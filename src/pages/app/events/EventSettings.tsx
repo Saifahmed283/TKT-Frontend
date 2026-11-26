@@ -97,7 +97,7 @@ export function EventSettingsPage() {
     <div className="pb-16">
       <PageHeader title="Event Settings" subtitle="Configure registration, ticket emails, finance estimates, and more." icon={<Mail size={18} />} />
 
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 pt-6">
         <Panel>
           <div className="mb-3 flex items-center justify-between gap-3">
             <h3 className="font-mono text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-3">Registration</h3>

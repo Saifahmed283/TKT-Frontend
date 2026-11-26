@@ -88,8 +88,8 @@ export function AccessCodesPage() {
   return (
     <div className="pb-16">
       <PageHeader title="Access Codes" subtitle="VIP, invite, and guest access codes with redemption controls." icon={<KeyRound className="size-5" />} actions={<Button icon={<Plus className="size-4" />} onClick={() => { reset(); setOpen(true) }}>Create code</Button>} />
-      <div className="px-6 pt-6">
-        <Table headers={['Code', 'Type', 'Assignee', 'Ticket type', 'Usage', 'Status', '']}>
+      <div className="pt-6">
+        <Table dense headers={['Code', 'Type', 'Assignee', 'Ticket type', 'Usage', 'Status', '']}>
           {(codes.data ?? []).length === 0 && <EmptyState colSpan={7} title="No access codes" />}
           {(codes.data ?? []).map((c) => (
             <tr key={c.id} className="group">
@@ -100,10 +100,10 @@ export function AccessCodesPage() {
               <Td className="text-[12px]">{c.redemptionCount}/{c.maxRedemptions}</Td>
               <Td><Badge tone={c.status === 'ACTIVE' ? 'ok' : c.status === 'REDEEMED' ? 'warn' : 'danger'}>{c.status}</Badge></Td>
               <Td>
-                <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100">
-                  <Button variant="ghost" size="sm" onClick={() => { setEditing(c); setForm({ code: c.code, type: c.type, fullName: c.fullName ?? '', email: c.email ?? '', phone: c.phone ?? '', attendeeCategory: c.attendeeCategory ?? '', ticketTypeId: c.ticketTypeId ?? '', notes: c.notes ?? '', maxRedemptions: String(c.maxRedemptions), expiresAt: c.expiresAt ? c.expiresAt.slice(0, 16) : '' }); setOpen(true) }} icon={<Pencil className="size-3.5" />} />
-                  {c.status !== 'REVOKED' && <Button variant="ghost" size="sm" onClick={() => revoke.mutate(c.id)} icon={<Ban className="size-3.5" />} />}
-                  {c.redemptionCount === 0 && <ConfirmDialog title="Delete access code" body={`Delete access code "${c.code}"? This cannot be undone.`} confirmLabel="Delete code" onConfirm={() => remove.mutate(c.id)}><Button variant="ghost" size="sm" className="text-danger" icon={<Trash2 className="size-3.5" />} /></ConfirmDialog>}
+                <div className="flex justify-end gap-1">
+                  <Button variant="ghost" size="sm" aria-label="Edit access code" onClick={() => { setEditing(c); setForm({ code: c.code, type: c.type, fullName: c.fullName ?? '', email: c.email ?? '', phone: c.phone ?? '', attendeeCategory: c.attendeeCategory ?? '', ticketTypeId: c.ticketTypeId ?? '', notes: c.notes ?? '', maxRedemptions: String(c.maxRedemptions), expiresAt: c.expiresAt ? c.expiresAt.slice(0, 16) : '' }); setOpen(true) }} icon={<Pencil className="size-3.5" />} />
+                  {c.status !== 'REVOKED' && <Button variant="ghost" size="sm" aria-label="Revoke access code" onClick={() => revoke.mutate(c.id)} icon={<Ban className="size-3.5" />} />}
+                  {c.redemptionCount === 0 && <ConfirmDialog title="Delete access code" body={`Delete access code "${c.code}"? This cannot be undone.`} confirmLabel="Delete code" onConfirm={() => remove.mutate(c.id)}><Button variant="ghost" size="sm" aria-label="Delete access code" className="text-danger" icon={<Trash2 className="size-3.5" />} /></ConfirmDialog>}
                 </div>
               </Td>
             </tr>

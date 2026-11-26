@@ -79,7 +79,7 @@ export function AuditPage() {
           </Button>
         }
       />
-      <div className="px-6 pt-5">
+      <div className="pt-5">
         <Table headers={['Action', 'Entity', 'Actor', 'Result', 'Details', 'When']}>
           {data.rows.length === 0 && <EmptyState colSpan={6} title="No audit entries yet" />}
           {data.rows.map((r) => (

@@ -203,7 +203,7 @@ export function SiteContentPage() {
         }
       />
 
-      <div className="border-b border-line px-6 pt-6">
+      <div className="border-b border-line pt-6">
         <div className="flex flex-wrap gap-1">
           {SECTIONS.map((item) => (
             <button
@@ -220,7 +220,7 @@ export function SiteContentPage() {
         </div>
       </div>
 
-      <form id="site-content-form" onSubmit={submit} className="mx-auto max-w-5xl space-y-5 px-6 pt-6">
+      <form id="site-content-form" onSubmit={submit} className="mx-auto max-w-5xl space-y-5 pt-6">
         {section === 'team' && (
           <>
             <CopyFields

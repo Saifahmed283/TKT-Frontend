@@ -67,13 +67,13 @@ export function DevicesPage() {
   return (
     <div className="pb-16">
       <PageHeader title="Devices & Scan Ops" subtitle="Monitor scanner devices, heartbeats, network state, and disable compromised devices." icon={<Radio className="size-5" />} actions={<Button variant="ghost" icon={<RefreshCw className="size-4" />} onClick={() => { devices.refetch(); stats.refetch() }}>Refresh</Button>} />
-      <div className="grid gap-4 px-6 pt-6 md:grid-cols-4">
+      <div className="grid gap-4 pt-6 md:grid-cols-4">
         <StatCard label="Total devices" value={String(s?.total ?? 0)} icon={<Radio className="size-4" />} />
         <StatCard label="Online now" value={String(s?.online ?? 0)} icon={<Wifi className="size-4" />} />
         <StatCard label="Stale / offline" value={String((s?.stale ?? 0) + (s?.offline ?? 0))} icon={<WifiOff className="size-4" />} />
         <StatCard label="Disabled / revoked" value={String(s?.disabled ?? 0)} icon={<ShieldOff className="size-4" />} />
       </div>
-      <div className="px-6 pt-6">
+      <div className="pt-6">
         <Table headers={['Device', 'Owner', 'Status', 'Network', 'Last seen', 'Scans', '']}>
           {(devices.data ?? []).length === 0 && <EmptyState colSpan={7} title="No devices registered" body="Devices register when a scanner signs in and enables offline mode." />}
           {(devices.data ?? []).map((d) => (

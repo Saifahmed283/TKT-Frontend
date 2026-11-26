@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
-import { api } from '@/lib/api'
+import { API_BASE, api, resolveUploadUrl } from '@/lib/api'
 import { downloadAuthFile } from '@/lib/export'
 import { useDebouncedValue } from '@/lib/useDebouncedValue'
 import { useToast } from '@/components/ui/toast'
@@ -40,10 +40,27 @@ const fmtMoney = (n: number, currency = 'EGP') => `${currency} ${n.toLocaleStrin
 // admin never silently loads an attacker-controlled image while reviewing.
 type ProofSource = { url: string; trusted: boolean }
 
+function isOwnProofUrl(stored: string): boolean {
+  if (stored.startsWith('/api/uploads/blob/') || stored.startsWith('/uploads/')) return true
+  try {
+    const parsed = new URL(stored, window.location.href)
+    const ownOrigin = parsed.origin === window.location.origin
+      || parsed.origin === new URL(API_BASE, window.location.href).origin
+    return ownOrigin && (parsed.pathname.startsWith('/api/uploads/blob/') || parsed.pathname.startsWith('/uploads/'))
+  } catch {
+    return false
+  }
+}
+
 function proofSource(raw: unknown): ProofSource | null {
-  const url = typeof raw === 'string' ? raw.trim() : ''
-  if (!url) return null
-  if (url.startsWith('/api/uploads/blob/') || url.startsWith('/uploads/')) return { url, trusted: true }
+  const stored = typeof raw === 'string' ? raw.trim() : ''
+  if (!stored) return null
+  // Only proof links served by our own API/frontend may be embedded; arbitrary
+  // external URLs remain plain links so an admin is not silently loading
+  // attacker-controlled content while reviewing a payment.
+  const trusted = isOwnProofUrl(stored)
+  const url = resolveUploadUrl(stored)
+  if (trusted) return { url, trusted: true }
   if (/^https?:\/\//i.test(url) || url.startsWith('data:image/')) return { url, trusted: false }
   return null
 }
@@ -87,7 +104,7 @@ export function PaymentsPage() {
         method: 'POST',
         headers: { 'Idempotency-Key': crypto.randomUUID() },
         body: JSON.stringify({ action }),
-      }),
+      }, { timeoutMs: 30_000 }),
     onSuccess: (_, v) => { toast.success(v.action === 'CONFIRM' ? 'Payment confirmed' : 'Payment rejected'); setReviewTarget(null); refresh() },
     onError: (e: any) => toast.error(e?.message ?? 'Review failed'),
   })
@@ -118,14 +135,14 @@ export function PaymentsPage() {
   const pending = pendingQ.data ?? []
   const summary = summaryQ.data
   const reviewMeta = (reviewTarget?.metadata ?? {}) as Record<string, unknown>
-  const reviewProof = proofSource(reviewMeta.paymentProofUrl ?? reviewTarget?.paymentProofUrl)
+  const reviewProof = proofSource(reviewMeta.paymentProofUrl || reviewTarget?.paymentProofUrl)
 
   return (
     <div>
       <PageHeader title="Payments" subtitle="Providers, payment review, revenue, remaining tickets, and finance exports."
-        actions={<div className="flex gap-2"><Button variant="ghost" onClick={() => void exportPayments()}><Download size={15} /> Excel</Button><Button onClick={() => setProviderOpen(true)}><Plus size={15} /> Add provider</Button></div>} />
+        actions={<div className="flex flex-wrap gap-2"><Button variant="ghost" onClick={() => void exportPayments()}><Download size={15} /> Excel</Button><Button onClick={() => setProviderOpen(true)}><Plus size={15} /> Add provider</Button></div>} />
 
-      <div className="space-y-6 p-6">
+      <div className="space-y-6">
         {summary && (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard label="Confirmed revenue" value={fmtMoney(summary.confirmedRevenue, summary.currency)} sub={`Net ${fmtMoney(summary.netRevenue, summary.currency)}`} icon={<Wallet size={18} />} />
@@ -157,7 +174,7 @@ export function PaymentsPage() {
         <Panel>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <div className="text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-3">Payment reference lookup</div>
-            <div className="flex items-center gap-2"><Search size={14} className="text-ink-3" /><Input value={refLookup} onChange={e => setRefLookup(e.target.value)} placeholder="Search payment reference..." className="w-72" />
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center"><div className="flex w-full items-center gap-2"><Search size={14} className="shrink-0 text-ink-3" /><Input value={refLookup} onChange={e => setRefLookup(e.target.value)} placeholder="Search payment reference..." className="w-full sm:w-72" /></div>
               <Button size="sm" variant="ghost" disabled={refLookup.trim().length < 3 || fetchRef.isPending} loading={fetchRef.isPending} onClick={() => fetchRef.mutate(refLookup.trim())}>Fetch by reference</Button></div>
           </div>
           {fetchResult && (
@@ -188,7 +205,8 @@ export function PaymentsPage() {
             <Table headers={['Reference', 'Reservation', 'Attendee', 'Proof', 'Status']}>
               {(refQ.data ?? []).map(r => {
                 const meta = (r.metadata ?? {}) as Record<string, unknown>
-                return <tr key={r.id}><Td className="font-mono text-xs">{String(meta.paymentReference ?? '—')}</Td><Td>{r.reservationCode ?? r.id.slice(0, 8)}</Td><Td>{r.attendee?.name ?? '—'}</Td><Td>{meta.paymentProofUrl ? <a className="text-signal hover:underline" href={String(meta.paymentProofUrl)} target="_blank" rel="noreferrer">Open proof</a> : '—'}</Td><Td><Badge tone={String(r.paymentStatus ?? meta.paymentStatus) === 'CONFIRMED' ? 'ok' : 'warn'}>{String(r.paymentStatus ?? meta.paymentStatus ?? '—')}</Badge></Td></tr>
+                const proof = proofSource(r.paymentProofUrl || meta.paymentProofUrl)
+                return <tr key={r.id}><Td className="font-mono text-xs">{String(meta.paymentReference ?? '—')}</Td><Td>{r.reservationCode ?? r.id.slice(0, 8)}</Td><Td>{r.attendee?.name ?? '—'}</Td><Td>{proof ? <a className="text-signal hover:underline" href={proof.url} target="_blank" rel="noreferrer">Open proof</a> : '—'}</Td><Td><Badge tone={String(r.paymentStatus ?? meta.paymentStatus) === 'CONFIRMED' ? 'ok' : 'warn'}>{String(r.paymentStatus ?? meta.paymentStatus ?? '—')}</Badge></Td></tr>
               })}
               {(refQ.data ?? []).length === 0 && <tr><td colSpan={5}><EmptyState colSpan={5} title="No reference match" body="Check reference number and event scope." /></td></tr>}
             </Table>
@@ -201,7 +219,7 @@ export function PaymentsPage() {
             {pending.map(p => {
               const meta = (p.metadata ?? {}) as Record<string, unknown>
               const paymentStatus = String(p.paymentStatus ?? meta.paymentStatus ?? 'PENDING')
-              const hasProof = Boolean(proofSource(meta.paymentProofUrl ?? p.paymentProofUrl))
+              const hasProof = Boolean(proofSource(meta.paymentProofUrl || p.paymentProofUrl))
               return (
                 <tr key={p.id} data-testid="pending-payment-row">
                   <Td><div className="font-medium text-ink">{p.reservationCode ?? p.id.slice(0, 8)}</div><div className="text-[11px] text-ink-3">{p.ticketType?.name}</div></Td>
@@ -290,11 +308,11 @@ export function PaymentsPage() {
                   <a href={reviewProof.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-signal hover:underline"><ExternalLink size={12} /> Open full size</a>
                 </div>
                 {reviewProof.trusted ? (
-                  <div className="flex min-h-64 items-center justify-center overflow-hidden border border-line-soft bg-canvas p-3">
+                  <div className="flex min-h-48 items-center justify-center overflow-hidden border border-line-soft bg-canvas p-3 sm:min-h-64">
                     {isImageProof(reviewProof.url) ? (
-                      <img data-testid="payment-proof-preview" src={reviewProof.url} alt={`Payment proof for reservation ${reviewTarget.reservationCode ?? reviewTarget.id}`} className="max-h-[55vh] max-w-full object-contain" />
+                      <img data-testid="payment-proof-preview" src={reviewProof.url} alt={`Payment proof for reservation ${reviewTarget.reservationCode ?? reviewTarget.id}`} className="max-h-[min(40dvh,22rem)] max-w-full object-contain" />
                     ) : (
-                      <object data-testid="payment-proof-preview" data={reviewProof.url} aria-label="Submitted payment proof" className="h-[55vh] w-full">
+                      <object data-testid="payment-proof-preview" data={reviewProof.url} aria-label="Submitted payment proof" className="h-[min(40dvh,22rem)] w-full">
                         <a href={reviewProof.url} target="_blank" rel="noreferrer" className="text-signal hover:underline">Open proof in a new tab</a>
                       </object>
                     )}

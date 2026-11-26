@@ -152,8 +152,8 @@ export function CredentialsPage() {
         }
       />
 
-      <div className="px-6 pt-5">
-        <Table headers={['Credential', 'Attendee', 'Ticket', 'Status', 'Delivery', 'Issued', 'Last used', '']}>
+      <div className="pt-5">
+        <Table dense headers={['Credential', 'Attendee', 'Ticket', 'Status', 'Delivery', 'Issued', 'Last used', '']}>
           {data.length === 0 && <EmptyState colSpan={8} title="No credentials issued" />}
           {data.map((c) => (
             <tr key={c.id} className="group">
@@ -185,20 +185,20 @@ export function CredentialsPage() {
               <Td className="text-[12px] text-ink-3">{c.issuedAt.split('T')[0]}</Td>
               <Td className="text-[12px] text-ink-3">{c.lastUsedAt ? c.lastUsedAt.split('T')[0] : '—'}</Td>
               <Td>
-                <div className="flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                  <button data-testid="credential-reveal" className="rounded-none p-1.5 text-ink-2 hover:bg-raised" onClick={() => setShowQr(c.id)} aria-label="Show QR"><QrCode className="size-4" /></button>
-                  {c.ticket?.id && <button className="rounded-none p-1.5 text-ink-2 hover:bg-raised" onClick={() => { setResendTarget(c); setResendEmail(c.attendee?.email ?? '') }} aria-label="Send ticket"><Send className="size-4" /></button>}
-                  <button className="rounded-none p-1.5 text-ink-2 hover:bg-raised" onClick={() => setHistoryId(c.id)} aria-label="Delivery history"><span className="font-mono text-[10px]">LOG</span></button>
-                  <button className="rounded-none p-1.5 text-ink-2 hover:bg-raised" onClick={() => void downloadTicketPdf(pdfIdentity(c))} aria-label="Download ticket PDF"><Download className="size-4" /></button>
-                  <button className="rounded-none p-1.5 text-ink-2 hover:bg-raised" onClick={() => void downloadIdCardPdf(pdfIdentity(c))} aria-label="Download ID card PDF"><CreditCard className="size-4" /></button>
+                <div className="flex justify-end gap-1">
+                  <button data-testid="credential-reveal" className="grid min-h-11 min-w-11 place-items-center rounded-none text-ink-2 hover:bg-raised" onClick={() => setShowQr(c.id)} aria-label="Show QR"><QrCode className="size-4" /></button>
+                  {c.ticket?.id && <button className="grid min-h-11 min-w-11 place-items-center rounded-none text-ink-2 hover:bg-raised" onClick={() => { setResendTarget(c); setResendEmail(c.attendee?.email ?? '') }} aria-label="Send ticket"><Send className="size-4" /></button>}
+                  <button className="grid min-h-11 min-w-11 place-items-center rounded-none text-ink-2 hover:bg-raised" onClick={() => setHistoryId(c.id)} aria-label="Delivery history"><span className="font-mono text-[10px]">LOG</span></button>
+                  <button className="grid min-h-11 min-w-11 place-items-center rounded-none text-ink-2 hover:bg-raised" onClick={() => void downloadTicketPdf(pdfIdentity(c))} aria-label="Download ticket PDF"><Download className="size-4" /></button>
+                  <button className="grid min-h-11 min-w-11 place-items-center rounded-none text-ink-2 hover:bg-raised" onClick={() => void downloadIdCardPdf(pdfIdentity(c))} aria-label="Download ID card PDF"><CreditCard className="size-4" /></button>
                   {c.status === 'ACTIVE' && (
                     <ConfirmDialog title="Revoke credential?" body={`Revoke credential for ${c.attendee?.name ?? 'this attendee'}? This disables access.`} confirmLabel="Revoke" onConfirm={() => revoke.mutate(c.id)}>
-                      <button className="rounded-none p-1.5 text-danger hover:bg-danger/10" aria-label="Revoke"><Ban className="size-4" /></button>
+                      <button className="grid min-h-11 min-w-11 place-items-center rounded-none text-danger hover:bg-danger/10" aria-label="Revoke"><Ban className="size-4" /></button>
                     </ConfirmDialog>
                   )}
                   {c.status !== 'ACTIVE' && (
                     <ConfirmDialog title="Delete credential?" body="Delete this credential permanently? Only allowed when there are no access logs." confirmLabel="Delete" onConfirm={() => remove.mutate(c.id)}>
-                      <button className="rounded-none p-1.5 text-danger hover:bg-danger/10" aria-label="Delete"><Trash2 className="size-4" /></button>
+                      <button className="grid min-h-11 min-w-11 place-items-center rounded-none text-danger hover:bg-danger/10" aria-label="Delete"><Trash2 className="size-4" /></button>
                     </ConfirmDialog>
                   )}
                 </div>

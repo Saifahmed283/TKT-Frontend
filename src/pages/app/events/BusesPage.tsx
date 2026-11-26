@@ -154,7 +154,7 @@ export function BusesPage() {
         icon={<BusFront className="size-5" />}
         actions={<Button onClick={openCreate}><Plus size={15} /> Add bus</Button>}
       />
-      <div className="grid gap-6 p-6 lg:grid-cols-[280px_1fr]">
+      <div className="grid gap-6 pt-6 lg:grid-cols-[280px_1fr]">
         <Panel>
           <div className="mb-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-3">Buses</div>
           <div className="space-y-2">

@@ -1,4 +1,4 @@
-import { test, expect, type APIRequestContext } from '@playwright/test'
+import { test, expect, type APIRequestContext, type Page } from '@playwright/test'
 import { getAdminCredentials } from './auth'
 
 const API = 'http://localhost:4000'
@@ -73,6 +73,13 @@ async function seedPaidTransportEvent(request: APIRequestContext, name: string) 
   return eventId
 }
 
+async function findUpcomingEvent(page: Page, name: string) {
+  await page.getByRole('searchbox', { name: /Search events|ابحث في الفعاليات/i }).fill(name)
+  const card = page.locator('article', { hasText: name }).first()
+  await card.waitFor({ timeout: 20_000 })
+  return card
+}
+
 test.describe('TKT E2E — public site', () => {
   test('public nav links to key sections', async ({ page }) => {
     await page.goto('/')
@@ -94,6 +101,7 @@ test.describe('TKT E2E — public site', () => {
     await seedPublicEvent(request, name)
     await page.goto('/upcoming')
     await expect(page.getByText(/Moments worth|لحظات تستحق|Upcoming/i).first()).toBeVisible({ timeout: 20_000 })
+    await page.getByRole('searchbox', { name: /Search events|ابحث في الفعاليات/i }).fill(name)
     await expect(page.getByText(name).first()).toBeVisible({ timeout: 20_000 })
     await expect(page.getByText(/Reservations open|الحجز مفتوح|Reserve|احجز/i).first()).toBeVisible({ timeout: 20_000 })
   })
@@ -103,8 +111,7 @@ test.describe('TKT E2E — public site', () => {
     await seedPublicEvent(request, name)
     const email = `e2e.tester+${Date.now()}@example.com`
     await page.goto('/upcoming')
-    await page.getByText(name).first().waitFor({ timeout: 20_000 })
-    const card = page.locator('article', { hasText: name }).first()
+    const card = await findUpcomingEvent(page, name)
     await card.getByRole('button', { name: /Reserve|احجز/i }).first().click()
     await expect(page.getByTestId('wizard-step-ticket')).toBeVisible()
     await page.getByTestId('ticket-option').first().click()
@@ -134,8 +141,7 @@ test.describe('TKT E2E — public site', () => {
     await seedPaidTransportEvent(request, name)
     const email = `e2e.transport+${Date.now()}@example.com`
     await page.goto('/upcoming')
-    await page.getByText(name).first().waitFor({ timeout: 20_000 })
-    const card = page.locator('article', { hasText: name }).first()
+    const card = await findUpcomingEvent(page, name)
     await card.getByRole('button', { name: /Reserve|احجز/i }).first().click()
     await expect(page.getByTestId('wizard-step-ticket')).toBeVisible()
     await page.getByTestId('ticket-option').filter({ hasText: 'Conference + Bus' }).click()
@@ -202,8 +208,8 @@ test.describe('TKT E2E — public site', () => {
     const name = `E2E Discard Guard ${Date.now()}`
     await seedPublicEvent(request, name)
     await page.goto('/upcoming')
-    await page.getByText(name).first().waitFor({ timeout: 20_000 })
-    await page.locator('article', { hasText: name }).first().getByRole('button', { name: /Reserve|احجز/i }).first().click()
+    const card = await findUpcomingEvent(page, name)
+    await card.getByRole('button', { name: /Reserve|احجز/i }).first().click()
     await page.getByTestId('ticket-option').first().click()
     await page.getByTestId('wizard-next').click()
     await page.getByLabel(/Full name|الاسم/i).fill('E2E Guard')
@@ -262,8 +268,8 @@ test.describe('TKT E2E — public site', () => {
     })
 
     await page.goto('/upcoming')
-    await page.getByText(name).first().waitFor({ timeout: 20_000 })
-    await page.locator('article', { hasText: name }).first().getByRole('button', { name: /Reserve|احجز/i }).first().click()
+    const card = await findUpcomingEvent(page, name)
+    await card.getByRole('button', { name: /Reserve|احجز/i }).first().click()
     await page.getByTestId('ticket-option').first().click()
     await page.getByTestId('wizard-next').click()
     await page.getByLabel(/Full name|الاسم/i).fill('E2E Poller')
@@ -301,8 +307,8 @@ test.describe('TKT E2E — public site', () => {
     })
 
     await page.goto('/upcoming')
-    await page.getByText(name).first().waitFor({ timeout: 20_000 })
-    await page.locator('article', { hasText: name }).first().getByRole('button', { name: /Reserve|احجز/i }).first().click()
+    const card = await findUpcomingEvent(page, name)
+    await card.getByRole('button', { name: /Reserve|احجز/i }).first().click()
     await page.getByTestId('ticket-option').filter({ hasText: 'Conference + Bus' }).click()
     await page.getByTestId('wizard-next').click()
     await page.getByLabel(/Full name|الاسم/i).fill('E2E Hold Retry')

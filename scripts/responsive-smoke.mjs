@@ -110,6 +110,8 @@ try {
               testId: element.getAttribute('data-testid'),
             }))
         })(),
+        scrollHeight: document.documentElement.scrollHeight,
+        innerHeight: window.innerHeight,
       }))
       const expectedPath = route === '/app' ? metrics.pathname : route
       const validAppPath = route !== '/app' || metrics.pathname === '/app' || metrics.pathname === '/login'
@@ -121,6 +123,9 @@ try {
         failures++
       } else if (route === '/' && expects3D && (metrics.heroPointerEvents !== 'auto' || !metrics.heroHitInside)) {
         console.error(`FAIL ${viewport.name} /: 3D hero is not reachable by pointer (pointer-events=${metrics.heroPointerEvents}, hitInside=${metrics.heroHitInside}, hitStack=${JSON.stringify(metrics.heroHitStack)})`)
+        failures++
+      } else if (route === '/' && metrics.scrollHeight > metrics.innerHeight + 2) {
+        console.error(`FAIL ${viewport.name} /: home page scrolls vertically (${metrics.scrollHeight}px content in ${metrics.innerHeight}px viewport)`)
         failures++
       } else if (metrics.documentWidth > metrics.viewportWidth + 1) {
         console.error(`FAIL ${viewport.name} ${route}: horizontal overflow ${metrics.documentWidth}px > ${metrics.viewportWidth}px`)
@@ -164,6 +169,92 @@ try {
     await context.close()
   }
 
+  async function checkDashboardDrawer(viewport) {
+    const context = await browser.newContext({
+      viewport: { width: viewport.width, height: viewport.height },
+      deviceScaleFactor: viewport.width <= 390 ? 2 : 1,
+      hasTouch: true,
+    })
+    await context.route('**/api/auth/refresh', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        data: {
+          token: 'responsive-smoke-token',
+          user: {
+            id: 'u-responsive',
+            name: 'Responsive Smoke',
+            email: 'responsive@test.tkt',
+            phone: null,
+            platformRole: 'super_admin',
+            orgMemberships: [],
+            eventMemberships: [],
+          },
+        },
+      }),
+    }))
+    await context.route('**/api/dashboard', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        data: {
+          kpis: {
+            events: 0, totalGuests: 0, checkedIn: 0, pendingEntry: 0,
+            totalDevices: 0, activeDevices: 0, todayScans: 0, validScans: 0, invalidScans: 0,
+          },
+          reservations: [],
+          recentActivity: [],
+        },
+      }),
+    }))
+    const page = await context.newPage()
+    const response = await page.goto(new URL('/app', baseURL).toString(), { waitUntil: 'domcontentloaded', timeout: 30000 })
+    if (!response?.ok()) {
+      console.error(`FAIL ${viewport.name} /app: HTTP ${response?.status() ?? 'no response'}`)
+      failures++
+      await context.close()
+      return
+    }
+    await page.locator('.tkt-intro').waitFor({ state: 'detached', timeout: 5000 })
+    const hamburger = page.getByRole('button', { name: 'Open navigation' })
+    await hamburger.waitFor({ state: 'visible', timeout: 10000 })
+
+    const mainWidth = await page.locator('main').evaluate((el) => el.getBoundingClientRect().width)
+    const sidebar = page.locator('aside')
+    const closedX = await sidebar.evaluate((el) => el.getBoundingClientRect().x)
+    if (mainWidth < viewport.width - 2) {
+      console.error(`FAIL ${viewport.name} /app: main content is only ${mainWidth}px wide in a ${viewport.width}px viewport`)
+      failures++
+    } else if (closedX > -1) {
+      console.error(`FAIL ${viewport.name} /app: sidebar is not off-canvas before opening (x=${closedX})`)
+      failures++
+    } else {
+      await hamburger.click()
+      await page.waitForTimeout(250)
+      const openX = await sidebar.evaluate((el) => el.getBoundingClientRect().x)
+      const backdropVisible = await page.getByRole('button', { name: 'Close navigation' }).first().isVisible()
+      if (openX < -1 || !backdropVisible) {
+        console.error(`FAIL ${viewport.name} /app: drawer did not open (x=${openX}, backdrop=${backdropVisible})`)
+        failures++
+      } else {
+        await page.keyboard.press('Escape')
+        await page.waitForTimeout(250)
+        const escapeX = await sidebar.evaluate((el) => el.getBoundingClientRect().x)
+        if (escapeX > -1) {
+          console.error(`FAIL ${viewport.name} /app: Escape did not close the drawer (x=${escapeX})`)
+          failures++
+        } else {
+          console.log(`PASS ${viewport.name} /app drawer opens, exposes content, and closes with Escape`)
+        }
+      }
+    }
+    await context.close()
+  }
+
+  for (const viewport of viewports.filter((v) => v.width < 1024)) {
+    await checkDashboardDrawer(viewport)
+  }
+
   const reducedContext = await browser.newContext({ viewport: { width: 1440, height: 900 } })
   const reducedPage = await reducedContext.newPage()
   await reducedPage.emulateMedia({ reducedMotion: 'reduce' })
@@ -181,4 +272,4 @@ try {
   await browser.close()
 }
 if (failures) throw new Error(`Responsive smoke test found ${failures} failure(s)`)
-console.log(`Responsive smoke passed: ${viewports.length} viewports × ${routes.length} routes, plus PWA assets and reduced-motion checks`)
+console.log(`Responsive smoke passed: ${viewports.length} viewports × ${routes.length} routes, dashboard drawer, home no-scroll, PWA assets, and reduced-motion checks`)

@@ -36,7 +36,7 @@ export function Dialog({
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[80] flex items-end justify-center p-2 sm:items-center sm:p-4">
           <motion.div
             className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"
             initial={{ opacity: 0 }}
@@ -49,7 +49,7 @@ export function Dialog({
             role="dialog"
             aria-modal="true"
             className={cn(
-              'tkt-window relative w-full overflow-hidden border border-signal/35 bg-elevated shadow-float',
+              'tkt-window relative max-h-[calc(100dvh-1rem)] w-full overflow-hidden border border-signal/35 bg-elevated shadow-float sm:max-h-[calc(100dvh-2rem)]',
               wide ? 'max-w-2xl' : 'max-w-md',
               className,
             )}
@@ -63,14 +63,14 @@ export function Dialog({
               <button
                 onClick={onClose}
                 aria-label="Close dialog"
-                className="p-1.5 text-ink-3 transition-colors hover:bg-raised hover:text-ink"
+                className="grid min-h-11 min-w-11 place-items-center text-ink-3 transition-colors hover:bg-raised hover:text-ink"
               >
                 <X className="size-4" />
               </button>
             </div>
             <Corners />
             <span className="tkt-window-corner" aria-hidden="true" />
-            <div className="max-h-[calc(100vh-10rem)] overflow-y-auto p-5">{children}</div>
+            <div className="max-h-[calc(100dvh-8rem)] overflow-y-auto p-4 sm:p-5">{children}</div>
           </motion.div>
         </div>
       )}

@@ -77,22 +77,22 @@ export function LiveActivityFeed({ activities }: { activities: FeedActivity[] })
         </span>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         {(['all', 'valid', 'invalid'] as ResultFilter[]).map((f) => (
           <button
             key={f}
             onClick={() => setResultFilter(f)}
             className={cn(
-              'rounded-none px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.15em] transition-colors',
+              'min-h-10 rounded-none px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.15em] transition-colors sm:min-h-11',
               resultFilter === f ? 'bg-signal-soft text-signal' : 'border border-line-soft text-ink-2 hover:bg-raised hover:text-ink',
             )}
           >
             {f === 'all' ? 'All' : f === 'valid' ? 'Valid' : 'Invalid'}
           </button>
         ))}
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:ms-auto">
           <select
-            className="input !w-auto !py-1.5 text-xs"
+            className="input w-full !py-2 text-xs sm:w-auto sm:!py-1.5"
             value={eventFilter}
             onChange={(e) => setEventFilter(e.target.value)}
           >
@@ -103,7 +103,7 @@ export function LiveActivityFeed({ activities }: { activities: FeedActivity[] })
           </select>
           {hasFilters && (
             <button
-              className="btn-ghost !px-2.5 !py-1 text-[10px]"
+              className="btn-ghost min-h-10 !px-2.5 text-[10px] sm:min-h-11"
               onClick={() => {
                 setResultFilter('all')
                 setEventFilter('all')
@@ -115,7 +115,7 @@ export function LiveActivityFeed({ activities }: { activities: FeedActivity[] })
         </div>
       </div>
 
-      <div className="mt-4 max-h-[420px] overflow-y-auto pr-1">
+      <div className="mt-4 max-h-[min(60vh,420px)] overflow-y-auto pr-1">
         {grouped.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center text-ink-3">
             <Clock className="mb-3 size-10 opacity-50" />
@@ -126,7 +126,7 @@ export function LiveActivityFeed({ activities }: { activities: FeedActivity[] })
             {grouped.map(([eventName, items]) => (
               <div key={eventName}>
                 <div className="mb-2 flex items-center justify-between border-b border-line-soft pb-1">
-                  <p className="truncate font-mono text-[12px] font-semibold uppercase tracking-[0.1em] text-ink-0">{eventName}</p>
+                  <p className="break-words font-mono text-[12px] font-semibold uppercase tracking-[0.1em] text-ink-0" title={eventName}>{eventName}</p>
                   <Badge tone="info">{items.length} scan{items.length === 1 ? '' : 's'}</Badge>
                 </div>
                 <div className="space-y-2">
@@ -143,7 +143,7 @@ export function LiveActivityFeed({ activities }: { activities: FeedActivity[] })
                         <div className="mt-0.5">{<ResultIcon result={a.result} />}</div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2">
-                            <p className="truncate text-[13px] font-medium text-ink-0">{a.attendee?.name ?? 'Unknown guest'}</p>
+                            <p className="break-words text-[13px] font-medium text-ink-0" title={a.attendee?.name ?? 'Unknown guest'}>{a.attendee?.name ?? 'Unknown guest'}</p>
                             <span className="shrink-0 font-mono text-[10px] text-ink-3">{formatDateTime(a.timestamp)}</span>
                           </div>
                           <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -151,7 +151,7 @@ export function LiveActivityFeed({ activities }: { activities: FeedActivity[] })
                             {a.offline && <Badge tone="warn">OFFLINE</Badge>}
                             {a.area?.name && <Badge tone="default">{a.area.name}</Badge>}
                           </div>
-                          <p className="mt-1 truncate font-mono text-[10px] text-ink-3">
+                          <p className="mt-1 break-words font-mono text-[10px] text-ink-3">
                             {a.credential?.code ?? '—'} · by {a.operator?.name ?? 'Unknown'}
                           </p>
                         </div>

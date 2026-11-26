@@ -79,14 +79,17 @@ export default function Landing() {
   }, [])
 
   return (
-    <div className="min-h-[100svh] overflow-x-hidden bg-paper text-ink">
+    <div className="overflow-x-hidden bg-paper text-ink">
       <a href="#main-content" className="sr-only z-[100] bg-paper px-4 py-3 text-ink focus:fixed focus:left-4 focus:top-4 focus:not-sr-only">
         {lang === 'ar' ? 'تخطي إلى المحتوى الرئيسي' : 'Skip to main content'}
       </a>
       <PublicNav />
 
-      <main id="main-content" className="relative min-h-[100svh]">
-        <header className="relative flex min-h-[100svh] flex-col justify-center overflow-x-clip px-4 pb-12 pt-24 sm:px-6 sm:pb-16 sm:pt-28 lg:px-8 lg:pb-16 lg:pt-32">
+      <main id="main-content" className="relative">
+        {/* Only the hero owns the viewport height. Centering it on small
+            screens left large empty bands under the fixed nav; desktop keeps
+            its centered 3D composition. */}
+        <header className="relative flex min-h-[100svh] flex-col justify-start overflow-x-clip px-4 pb-12 pt-24 sm:px-6 sm:pb-16 sm:pt-28 lg:justify-center lg:px-8 lg:pb-16 lg:pt-32">
           <style>{`
             .tkt-hero-vignette{background:radial-gradient(circle at 68% 45%,rgba(11,11,12,.08) 0%,rgba(11,11,12,.48) 48%,rgba(11,11,12,.78) 78%,var(--color-canvas) 100%)}
             :root[data-theme='light'] .tkt-hero-vignette{background:radial-gradient(circle at 68% 45%,rgba(247,244,238,0) 0%,rgba(247,244,238,.12) 42%,rgba(247,244,238,.42) 70%,var(--color-canvas) 100%)}
@@ -155,7 +158,7 @@ export default function Landing() {
             </div>
           )}
 
-          <div className="pointer-events-none relative z-10 mx-auto grid w-full max-w-7xl shrink-0 items-center gap-6 py-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,0.82fr)] sm:gap-6 sm:py-8 lg:grid-cols-[minmax(0,620px)_1fr] lg:py-0">
+          <div className="pointer-events-none relative z-10 mx-auto grid w-full max-w-7xl shrink-0 items-center gap-6 py-0 sm:grid-cols-[minmax(0,1fr)_minmax(0,0.82fr)] sm:gap-6 lg:grid-cols-[minmax(0,620px)_1fr] lg:py-0">
             {!desktop3D && showStaticHero && (
               <div aria-hidden="true" data-testid="hero-emblem" data-renderer="static" className="order-2 w-full sm:order-2 sm:justify-self-center">
                 <HeroVisual />

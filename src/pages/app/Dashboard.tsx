@@ -56,10 +56,10 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Link to="/app/events" className="btn-ghost !py-1.5 text-xs">
+          <Link to="/app/events" className="btn-ghost min-h-10 text-xs sm:min-h-11">
             All events <ArrowRight size={13} />
           </Link>
-          <button className="btn-ghost !py-1.5 text-xs" onClick={() => q.refetch()} disabled={q.isFetching}>
+          <button className="btn-ghost min-h-10 text-xs sm:min-h-11" onClick={() => q.refetch()} disabled={q.isFetching}>
             <RefreshCw className={`size-3.5 ${q.isFetching ? 'animate-spin' : ''}`} />
             {t('refresh')}
           </button>
@@ -67,7 +67,7 @@ export default function Dashboard() {
       </div>
 
       {kpis.events === 0 ? (
-        <div className="panel relative flex flex-col items-center gap-4 px-6 py-20 text-center">
+        <div className="panel relative flex flex-col items-center gap-4 px-4 py-16 text-center sm:px-6 sm:py-20">
           <Corners />
           <div className="grid h-14 w-14 place-items-center border border-signal/30 bg-signal/10 text-signal">
             <CalendarDays size={24} />

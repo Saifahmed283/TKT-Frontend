@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { ArrowUpRight, Calendar, Lock, MapPin, Ticket, Users } from 'lucide-react'
+import { ArrowUpRight, Calendar, Lock, MapPin, Search, Ticket, Users } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import PublicNav from '../../components/public/PublicNav'
 import PublicFooter from '../../components/public/PublicFooter'
@@ -9,6 +9,7 @@ import { Corners, Blink } from '../../components/instruments'
 import { ErrorBanner, Spinner } from '../../components/ui'
 import { useLanguage } from '../../lib/i18n'
 import { usePublicEvents, type PublicEvent, type PublicTicketType, type ReservationAvailability } from '../../lib/public'
+import { useDebouncedValue } from '../../lib/useDebouncedValue'
 import SpotlightCard from '../../components/reactbits/SpotlightCard'
 import BlurText from '../../components/reactbits/BlurText'
 import ShinyText from '../../components/reactbits/ShinyText'
@@ -229,12 +230,41 @@ export function EventCard({ e, i, onReserve }: { e: PublicEvent; i: number; onRe
   )
 }
 
+const PAGE_SIZE = 5
+
 export default function UpcomingEvents() {
   const [reserving, setReserving] = useState<PublicEvent | null>(null)
   const [searchParams, setSearchParams] = useSearchParams()
   const { t } = useLanguage()
   const { data: events, isLoading, error } = usePublicEvents('upcoming')
   const preselectedEventId = searchParams.get('event')
+  const [query, setQuery] = useState('')
+  const [page, setPage] = useState(1)
+  const resultsRef = useRef<HTMLDivElement>(null)
+  const debouncedQuery = useDebouncedValue(query, 150)
+
+  const filtered = useMemo(() => {
+    const needle = debouncedQuery.trim().toLocaleLowerCase()
+    const all = events ?? []
+    if (!needle) return all
+    return all.filter((e) => [
+      e.name,
+      e.description ?? '',
+      e.organization?.name ?? '',
+      e.venueName ?? '',
+      e.type.replaceAll('_', ' '),
+      ...e.ticketTypes.map((tt) => tt.name),
+    ].join(' ').toLocaleLowerCase().includes(needle))
+  }, [events, debouncedQuery])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const visible = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+
+  const goToPage = (next: number) => {
+    setPage(next)
+    resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   useEffect(() => {
     if (!preselectedEventId || !events) return
@@ -276,7 +306,7 @@ export default function UpcomingEvents() {
 
               {events && events.length > 0 && (
                 <div className="flex items-center gap-4 border border-line-soft/70 bg-raised/40 px-5 py-4 backdrop-blur-sm lg:mb-2">
-                  <p className="font-display text-4xl font-semibold tabular-nums text-[color:var(--upcoming-count-label)]">{events.length}</p>
+                  <p className="font-display text-4xl font-semibold tabular-nums text-[color:var(--upcoming-count-label)]">{filtered.length}</p>
                   <ShinyText text={t('eventsAvailable')} className="text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--upcoming-count-label)]" color="var(--upcoming-count-label)" shineColor="var(--color-signal)" speed={2.8} />
                 </div>
               )}
@@ -295,7 +325,26 @@ export default function UpcomingEvents() {
             </div>
           )}
           {events && (
-            <div className="space-y-4 sm:space-y-5">
+            <>
+              {events.length > 0 && (
+                <div className="mb-6 flex flex-col gap-4 border-b border-line-soft/70 pb-5 sm:flex-row sm:items-center sm:justify-between">
+                  <label className="relative block w-full max-w-sm">
+                    <span className="sr-only">{t('searchEvents')}</span>
+                    <Search size={14} className="absolute start-3 top-1/2 -translate-y-1/2 text-ink-3" aria-hidden="true" />
+                    <input
+                      type="search"
+                      className="input ps-9"
+                      value={query}
+                      onChange={(e) => { setQuery(e.target.value); setPage(1) }}
+                      placeholder={t('searchEventsPlaceholder')}
+                    />
+                  </label>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-3">
+                    {filtered.length} / {events.length} {t('eventsAvailable')}
+                  </p>
+                </div>
+              )}
+
               {events.length === 0 ? (
                 <div className="panel relative overflow-hidden px-6 py-16 text-center sm:py-20">
                   <Corners />
@@ -303,17 +352,53 @@ export default function UpcomingEvents() {
                   <p className="relative font-display text-3xl font-semibold tracking-tight text-ink-0 sm:text-4xl">{t('noUpcomingTitle')}</p>
                   <p className="relative mx-auto mt-4 max-w-md text-sm leading-relaxed text-ink-3">{t('noUpcomingBody')}</p>
                 </div>
+              ) : filtered.length === 0 ? (
+                <div className="panel relative overflow-hidden px-6 py-16 text-center sm:py-20">
+                  <Corners />
+                  <p className="relative font-display text-3xl font-semibold tracking-tight text-ink-0 sm:text-4xl">{t('noSearchResults')}</p>
+                  <p className="relative mx-auto mt-4 max-w-md text-sm leading-relaxed text-ink-3">{t('noSearchResultsBody')}</p>
+                  <button type="button" className="btn-ghost relative mt-6" onClick={() => { setQuery(''); setPage(1) }}>
+                    {t('clearSearch')}
+                  </button>
+                </div>
               ) : (
-                events.map((e, i) => (
-                  <EventCard
-                    key={e.id}
-                    e={e}
-                    i={i}
-                    onReserve={setReserving}
-                  />
-                ))
+                <>
+                  <div ref={resultsRef} className="space-y-4 sm:space-y-5">
+                    {visible.map((e, idx) => (
+                      <EventCard
+                        key={e.id}
+                        e={e}
+                        i={(currentPage - 1) * PAGE_SIZE + idx}
+                        onReserve={setReserving}
+                      />
+                    ))}
+                  </div>
+                  {totalPages > 1 && (
+                    <nav aria-label={t('pagination')} className="mt-8 flex items-center justify-between gap-3 border-t border-line-soft/70 pt-6">
+                      <button
+                        type="button"
+                        className="btn-ghost !px-3 !py-2.5"
+                        disabled={currentPage <= 1}
+                        onClick={() => goToPage(currentPage - 1)}
+                      >
+                        {t('previous')}
+                      </button>
+                      <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-3">
+                        {currentPage} / {totalPages}
+                      </span>
+                      <button
+                        type="button"
+                        className="btn-ghost !px-3 !py-2.5"
+                        disabled={currentPage >= totalPages}
+                        onClick={() => goToPage(currentPage + 1)}
+                      >
+                        {t('next')}
+                      </button>
+                    </nav>
+                  )}
+                </>
               )}
-            </div>
+            </>
           )}
         </div>
       </section>

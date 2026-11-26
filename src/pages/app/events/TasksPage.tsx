@@ -112,7 +112,7 @@ export function TasksPage() {
         }
       />
 
-      <div className="flex gap-3 overflow-x-auto px-6 pb-6 pt-5">
+      <div className="flex gap-3 overflow-x-auto pb-6 pt-5">
         {grouped.map((col) => (
           <div key={col.key} className="flex min-w-[280px] flex-1 flex-col rounded-none border border-line bg-raised/50 p-3">
             <div className="flex items-center gap-2 px-1 pb-3">
@@ -142,7 +142,7 @@ export function TasksPage() {
                     <div className="flex items-center gap-1">
                       <PriorityIcon p={t.priority} />
                       <ConfirmDialog title="Delete task?" body={`Delete "${t.title}"?`} confirmLabel="Delete" onConfirm={() => remove.mutate(t.id)}>
-                        <button className="rounded-none p-1 text-ink-3 opacity-0 transition-opacity hover:bg-danger/10 hover:text-danger group-hover:opacity-100" aria-label="Delete task"><Trash2 className="size-3.5" /></button>
+                        <button className="grid min-h-11 min-w-11 place-items-center rounded-none text-ink-3 transition-colors hover:bg-danger/10 hover:text-danger" aria-label="Delete task"><Trash2 className="size-3.5" /></button>
                       </ConfirmDialog>
                     </div>
                   </div>
@@ -164,7 +164,7 @@ export function TasksPage() {
                   {col.key !== 'DONE' ? (
                     <button
                       onClick={() => setStatus.mutate({ id: t.id, status: col.key === 'TODO' ? 'IN_PROGRESS' : 'DONE' })}
-                      className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-none border border-line py-1.5 text-[11px] font-medium text-ink-2 opacity-0 transition-opacity hover:bg-raised group-hover:opacity-100"
+                      className="mt-3 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-none border border-line py-1.5 text-[11px] font-medium text-ink-2 transition-colors hover:bg-raised"
                     >
                       <Check className="size-3" />
                       {col.key === 'TODO' ? 'Start' : 'Complete'}
@@ -172,7 +172,7 @@ export function TasksPage() {
                   ) : (
                     <button
                       onClick={() => setStatus.mutate({ id: t.id, status: 'TODO' })}
-                      className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-none border border-line py-1.5 text-[11px] font-medium text-ink-3 opacity-0 transition-opacity hover:bg-raised group-hover:opacity-100"
+                      className="mt-3 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-none border border-line py-1.5 text-[11px] font-medium text-ink-3 transition-colors hover:bg-raised"
                     >
                       Reopen
                     </button>

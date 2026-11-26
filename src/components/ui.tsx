@@ -91,7 +91,7 @@ export function Modal({ open, onClose, title, children, wide }: { open: boolean;
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => closeRef.current()}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-2 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => closeRef.current()}>
       <div
         ref={panelRef}
         role="dialog"
@@ -99,17 +99,17 @@ export function Modal({ open, onClose, title, children, wide }: { open: boolean;
         aria-labelledby={titleId}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className={`animate-fade-in relative max-h-[85vh] w-full ${wide ? 'max-w-2xl' : 'max-w-md'} overflow-y-auto border border-line-soft bg-raised shadow-float`}
+        className={`animate-fade-in relative max-h-[calc(100dvh-1rem)] w-full ${wide ? 'max-w-2xl' : 'max-w-md'} overflow-y-auto border border-line-soft bg-raised shadow-float sm:max-h-[calc(100dvh-2rem)]`}
         onClick={(e) => e.stopPropagation()}
       >
         <Corners />
         <div className="flex items-center justify-between border-b border-line-soft px-5 py-4">
           <h2 id={titleId} className="font-display text-lg font-semibold uppercase tracking-wide text-ink-0">{title}</h2>
-          <button onClick={() => closeRef.current()} className="rounded-none p-1.5 text-ink-3 transition-colors hover:bg-elevated hover:text-ink-0" aria-label={t('closeDialog')}>
+          <button onClick={() => closeRef.current()} className="grid min-h-11 min-w-11 place-items-center rounded-none text-ink-3 transition-colors hover:bg-elevated hover:text-ink-0" aria-label={t('closeDialog')}>
             <X size={16} />
           </button>
         </div>
-        <div className="p-5">{children}</div>
+        <div className="p-4 sm:p-5">{children}</div>
       </div>
     </div>
   )
@@ -133,10 +133,10 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
           <span className="inline-block h-1 w-1 rounded-full bg-signal" />
           TKT · Control center
         </p>
-        <h1 className="font-display text-3xl font-semibold leading-tight tracking-tight text-ink-0">{title}</h1>
-        {subtitle && <p className="mt-1.5 font-mono text-[11px] tracking-[0.05em] text-ink-3">{subtitle}</p>}
+        <h1 className="font-display text-[22px] font-semibold leading-tight tracking-tight text-ink-0 sm:text-3xl">{title}</h1>
+        {subtitle && <p className="mt-1.5 break-words font-mono text-[11px] tracking-[0.05em] text-ink-3">{subtitle}</p>}
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      {actions && <div className="flex min-w-0 flex-wrap items-center gap-2">{actions}</div>}
     </div>
   )
 }

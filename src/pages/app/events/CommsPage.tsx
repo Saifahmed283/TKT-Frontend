@@ -107,7 +107,7 @@ export function CommsPage() {
         }
       />
 
-      <div className="px-6 pt-5 grid gap-6 xl:grid-cols-[1.4fr_1fr]">
+      <div className="grid gap-6 pt-5 xl:grid-cols-[1.4fr_1fr]">
         <div className="space-y-3">
           <h2 className="text-sm font-semibold">Announcements</h2>
           {data.length === 0 && (

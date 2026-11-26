@@ -325,6 +325,19 @@
   @apply inline-flex items-center gap-1.5 border border-line px-2.5 py-0.5 text-xs font-medium;
 }
 
+/* Touch devices: keep every interactive control comfortably tappable. */
+@media (pointer: coarse) {
+  button,
+  .btn,
+  .input,
+  input:not([type='checkbox']):not([type='radio']):not([type='hidden']),
+  select,
+  textarea {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+}
+
 /* ——— Playful decorative accents (CSS only, motion-safe) ——— */
 @keyframes tkt-sparkle {
   0%, 100% { opacity: 0.22; transform: scale(0.7) rotate(0deg); }

@@ -47,26 +47,19 @@ export function StatCard({
   className?: string
   style?: CSSProperties
 }) {
-  return (
-    <div
-      role={onClick ? 'button' : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      onClick={onClick}
-      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick() } : undefined}
-      style={style}
-      className={cn(
-        'relative overflow-hidden border bg-raised transition-all duration-200 hover:-translate-y-px',
-        border[variant],
-        onClick ? 'cursor-pointer' : '',
-        className,
-      )}
-    >
+  const baseClass = cn(
+    'relative block w-full min-h-11 overflow-hidden border bg-raised text-start transition-all duration-200 hover:-translate-y-px',
+    border[variant],
+    className,
+  )
+  const body = (
+    <>
       <Corners className="opacity-40" />
       <div className={cn('absolute inset-y-0 left-0 w-[3px] rtl:left-auto rtl:right-0', accent[variant])} />
       <div className="p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0 space-y-1">
-            <p className="truncate font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-3">{title}</p>
+            <p className="break-words font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-3">{title}</p>
             <p className="font-display text-2xl font-bold tracking-tight text-ink-0 sm:text-3xl tabular-nums">{value}</p>
             {trend && (
               <p
@@ -84,6 +77,11 @@ export function StatCard({
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
+
+  if (onClick) {
+    return <button type="button" onClick={onClick} style={style} className={cn(baseClass, 'cursor-pointer')}>{body}</button>
+  }
+  return <div style={style} className={baseClass}>{body}</div>
 }

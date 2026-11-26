@@ -77,7 +77,7 @@ export function WorkforcePage() {
   return (
     <div className="pb-16">
       <PageHeader title="Workforce / Recruitment" subtitle="Recruitment applications, conversion to staff, and ID ops." icon={<BriefcaseBusiness className="size-5" />} actions={<Button icon={<Plus className="size-4" />} onClick={() => setOpen(true)}>New application</Button>} />
-      <div className="px-6 pt-6 space-y-8">
+      <div className="space-y-8 pt-6">
         <div>
           <h2 className="text-sm font-semibold mb-3">Applications</h2>
           <Table headers={['Applicant', 'Requested role', 'Status', 'Convert', '']}>

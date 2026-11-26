@@ -85,7 +85,7 @@ export function AreasPage() {
           </Button>
         }
       />
-      <div className="px-6 pt-5">
+      <div className="pt-5">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {data.length === 0 && (
             <div className="col-span-full rounded-none border border-dashed border-line py-16 text-center">

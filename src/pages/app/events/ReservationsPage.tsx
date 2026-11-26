@@ -126,12 +126,12 @@ export function ReservationsPage() {
         subtitle={`${data.total} public registrations. Paid reservations wait for your decision before a QR is issued.`}
         icon={<ClipboardCheck className="size-5" />}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button size="sm" variant="ghost" onClick={() => { const s = (eventQ.data?.settings?.ticketEmail ?? {}) as any; setEmailTpl({ subject: s.subject ?? '', preheader: s.preheader ?? '', title: s.title ?? '', body: s.body ?? '', footer: s.footer ?? '' }); setEmailTplOpen(true) }}>Email template</Button>
             <Button size="sm" variant="ghost" onClick={() => void downloadAuthFile(`/events/${eventId}/reservations/export.xlsx?status=${filter}`, `reservations-${eventId}.xlsx`).catch(() => toast.error('Export failed'))}><Download size={14} /> Excel</Button>
             <Button size="sm" variant="ghost" onClick={() => void downloadAuthFile(`/events/${eventId}/reservations/deliveries/export.xlsx`, `deliveries-${eventId}.xlsx`).catch(() => toast.error('Export failed'))}><Download size={14} /> Delivery log</Button>
             <Button size="sm" variant="ghost" onClick={() => exportPdf(`reservations-${eventId}`, 'Reservations', ['Code', 'Name', 'Email', 'Ticket', 'Amount', 'Approval', 'Payment', 'Issued'], (data.rows ?? []).map(r => [r.reservationCode ?? r.id.slice(0, 8), r.attendee.name, r.attendee.email ?? '', r.ticketType.name, r.price, r.approval, r.paymentStatus ?? '', timeAgo(r.issuedAt)]))}><Download size={14} /> PDF</Button>
-          <div className="flex gap-1 rounded-none border border-line bg-raised p-1">
+          <div className="flex w-full flex-wrap gap-1 rounded-none border border-line bg-raised p-1 sm:w-auto">
             {(['PENDING', 'APPROVED', 'REJECTED', 'ALL'] as Filter[]).map((f) => (
               <button
                 key={f}
@@ -139,7 +139,7 @@ export function ReservationsPage() {
                   setFilter(f)
                   setPage(1)
                 }}
-                className={`rounded-none px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.15em] transition-colors ${
+                className={`min-h-11 rounded-none px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.15em] transition-colors ${
                   filter === f ? 'bg-signal text-on-signal' : 'text-ink-2 hover:bg-elevated hover:text-ink'
                 }`}
               >
@@ -150,8 +150,8 @@ export function ReservationsPage() {
           </div>
         }
       />
-      <div className="px-6 pt-5">
-        <Table headers={['Reservation', 'Attendee', 'Ticket', 'Approval', 'Payment', 'QR', 'When', 'Actions']}>
+      <div className="pt-5">
+        <Table dense headers={['Reservation', 'Attendee', 'Ticket', 'Approval', 'Payment', 'QR', 'When', 'Actions']}>
           {data.rows.length === 0 && (
             <EmptyState colSpan={8} title="No reservations in this view" />
           )}

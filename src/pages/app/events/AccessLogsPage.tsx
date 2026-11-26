@@ -82,7 +82,7 @@ export function AccessLogsPage() {
           </>
         }
       />
-      <div className="px-6 pt-5">
+      <div className="pt-5">
         <Table headers={['Attendee', 'Credential', 'Area', 'Decision', 'Source', 'Operator', 'When']}>
           {data.rows.length === 0 && <EmptyState colSpan={7} title="No scans recorded" />}
           {data.rows.map((l) => (

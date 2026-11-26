@@ -72,7 +72,7 @@ export function ReportsPage() {
         }
       />
 
-      <div className="px-6 pt-6">
+      <div className="pt-6">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard label="Attendance rate" value={`${data.attendance.rate}%`} icon={<BarChart3 className="size-4" />} />
           <StatCard label="Access success" value={`${data.access.successRate}%`} icon={<BarChart3 className="size-4" />} />

@@ -183,7 +183,7 @@ export function OrganizationDetailPage() {
       <PageHeader title={org.name} subtitle={org.description ?? org.slug}
         actions={canManage ? <div className="flex items-center gap-2"><Button variant="ghost" onClick={() => setFolderOpen(true)} icon={<FolderPlus className="size-4" />}>New folder</Button><Button variant="ghost" onClick={() => { setEditRole(null); setRoleErr(''); setRoleOpen(true) }}><Plus size={15} /> New role</Button><Button onClick={() => setMemberOpen(true)}><Plus size={15} /> Add member</Button><Button variant="ghost" className="!text-danger" icon={<Trash2 className="size-4" />} onClick={() => setDeleteOrgOpen(true)}>Delete org</Button></div> : undefined} />
 
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 pt-6">
         <div className="grid gap-4 xl:grid-cols-[320px_1fr]">
           <div className="panel p-5">
             <div className="mb-4 flex items-center gap-2"><ImageIcon size={16} className="text-signal" /><h2 className="font-display text-lg font-semibold">Organization identity</h2></div>

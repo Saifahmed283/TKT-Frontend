@@ -1,7 +1,7 @@
 ﻿import { useRef, useState } from 'react'
 import { Upload, X, FileImage } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getAccessToken } from '@/lib/api'
+import { getAccessToken, resolveUploadUrl } from '@/lib/api'
 import { useToast } from './toast'
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? '/api'
@@ -86,7 +86,7 @@ export function FileUploadField({
         {value ? (
           <div className="mt-3 flex items-center gap-3">
             {preview && isImage ? (
-              <img src={value} alt="" className="h-14 w-14 border border-line object-cover bg-canvas" />
+              <img src={resolveUploadUrl(value)} alt="" className="h-14 w-14 border border-line object-cover bg-canvas" />
             ) : (
               <div className="flex h-14 w-14 items-center justify-center border border-line bg-canvas text-ink-3"><FileImage className="size-5" /></div>
             )}

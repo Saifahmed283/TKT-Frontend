@@ -63,7 +63,7 @@ export function OrganizationsPage() {
         icon={<Building2 className="size-5" />}
         actions={<Button icon={<Plus className="size-4" />} onClick={() => setOpen(true)}>New organization</Button>}
       />
-      <div className="grid gap-4 px-6 pt-6 md:grid-cols-2">
+      <div className="grid gap-4 pt-6 md:grid-cols-2">
         {data?.length === 0 && (
           <div className="col-span-full rounded-none border border-dashed border-line py-16 text-center">
             <Building2 className="mx-auto size-7 text-ink-3" />

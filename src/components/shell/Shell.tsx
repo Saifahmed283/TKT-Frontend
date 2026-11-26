@@ -4,7 +4,7 @@ import {
   LayoutDashboard, CalendarDays, Users, Ticket, QrCode, ScanLine, ListTodo,
   AlertTriangle, Megaphone, Shield, LogOut, Radio, ChevronDown,
   UserCog, Building2, BookOpen, Search, ClipboardCheck, Sun, Moon, Languages, Globe, Plug,
-  CreditCard, KeyRound, Smartphone, BriefcaseBusiness, FileText, Radar, MapPinned, Layers, BusFront,
+  CreditCard, KeyRound, Smartphone, BriefcaseBusiness, FileText, Radar, MapPinned, Layers, BusFront, Menu, X,
 } from 'lucide-react'
 import { useAuth, usePermissions } from '../../lib/auth'
 import { CommandPalette } from './CommandPalette'
@@ -101,6 +101,7 @@ export default function Shell() {
   const { theme, toggle: toggleTheme } = useTheme()
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const activeEvent = useMemo(() => {
     const m = location.pathname.match(/\/app\/events\/([^/]+)/)
@@ -113,10 +114,17 @@ export default function Shell() {
         e.preventDefault()
         setPaletteOpen((v) => !v)
       }
+      if (e.key === 'Escape') setSidebarOpen(false)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+
+  // A navigation tap should close the mobile drawer so the new page is visible.
+  useEffect(() => {
+    setSidebarOpen(false)
+    setMenuOpen(false)
+  }, [location.pathname])
 
   async function onLogout() {
     await logout()
@@ -127,12 +135,32 @@ export default function Shell() {
     <div className="flex min-h-screen bg-canvas">
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
 
-      <aside className="fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-line-soft bg-canvas rtl:left-auto rtl:right-0 rtl:border-r-0 rtl:border-l rtl:border-line-soft">
+      {sidebarOpen && (
+        <button
+          type="button"
+          aria-label={t('closeNavigation')}
+          className="fixed inset-0 z-40 bg-canvas/80 backdrop-blur-sm lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-[min(18rem,85vw)] flex-col border-r border-line-soft bg-canvas transition-transform duration-200 rtl:left-auto rtl:right-0 rtl:border-r-0 rtl:border-l rtl:border-line-soft lg:z-40 lg:w-64 lg:translate-x-0 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full rtl:translate-x-full'
+        }`}
+      >
 <div className="flex h-16 items-center gap-2.5 border-b border-line-soft px-5">
-  <Link to="/app" className="flex items-center gap-2">
+  <Link to="/app" onClick={() => setSidebarOpen(false)} className="flex items-center gap-2">
     <BrandLogo imageClassName="h-8" />
   </Link>
-  <span className="ml-auto flex items-center gap-1.5 text-[9px] font-medium uppercase tracking-[0.14em] text-ink-3">
+  <button
+    type="button"
+    aria-label={t('closeNavigation')}
+    className="ms-auto grid h-11 w-11 place-items-center text-ink-2 lg:hidden"
+    onClick={() => setSidebarOpen(false)}
+  >
+    <X size={18} />
+  </button>
+  <span className="hidden items-center gap-1.5 text-[9px] font-medium uppercase tracking-[0.14em] text-ink-3 sm:ms-auto sm:flex">
     <Blink className="bg-ok" />
     v2.0
   </span>
@@ -141,7 +169,8 @@ export default function Shell() {
         <div className="border-b border-line-soft px-3 py-2.5">
           <Link
             to="/upcoming"
-            className="group flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.16em] text-ink-2 transition-colors hover:text-signal"
+            onClick={() => setSidebarOpen(false)}
+            className="group flex min-h-11 items-center gap-2 text-[10px] font-medium uppercase tracking-[0.16em] text-ink-2 transition-colors hover:text-signal"
           >
             <Globe size={12} className="text-ink-3 transition-colors group-hover:text-signal" />
             {t('backToSite')}
@@ -158,8 +187,9 @@ export default function Shell() {
                 key={item.to}
                 to={item.to}
                 end={item.end}
+                onClick={() => setSidebarOpen(false)}
                 className={({ isActive }) =>
-                  `group relative flex items-center gap-3 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.1em] transition-colors ${
+                  `group relative flex min-h-11 items-center gap-3 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.1em] transition-colors ${
                     isActive ? 'bg-signal-soft text-signal' : 'text-ink-2 hover:bg-raised hover:text-ink'
                   }`
                 }
@@ -179,7 +209,7 @@ export default function Shell() {
             <>
               <p className="mb-2 mt-6 flex items-center gap-2 px-2 text-[10px] font-medium uppercase tracking-[0.22em] text-ink-3">
                 <span className="text-signal">//</span> {t('event')}
-                <span className="truncate text-signal/70">{activeEvent.name?.slice(0, 12)}</span>
+                <span className="min-w-0 break-words text-signal/70" title={activeEvent.name}>{activeEvent.name}</span>
               </p>
               <div className="space-y-4">
                 {eventNavGroups.map((group) => {
@@ -193,8 +223,9 @@ export default function Shell() {
                           <NavLink
                             key={item.to}
                             to={`/app/events/${activeEvent.id}/${item.to}`}
+                            onClick={() => setSidebarOpen(false)}
                             className={({ isActive }) =>
-                              `group relative flex items-center gap-3 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.08em] transition-colors ${
+                              `group relative flex min-h-11 items-center gap-3 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.08em] transition-colors ${
                                 isActive ? 'bg-signal-soft text-signal' : 'text-ink-2 hover:bg-raised hover:text-ink'
                               }`
                             }
@@ -220,7 +251,7 @@ export default function Shell() {
         <div className="border-t border-line-soft px-3 py-3">
           <div className="relative">
             <button
-              className="flex w-full items-center gap-3 px-2 py-2 text-left transition-colors hover:bg-raised"
+              className="flex min-h-11 w-full items-center gap-3 px-2 py-2 text-left transition-colors hover:bg-raised"
               onClick={() => setMenuOpen((v) => !v)}
             >
               <span className="relative grid h-9 w-9 shrink-0 place-items-center border border-signal/30 bg-signal/10 font-mono text-xs font-bold text-signal">
@@ -238,13 +269,13 @@ export default function Shell() {
                 <Link
                   to="/app/profile"
                   onClick={() => setMenuOpen(false)}
-                  className="flex w-full items-center gap-2.5 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.1em] text-ink-2 transition-colors hover:bg-raised hover:text-ink"
+                  className="flex min-h-11 w-full items-center gap-2.5 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.1em] text-ink-2 transition-colors hover:bg-raised hover:text-ink"
                 >
                   <UserCog size={14} />
                   Profile
                 </Link>
                 <button
-                  className="flex w-full items-center gap-2.5 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.1em] text-danger transition-colors hover:bg-danger/10"
+                  className="flex min-h-11 w-full items-center gap-2.5 px-3 py-2 font-mono text-[12px] uppercase tracking-[0.1em] text-danger transition-colors hover:bg-danger/10"
                   onClick={onLogout}
                 >
                   <LogOut size={14} />
@@ -260,33 +291,44 @@ export default function Shell() {
         </div>
       </aside>
 
-      <main className="ml-64 min-w-0 flex-1 rtl:ml-0 rtl:mr-64">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-line-soft bg-canvas/85 px-6 backdrop-blur-xl">
+      <main className="min-w-0 flex-1 lg:ml-64 rtl:ml-0 rtl:lg:mr-64">
+        <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-line-soft bg-canvas/85 px-3 backdrop-blur-xl sm:h-16 sm:gap-4 sm:px-6">
+          <button
+            type="button"
+            aria-label={t('openNavigation')}
+            className="grid h-11 w-11 shrink-0 place-items-center border border-line-soft bg-raised text-ink-2 transition-colors hover:border-signal/40 lg:hidden"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <Menu size={18} />
+          </button>
           <button
             onClick={() => setPaletteOpen(true)}
-            className="group flex w-72 items-center gap-3 border border-line-soft bg-raised px-3.5 py-2 transition-colors hover:border-signal/40"
+            aria-label={t('jumpTo')}
+            className="group flex h-11 min-w-11 items-center justify-center gap-3 border border-line-soft bg-raised px-3 transition-colors hover:border-signal/40 md:h-auto md:w-56 md:justify-start md:px-3.5 md:py-2 xl:w-72"
           >
             <Search size={14} className="text-ink-3 group-hover:text-signal" />
-            <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-ink-3">
+            <span className="hidden font-mono text-[11px] uppercase tracking-[0.15em] text-ink-3 md:inline">
               {t('jumpTo')}
             </span>
-            <span className="ml-auto flex items-center gap-1 font-mono text-[9px] text-ink-3 rtl:ml-0 rtl:mr-auto">
+            <span className="ms-auto hidden items-center gap-1 font-mono text-[9px] text-ink-3 md:flex">
               <span className="border border-line-soft bg-elevated px-1.5 py-0.5">Ctrl</span>
               <span className="border border-line-soft bg-elevated px-1.5 py-0.5">K</span>
             </span>
           </button>
-          <div className="flex items-center gap-4 text-[10px] font-medium uppercase tracking-[0.16em]">
+          <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.16em] sm:gap-4">
             <Link
               to="/upcoming"
-              className="flex items-center gap-1.5 border border-line-soft bg-raised px-2.5 py-1.5 text-ink-2 transition-colors hover:border-signal/40 hover:text-ink"
+              aria-label={t('backToSite')}
+              className="flex h-11 items-center gap-1.5 border border-line-soft bg-raised px-2.5 text-ink-2 transition-colors hover:border-signal/40 hover:text-ink sm:px-2.5 sm:py-1.5"
             >
               <Globe size={12} className="text-signal" />
-              {t('backToSite')}
+              <span className="hidden sm:inline">{t('backToSite')}</span>
             </Link>
             <button
               onClick={toggleLang}
               title="Toggle language"
-              className="flex items-center gap-1.5 border border-line-soft bg-raised px-2.5 py-1.5 text-ink-2 transition-colors hover:border-signal/40 hover:text-ink"
+              aria-label="Toggle language"
+              className="flex h-11 items-center gap-1.5 border border-line-soft bg-raised px-2.5 text-ink-2 transition-colors hover:border-signal/40 hover:text-ink sm:h-auto sm:py-1.5"
             >
               <Languages size={12} className="text-signal" />
               {lang === 'en' ? 'ع' : 'EN'}
@@ -294,12 +336,13 @@ export default function Shell() {
             <button
               onClick={toggleTheme}
               title="Toggle theme"
-              className="flex items-center gap-1.5 border border-line-soft bg-raised px-2.5 py-1.5 text-ink-2 transition-colors hover:border-signal/40 hover:text-ink"
+              aria-label="Toggle theme"
+              className="flex h-11 w-11 items-center justify-center border border-line-soft bg-raised text-ink-2 transition-colors hover:border-signal/40 hover:text-ink sm:h-auto sm:w-auto sm:px-2.5 sm:py-1.5"
             >
               {theme === 'dark' ? <Sun size={12} className="text-signal" /> : <Moon size={12} className="text-signal" />}
             </button>
-            <Clock />
-            <span className="hidden items-center gap-1.5 text-ink-3 sm:flex">
+            <span className="hidden xl:inline"><Clock /></span>
+            <span className="hidden items-center gap-1.5 text-ink-3 lg:flex">
               <span className="h-1.5 w-1.5 animate-blink rounded-full bg-ok" />
               {t('apiStable')}
             </span>
@@ -309,7 +352,7 @@ export default function Shell() {
             </span>
           </div>
         </header>
-        <div className="px-6 py-6">
+        <div className="min-w-0 px-3 py-4 sm:px-6 sm:py-6">
           <Outlet />
         </div>
       </main>

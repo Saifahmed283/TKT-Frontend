@@ -81,18 +81,18 @@ export default function AttendeesPage() {
             }}
           />
         </div>
-        <select className="input w-44" value={scope} onChange={(e) => { setScope(e.target.value as 'approved' | 'pending' | 'all'); setStatus(''); setPage(1) }}>
+        <select className="input w-full sm:w-44" value={scope} onChange={(e) => { setScope(e.target.value as 'approved' | 'pending' | 'all'); setStatus(''); setPage(1) }}>
           <option value="approved">Approved</option>
           <option value="pending">Pending review</option>
           <option value="all">All attendees</option>
         </select>
-        <select className="input w-40" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
+        <select className="input w-full sm:w-40" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
           <option value="">All statuses</option>
           {Object.keys(statusClass).map((s) => (
             <option key={s}>{s}</option>
           ))}
         </select>
-        <select className="input w-44" value={attendeeType} onChange={(e) => { setAttendeeType(e.target.value); setPage(1) }}>
+        <select className="input w-full sm:w-44" value={attendeeType} onChange={(e) => { setAttendeeType(e.target.value); setPage(1) }}>
           <option value="">All attendee types</option>
           {taxonomyQ.data.attendeeTypes.map((item) => (
             <option key={item.code} value={item.code}>{item.label}</option>
@@ -100,19 +100,19 @@ export default function AttendeesPage() {
         </select>
         <span className="text-xs text-ink-400">{query.data ? `${query.data.total} attendees` : ''}</span>
         <button
-          className="btn-ghost py-1.5 text-xs"
+          className="btn-ghost min-h-10 text-xs sm:min-h-11"
           onClick={() => void downloadAuthFile(`/events/${eventId}/attendees/export.csv${filters ? `?${filters.replace(/^&/, '')}` : ''}`, `attendees-${eventId.slice(0, 8)}.csv`).catch(() => {})}
         >
           <Download size={12} /> Export CSV
         </button>
         <button
-          className="btn-ghost py-1.5 text-xs"
+          className="btn-ghost min-h-10 text-xs sm:min-h-11"
           onClick={() => void downloadAuthFile(`/events/${eventId}/attendees/export.xlsx${filters ? `?${filters.replace(/^&/, '')}` : ''}`, `attendees-${eventId.slice(0, 8)}.xlsx`).catch(() => {})}
         >
           <Download size={12} /> Excel
         </button>
         <button
-          className="btn-ghost py-1.5 text-xs"
+          className="btn-ghost min-h-10 text-xs sm:min-h-11"
           onClick={() => {
             const rows = query.data?.rows ?? []
             exportPdf(`attendees-${eventId.slice(0, 8)}`, 'Attendees', ['Name', 'Email', 'Phone', 'Category', 'Attendee type', 'Status', 'Tickets', 'Scans', 'Registered'], rows.map((a) => [a.name, a.email, a.phone ?? '', a.category ?? '', typeLabel(a.attendeeType), a.status, a._count.tickets, a._count.accessLogs, fmtDateTime(a.createdAt)]))
@@ -129,8 +129,8 @@ export default function AttendeesPage() {
       ) : (query.data?.rows.length ?? 0) === 0 ? (
         <EmptyState icon={<Users size={22} />} title="No attendees found" body="Add attendees via the API, bulk import, or registration desk." />
       ) : (
-        <div className="card overflow-hidden">
-          <table className="w-full text-start text-sm">
+        <div className="card overflow-x-auto">
+          <table className="w-full min-w-[900px] text-start text-sm">
             <thead className="border-b border-line bg-ink-850 text-xs uppercase tracking-wide text-ink-400">
               <tr>
                 <th className="px-4 py-3 font-medium">Name</th>
@@ -161,7 +161,7 @@ export default function AttendeesPage() {
                   <td className="px-4 py-3 text-end">
                     {a._count.tickets === 0 && a._count.credentials === 0 && a._count.accessLogs === 0 && (
                       <ConfirmDialog title="Delete attendee?" body={`Delete ${a.name}? This cannot be undone.`} confirmLabel="Delete" onConfirm={() => remove.mutate(a.id)}>
-                        <button className="btn-ghost !px-2 !py-1 text-[11px] text-danger"><Trash2 size={12} /></button>
+                        <button aria-label="Delete attendee" className="btn-ghost grid min-h-11 min-w-11 place-items-center text-[11px] text-danger"><Trash2 size={12} /></button>
                       </ConfirmDialog>
                     )}
                   </td>
@@ -173,14 +173,14 @@ export default function AttendeesPage() {
       )}
 
       {query.data && query.data.total > query.data.pageSize && (
-        <div className="mt-4 flex items-center justify-between text-sm text-ink-400">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-ink-400">
           <span>Page {query.data.page}</span>
           <div className="flex gap-2">
-            <button className="btn-ghost py-1.5 text-xs" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+            <button className="btn-ghost min-h-11 text-xs" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
               Previous
             </button>
             <button
-              className="btn-ghost py-1.5 text-xs"
+              className="btn-ghost min-h-11 text-xs"
               disabled={page * query.data.pageSize >= query.data.total}
               onClick={() => setPage((p) => p + 1)}
             >

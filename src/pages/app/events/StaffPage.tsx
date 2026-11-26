@@ -154,8 +154,8 @@ export function StaffPage() {
           </Button>
         }
       />
-      <div className="px-6 pt-5">
-        <Table headers={['Staff', 'Role', 'Scope', 'Team', 'Areas', 'Presence', '']}>
+      <div className="pt-5">
+        <Table dense headers={['Staff', 'Role', 'Scope', 'Team', 'Areas', 'Presence', '']}>
           {staff.length === 0 && <EmptyState colSpan={7} title="No staff yet" />}
           {staff.map((s) => {
             const p = presence.data?.find((row) => row.memberId === s.id)
@@ -211,14 +211,14 @@ export function StaffPage() {
                   )}
                 </Td>
                 <Td>
-                  <div className="flex justify-end opacity-0 transition-opacity group-hover:opacity-100">
+                  <div className="flex justify-end">
                     <ConfirmDialog
                       title="Remove staff member"
                       body={`Remove ${s.user.name} from this event?`}
                       confirmLabel="Remove"
                       onConfirm={() => remove.mutate(s.id)}
                     >
-                      <button className="rounded-none p-1.5 text-danger hover:bg-danger/10" aria-label="Remove">
+                      <button className="grid min-h-11 min-w-11 place-items-center rounded-none text-danger hover:bg-danger/10" aria-label="Remove">
                         <Trash2 className="size-4" />
                       </button>
                     </ConfirmDialog>

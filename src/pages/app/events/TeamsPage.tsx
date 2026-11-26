@@ -72,7 +72,7 @@ export function TeamsPage() {
           </Button>
         }
       />
-      <div className="px-6 pt-5">
+      <div className="pt-5">
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {data.length === 0 && (
             <div className="col-span-full">

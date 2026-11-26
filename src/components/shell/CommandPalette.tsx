@@ -25,11 +25,17 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   }, [open])
 
   useEffect(() => {
+    if (!open) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
     }
-    if (open) window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = previousOverflow
+    }
   }, [open, onClose])
 
   const eventItems = useMemo(
@@ -56,9 +62,9 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 px-4 pt-[15vh] backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 px-2 pt-2 backdrop-blur-sm sm:px-4 sm:pt-[15vh]" onClick={onClose}>
       <div
-        className="animate-fade-in relative w-full max-w-lg overflow-hidden border border-line-soft bg-elevated shadow-float"
+        className="animate-fade-in relative flex max-h-[calc(100dvh-1rem)] w-full max-w-lg flex-col overflow-hidden border border-line-soft bg-elevated shadow-float"
         onClick={(e) => e.stopPropagation()}
       >
         <Corners />
@@ -69,18 +75,18 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search events and pages…"
-            className="flex-1 bg-transparent font-mono text-[13px] text-ink outline-none placeholder:text-ink-3"
+            className="min-h-12 flex-1 bg-transparent font-mono text-[13px] text-ink outline-none placeholder:text-ink-3"
           />
           <span className="flex items-center gap-1 font-mono text-[9px] text-ink-3">
             <span className="border border-line-soft bg-raised px-1.5 py-0.5">esc</span>
           </span>
         </div>
-        <div className="max-h-80 overflow-y-auto p-2">
+        <div className="max-h-[min(60dvh,20rem)] overflow-y-auto p-2">
           {filtered.length === 0 && <p className="px-3 py-6 text-center font-mono text-[12px] text-ink-3">NO MATCHES</p>}
           {filtered.map((item, i) => (
             <button
               key={item.to + i}
-              className="group flex w-full items-center gap-3 border border-transparent px-3 py-2.5 text-left transition-colors hover:border-signal/20 hover:bg-raised"
+              className="group flex min-h-11 w-full items-center gap-3 border border-transparent px-4 py-3 text-left transition-colors hover:border-signal/20 hover:bg-raised sm:px-3 sm:py-2.5"
               onClick={() => {
                 navigate(item.to)
                 onClose()
@@ -90,8 +96,8 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                 <item.icon size={13} />
               </span>
               <span className="flex-1 font-mono text-[12px] text-ink">{item.label}</span>
-              <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-3">{item.hint}</span>
-              <CornerDownLeft size={12} className="text-ink-3 opacity-0 transition-opacity group-hover:opacity-100" />
+              <span className="hidden font-mono text-[10px] uppercase tracking-[0.15em] text-ink-3 sm:inline">{item.hint}</span>
+              <CornerDownLeft size={12} className="hidden text-ink-3 opacity-0 transition-opacity group-hover:opacity-100 sm:block" />
             </button>
           ))}
         </div>

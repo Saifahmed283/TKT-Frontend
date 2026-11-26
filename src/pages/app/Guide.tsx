@@ -36,7 +36,7 @@ export function Guide() {
         subtitle="How TKT runs a live event."
         icon={<LifeBuoy className="size-5" />}
       />
-      <div className="space-y-3 px-6 pt-6">
+      <div className="space-y-3 pt-6">
         {sections.map((s) => (
           <div key={s.title} className="rounded-none border border-line bg-raised/70 p-5">
             <h3 className="text-[14px] font-semibold">{s.title}</h3>

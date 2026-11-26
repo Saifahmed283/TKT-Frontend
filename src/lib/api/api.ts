@@ -203,6 +203,22 @@ export const api = Object.assign(request, {
     request<T>(path, { method: 'DELETE', signal: opts?.signal }, opts),
 })
 
+/**
+ * Upload responses store API-relative links (`/api/...` for private proofs,
+ * `/uploads/...` for local files). When VITE_API_BASE points at a separate
+ * backend origin those links must be resolved against it, otherwise the admin
+ * preview requests the SPA host and gets the shell/404 instead of the proof.
+ */
+export function resolveUploadUrl(url: string | null | undefined): string {
+  const value = (url ?? '').trim()
+  if (!value) return ''
+  if (/^(?:https?:|data:|blob:)/i.test(value)) return value
+  const base = API_BASE.replace(/\/+$/, '')
+  if (value.startsWith('/api/')) return `${base}${value.slice(4)}`
+  if (value.startsWith('/uploads/')) return `${base.replace(/\/api\/?$/, '')}${value}`
+  return value
+}
+
 export function queryString(params: Record<string, string | number | boolean | null | undefined>) {
   const q = new URLSearchParams()
   for (const [k, v] of Object.entries(params)) {
