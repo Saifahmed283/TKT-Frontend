@@ -45,7 +45,7 @@ export function EmptyState({ icon, title, body, action }: { icon: ReactNode; tit
   )
 }
 
-export function Modal({ open, onClose, title, children, wide }: { open: boolean; onClose: () => void; title: string; children: ReactNode; wide?: boolean }) {
+export function Modal({ open, onClose, title, children, wide, extraWide }: { open: boolean; onClose: () => void; title: string; children: ReactNode; wide?: boolean; extraWide?: boolean }) {
   const { t } = useLanguage()
   const panelRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
@@ -99,7 +99,7 @@ export function Modal({ open, onClose, title, children, wide }: { open: boolean;
         aria-labelledby={titleId}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className={`animate-fade-in relative max-h-[calc(100dvh-1rem)] w-full ${wide ? 'max-w-2xl' : 'max-w-md'} overflow-y-auto border border-line-soft bg-raised shadow-float sm:max-h-[calc(100dvh-2rem)]`}
+        className={`animate-fade-in relative max-h-[calc(100dvh-1rem)] w-full ${extraWide ? 'max-w-5xl' : wide ? 'max-w-2xl' : 'max-w-md'} overflow-y-auto border border-line-soft bg-raised shadow-float sm:max-h-[calc(100dvh-2rem)]`}
         onClick={(e) => e.stopPropagation()}
       >
         <Corners />

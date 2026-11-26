@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ClipboardList, CreditCard, Palette, Ticket, UserRound } from 'lucide-react'
+import { ClipboardList, Ticket, UserRound } from 'lucide-react'
 import { api, ApiError } from '../../../lib/api'
 import { useLanguage } from '../../../lib/i18n'
 import { DEFAULT_TICKET_DESIGN, fetchReservationStatus, normalizeTicketDesign, rememberReservationAccessToken, resendReservationTicket, useReservationStatus, type PublicEvent, type ReservationResult, type TicketDesignSelection } from '../../../lib/public'
@@ -64,12 +64,10 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   const ticketPrice = Number(selected?.price ?? 0)
   const totalPrice = (Number.isFinite(ticketPrice) ? ticketPrice : 0) + seatTotal
   const isPaid = totalPrice > 0
-  // Keep five stable stages; transportation seat selection lives inside the ticket stage.
+  // Three clear stages: choose, complete details/payment, then review.
   const steps = [
     { id: 'ticket', label: t('stepTicket'), icon: Ticket },
-    { id: 'details', label: t('stepDetails'), icon: UserRound },
-    { id: 'payment', label: t('stepPayment'), icon: CreditCard },
-    { id: 'design', label: lang === 'ar' ? 'تصميم التذكرة' : 'Ticket design', icon: Palette },
+    { id: 'details', label: lang === 'ar' ? 'البيانات والدفع' : 'Details & payment', icon: UserRound },
     { id: 'review', label: t('stepReview'), icon: ClipboardList },
   ]
   const activeStep = Math.min(stepIndex, steps.length - 1)
@@ -85,12 +83,15 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   const canContinue = (() => {
     if (stepId === 'ticket') {
       if (!ticketTypeId || !selected || selected.soldOut) return false
+      if (isPaid && !selectedProvider) return false
       if (!selected.transportIncluded) return true
       return selectedSeatIds.length === 1 && !holding && !!holdExpiresAt && !holdError
     }
-    if (stepId === 'details') return name.trim().length >= 2 && emailValid && phoneValid && !!gender && identityValid
-    if (stepId === 'payment') return !isPaid || (!!selectedProvider && !!paymentReference.trim() && !!paymentProofUrl)
-    if (stepId === 'design') return !!selected && !!ticketDesign.templateId && /^#[0-9a-f]{6}$/i.test(ticketDesign.panelColor) && /^#[0-9a-f]{6}$/i.test(ticketDesign.accentColor) && /^#[0-9a-f]{6}$/i.test(ticketDesign.backgroundColor) && /^#[0-9a-f]{6}$/i.test(ticketDesign.textColor)
+    if (stepId === 'details') {
+      const detailsValid = name.trim().length >= 2 && emailValid && phoneValid && !!gender && identityValid
+      const paymentValid = !isPaid || (!!selectedProvider && !!paymentReference.trim() && !!paymentProofUrl)
+      return detailsValid && paymentValid
+    }
     return true
   })()
   const qrUrl = useQrDataUrl(done?.approval === 'APPROVED' && done.qr ? done.qr : null)
@@ -375,7 +376,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
     stepIndex, setStepIndex, confirmDiscard, setConfirmDiscard, holdAttempt, setHoldAttempt,
     duplicateLoading, resending, resendMessage,
     seatScrollRef, seatScroll, setSeatScroll,
-    selected, selectedProvider, selectedBus, seatUnitPrice, seatTotal, ticketPrice, totalPrice, isPaid,
+    selected, selectedProvider, hasPaymentProvider: Boolean(event.paymentProviders?.length), selectedBus, seatUnitPrice, seatTotal, ticketPrice, totalPrice, isPaid,
     steps, activeStep, stepId, canGoBack, phoneValid, emailValid, identityValid, canContinue,
     qrUrl, pending, awaitingQr, status, holdCountdown, holdExpiring,
     reserve, onSubmit, goNext, goBack, requestClose, openExisting, resendTicket, copyCode, checkStatus,
