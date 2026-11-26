@@ -226,8 +226,8 @@ export interface AboutContent {
     partners: { eyebrow: LocalizedText; titleA: LocalizedText; titleB: LocalizedText }
     reports: { eyebrow: LocalizedText; titleA: LocalizedText; titleB: LocalizedText }
   }
-  members: { id: string; name: LocalizedText; role: LocalizedText; bio: LocalizedText }[]
-  partners: { id: string; name: LocalizedText }[]
+  members: { id: string; name: LocalizedText; role: LocalizedText; bio: LocalizedText; imageUrl?: string | null }[]
+  partners: { id: string; name: LocalizedText; imageUrl?: string | null }[]
   reports: { id: string; author: LocalizedText; role: LocalizedText; content: LocalizedText; eventName: LocalizedText }[]
   updatedAt: string | null
 }
