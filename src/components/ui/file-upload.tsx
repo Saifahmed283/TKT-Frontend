@@ -1,18 +1,35 @@
-﻿import { useRef, useState } from 'react'
-import { Upload, X, FileImage } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { ExternalLink, FileImage, Upload, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getAccessToken, resolveUploadUrl } from '@/lib/api'
+import { API_BASE, getAccessToken } from '@/lib/api'
 import { useToast } from './toast'
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? '/api'
-
 type UploadResult = { url: string; path: string; name: string; mimeType: string; size: number }
+
+/**
+ * Upload APIs may return a same-origin path (for example /api/uploads/blob/...),
+ * even when the API itself lives on another host. Resolve display URLs against
+ * the configured API base, but keep the original URL for the reservation payload:
+ * the backend validates and signs that stored capability URL.
+ */
+export function resolveUploadPreviewUrl(
+  value: string,
+  apiBase = API_BASE,
+  origin = typeof window === 'undefined' ? 'http://localhost' : window.location.origin,
+) {
+  if (!value || /^(data:|blob:)/i.test(value)) return value
+  try {
+    return new URL(value, new URL(apiBase, origin)).toString()
+  } catch {
+    return value
+  }
+}
 
 export function FileUploadField({
   label,
   value,
   onChange,
-  accept = 'image/*,application/pdf',
+  accept = 'image/jpeg,image/png,image/webp,image/gif,image/svg+xml,application/pdf',
   hint,
   preview = true,
   className,
@@ -29,43 +46,71 @@ export function FileUploadField({
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  const [uploadedMimeType, setUploadedMimeType] = useState<string | null>(null)
+  const [uploadedName, setUploadedName] = useState<string | null>(null)
+  const [previewFailed, setPreviewFailed] = useState(false)
   const toast = useToast()
 
   const upload = async (file: File) => {
     setUploading(true)
+    setPreviewFailed(false)
     try {
       const fd = new FormData()
       fd.append('file', file)
       const headers: Record<string, string> = {}
       const isPublicProof = uploadEndpoint === '/uploads/proof'
       const token = isPublicProof ? null : getAccessToken()
-      if (token) headers.Authorization = `Bearer ${token}`
-      const res = await fetch(`${API_BASE}${uploadEndpoint}`, { method: 'POST', body: fd, headers, credentials: 'include' })
+      if (token) headers.Authorization = 'Bearer ' + token
+      const res = await fetch(API_BASE + uploadEndpoint, {
+        method: 'POST',
+        body: fd,
+        headers,
+        credentials: 'include',
+      })
       const body = await res.json().catch(() => null)
       if (!res.ok) throw new Error(body?.error?.message ?? 'Upload failed')
-      const data = body?.data as UploadResult
-      // Blob URLs are absolute and must be kept intact; only local uploads
-      // return a same-origin path.
+      const data = body?.data as UploadResult | undefined
+      if (!data?.url) throw new Error('The server did not return a file URL')
+
+      setUploadedMimeType(data.mimeType || file.type || null)
+      setUploadedName(data.name || file.name)
+      // Do not replace this with the resolved preview URL. Signed proxy paths
+      // are interpreted by the backend when the reservation is submitted.
       onChange(data.url)
       toast.success('File uploaded')
-    } catch (e: any) {
-      toast.error(e?.message ?? 'Upload failed')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Upload failed'
+      toast.error(message)
     } finally {
       setUploading(false)
       if (inputRef.current) inputRef.current.value = ''
     }
   }
 
-  const isImage = /\.(jpg|jpeg|png|webp|gif|svg)(\?|$)/i.test(value) || value.startsWith('data:image')
+  const cleanPath = value.split(/[?#]/, 1)[0]
+  const isImage = Boolean(
+    uploadedMimeType?.startsWith('image/')
+    || /^data:image\//i.test(value)
+    || /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(cleanPath),
+  )
+  const isPdf = uploadedMimeType === 'application/pdf' || /\.pdf$/i.test(cleanPath)
+  const previewUrl = value ? resolveUploadPreviewUrl(value) : ''
+
+  const removeFile = () => {
+    setUploadedMimeType(null)
+    setUploadedName(null)
+    setPreviewFailed(false)
+    onChange('')
+  }
 
   return (
-    <label className={cn('block', className)}>
-      <span className="mb-1.5 flex items-baseline justify-between">
+    <div className={cn('block', className)}>
+      <div className="mb-1.5 flex items-baseline justify-between gap-2">
         <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-2">{label}</span>
         {hint && <span className="text-[11px] text-ink-3">{hint}</span>}
-      </span>
+      </div>
       <div className="border border-line bg-elevated p-3">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             aria-busy={uploading || undefined}
@@ -77,29 +122,68 @@ export function FileUploadField({
             <span>{uploading ? 'Uploading…' : value ? 'Replace file' : 'Upload file'}</span>
           </button>
           {value && (
-            <button type="button" onClick={() => onChange('')} className="inline-flex items-center gap-1 px-2 py-2 text-[12px] text-ink-3 hover:text-danger">
+            <button type="button" onClick={removeFile} className="inline-flex items-center gap-1 px-2 py-2 text-[12px] text-ink-3 hover:text-danger">
               <X className="size-3.5" /> Remove
             </button>
           )}
-          <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f) }} />
+          <input
+            ref={inputRef}
+            type="file"
+            accept={accept}
+            className="hidden"
+            onChange={(event) => {
+              const file = event.target.files?.[0]
+              if (file) void upload(file)
+            }}
+          />
         </div>
-        {value ? (
-          <div className="mt-3 flex items-center gap-3">
-            {preview && isImage ? (
-              <img src={resolveUploadUrl(value)} alt="" className="h-14 w-14 border border-line object-cover bg-canvas" />
-            ) : (
-              <div className="flex h-14 w-14 items-center justify-center border border-line bg-canvas text-ink-3"><FileImage className="size-5" /></div>
-            )}
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[12px] text-ink-2">{value}</p>
-                <p className="text-[11px] text-ink-3">Stored securely on the server</p>
+
+        {value && preview ? (
+          <div className="mt-4 space-y-2 border border-line-soft bg-panel/50 p-3" data-testid="file-preview">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2 text-[11px] font-semibold text-ink-2">
+                <FileImage className="size-4 shrink-0 text-signal" />
+                <span>File preview</span>
+              </div>
+              <a href={previewUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-signal hover:underline">
+                <ExternalLink className="size-3" /> Open original
+              </a>
             </div>
+
+            {isImage && !previewFailed ? (
+              <div className="grid min-h-40 place-items-center overflow-hidden border border-line-soft bg-canvas p-2 sm:min-h-56">
+                <img
+                  src={previewUrl}
+                  alt={uploadedName ? uploadedName + ' preview' : label + ' preview'}
+                  onError={() => setPreviewFailed(true)}
+                  className="max-h-[420px] w-full object-contain"
+                />
+              </div>
+            ) : isPdf ? (
+              <object data={previewUrl} type="application/pdf" className="h-64 w-full border border-line-soft bg-canvas sm:h-80">
+                <div className="p-4 text-xs text-ink-2">
+                  PDF preview is not available in this browser. Use “Open original” to view it.
+                </div>
+              </object>
+            ) : (
+              <div role="status" className="border border-line-soft bg-canvas p-4 text-xs text-ink-2">
+                {isImage
+                  ? 'The preview could not be loaded. Check the file link or open the original file.'
+                  : 'This file type can be opened separately.'}
+              </div>
+            )}
+
+            <p className="break-all text-[11px] text-ink-3">{uploadedName || value}</p>
+          </div>
+        ) : value ? (
+          <div className="mt-3 flex items-center gap-2 text-[11px] text-ink-3">
+            <FileImage className="size-4" /> File uploaded
+            <a href={previewUrl} target="_blank" rel="noreferrer" className="text-signal hover:underline">Open original</a>
           </div>
         ) : (
           <p className="mt-2 text-[11px] text-ink-3">Upload an image or PDF. Files are stored on the server.</p>
         )}
       </div>
-    </label>
+    </div>
   )
 }
-
