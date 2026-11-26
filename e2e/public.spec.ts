@@ -18,6 +18,11 @@ async function seedPublicEvent(request: APIRequestContext, name: string): Promis
   const eventId = (await created.json()).data.id
   const patch = await request.patch(`${API}/events/${eventId}`, { headers, data: { settings: { registration: { enabled: true, open: true } } } })
   expect(patch.ok()).toBeTruthy()
+  const programOnly = await request.post(`${API}/events/${eventId}/tickets/types`, {
+    headers,
+    data: { name: 'Program Only', price: 80, quota: 100, isPublic: true, transportIncluded: false },
+  })
+  expect(programOnly.ok()).toBeTruthy()
   const type = await request.post(`${API}/events/${eventId}/tickets/types`, { headers, data: { name: 'General Admission', price: 0, quota: 100, isPublic: true } })
   expect(type.ok()).toBeTruthy()
   for (const status of ['READY', 'PUBLISHED']) {
@@ -139,7 +144,18 @@ test.describe('TKT E2E — public site', () => {
     const card = page.locator('article', { hasText: name }).first()
     await card.getByRole('button', { name: /Reserve|احجز/i }).first().click()
     await expect(page.getByTestId('wizard-step-ticket')).toBeVisible()
+    await expect(page.getByTestId('ticket-filter-program')).toBeVisible()
+    await expect(page.getByTestId('ticket-filter-bus')).toBeVisible()
+    await page.getByTestId('ticket-filter-program').click()
+    await expect(page.getByTestId('ticket-option')).toHaveCount(1)
+    await expect(page.getByTestId('ticket-option').first()).toContainText('Program Only')
+    await page.getByTestId('ticket-filter-bus').click()
     await page.getByTestId('ticket-option').filter({ hasText: 'Conference + Bus' }).click()
+    await expect(page.getByTestId('ticket-designer')).toBeVisible()
+    await page.getByTestId('ticket-template-editorial-wide').click()
+    await expect(page.getByTestId('ticket-template-editorial-wide')).toHaveAttribute('aria-pressed', 'true')
+    await page.getByTestId('ticket-palette-rose-noir').click()
+    await expect(page.getByTestId('ticket-palette-rose-noir')).toHaveAttribute('aria-pressed', 'true')
     await page.getByTestId('wizard-next').click()
 
     // Seat choice comes before the attendee form and remains usable on narrow phones.
