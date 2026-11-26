@@ -399,8 +399,8 @@ function Scene({ model, seats, statuses, onSeatClick, preset, roof, controls, di
 }) {
   const project = useMemo(() => cabinProjection(model), [model])
   const placements = useMemo(() => {
-    const result = new Map(model.seats.map((placement) => [placement.label, placement]))
-    const extra = seats.filter((seat) => !result.has(seat.label))
+    const result = new Map(model.seats.map((placement) => [placement.label.trim().toUpperCase(), placement]))
+    const extra = seats.filter((seat) => !result.has(seat.label.trim().toUpperCase()))
     if (!extra.length) return result
 
     // Older/custom buses can have seat inventory records not represented in
@@ -412,7 +412,7 @@ function Scene({ model, seats, statuses, onSeatClick, preset, roof, controls, di
     extra.forEach((seat, index) => {
       const row = seat.row || Math.floor(index / maxCol) + 1
       const col = seat.col || (index % maxCol) + 1
-      result.set(seat.label, {
+      result.set(seat.label.trim().toUpperCase(), {
         label: seat.label,
         row,
         col,
@@ -444,7 +444,7 @@ function Scene({ model, seats, statuses, onSeatClick, preset, roof, controls, di
       <CabinShell model={model} roof={roof} />
       <Fixtures model={model} project={project} />
       {seats.map((seat) => {
-        const placement = placements.get(seat.label)
+        const placement = placements.get(seat.label.trim().toUpperCase())
         if (!placement) return null
         const status = statuses.get(seat.id) ?? seat.state
         return (
