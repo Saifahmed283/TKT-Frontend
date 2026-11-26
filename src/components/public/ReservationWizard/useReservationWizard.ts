@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Bus, ClipboardList, CreditCard, Ticket, UserRound } from 'lucide-react'
 import { api, ApiError } from '../../../lib/api'
 import { useLanguage } from '../../../lib/i18n'
-import { fetchReservationStatus, rememberReservationAccessToken, resendReservationTicket, useReservationStatus, type PublicEvent, type ReservationResult } from '../../../lib/public'
+import { DEFAULT_TICKET_DESIGN, fetchReservationStatus, normalizeTicketDesign, rememberReservationAccessToken, resendReservationTicket, useReservationStatus, type PublicEvent, type ReservationResult, type TicketDesignSelection } from '../../../lib/public'
 import { useQrDataUrl } from './shared'
 
 /**
@@ -19,6 +19,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   const [notes, setNotes] = useState('')
   const availableTypes = event.ticketTypes.filter((x) => x.isPublic !== false)
   const [ticketTypeId, setTicketTypeId] = useState(availableTypes.find((x) => !x.soldOut)?.id ?? availableTypes[0]?.id ?? '')
+  const [ticketDesign, setTicketDesign] = useState<TicketDesignSelection>(DEFAULT_TICKET_DESIGN)
   const [paymentProviderId, setPaymentProviderId] = useState(event.paymentProviders?.[0]?.id ?? '')
   const [paymentReference, setPaymentReference] = useState('')
   const [paymentProofUrl, setPaymentProofUrl] = useState<string | null>(null)
@@ -230,6 +231,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
         phone: phone.trim(),
         notes: notes.trim() || undefined,
         ticketTypeId,
+        ticketDesign: normalizeTicketDesign(ticketDesign),
         paymentProviderId: isPaid && paymentProviderId ? paymentProviderId : undefined,
         paymentReference: isPaid && paymentReference.trim() ? paymentReference.trim() : undefined,
         paymentProofUrl: isPaid && paymentProofUrl ? paymentProofUrl : undefined,
@@ -339,7 +341,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   return {
     event, t, lang, qc,
     name, setName, email, setEmail, phone, setPhone, notes, setNotes,
-    availableTypes, ticketTypeId, setTicketTypeId,
+    availableTypes, ticketTypeId, setTicketTypeId, ticketDesign, setTicketDesign,
     paymentProviderId, setPaymentProviderId, paymentReference, setPaymentReference,
     paymentProofUrl, setPaymentProofUrl,
     done, checkingCode, setCheckingCode, copied, existingReservation,
