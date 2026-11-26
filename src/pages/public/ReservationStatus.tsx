@@ -172,6 +172,9 @@ export default function ReservationStatusPage() {
                       )}
                       <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.16em] text-ink-3"><ShieldCheck size={13} className="text-signal" /> {t('secureBooking') ?? 'Secure booking'}</div>
                       {data.deliveryStatus && <div className="text-[11px] text-ink-3">Delivery: <span className="text-ink-1">{data.deliveryStatus}</span></div>}
+                      <a href={`/my-ticket#code=${encodeURIComponent(code)}`} className="mt-2 inline-flex items-center gap-2 border border-signal/30 bg-signal/8 px-4 py-2.5 text-xs font-semibold text-signal transition-colors hover:bg-signal/15">
+                        <QrCode size={14} /> {isAr ? 'افتح تذكرتي على الهاتف' : 'Open my ticket on phone'}
+                      </a>
                     </div>
                   </div>
 

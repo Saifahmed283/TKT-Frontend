@@ -6,7 +6,7 @@
       "destination": "/index.html"
     },
     {
-      "source": "/:path((?!api/|assets/|robots\\.txt$|sitemap\\.xml$).*)",
+      "source": "/:path((?!api/|assets/|sw\\.js$|manifest\\.webmanifest$|apple-touch-icon\\.png$|tkt-mark\\.svg$|robots\\.txt$|sitemap\\.xml$).*)",
       "destination": "/index.html"
     }
   ]

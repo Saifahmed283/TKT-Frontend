@@ -17,6 +17,8 @@ const RETRY_MS = 3_000
 const MAX_RETRY_MS = 15_000
 const STALL_MS = 45_000
 const TICK_DEBOUNCE_MS = 200
+// Serverless production uses bounded polling; local development keeps SSE.
+const SSE_ENABLED = import.meta.env.DEV
 
 type SseKind = 'access' | 'incident' | 'task' | 'announcement' | 'activity' | 'reservation'
 
@@ -138,6 +140,10 @@ export function useSse(eventId?: string, kind: SseKind = 'access') {
 
   useEffect(() => {
     if (!eventId) return
+    if (!SSE_ENABLED) {
+      const interval = window.setInterval(() => setTick((current) => current + 1), 30_000)
+      return () => window.clearInterval(interval)
+    }
     const channel = `event:${eventId}:${kind}`
     let alive = true
     let attempt = 0
@@ -187,7 +193,7 @@ export function useSseChannel(
   onEventRef.current = onEvent
 
   useEffect(() => {
-    if (!eventId) return
+    if (!eventId || !SSE_ENABLED) return
     const channel = `event:${eventId}:${kind}`
     let alive = true
     let attempt = 0

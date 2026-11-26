@@ -77,6 +77,27 @@ export interface ReservationResult {
   seats?: { id: string; label: string; busId: string; passengerName?: string | null; bus?: { name: string } | null }[]
 }
 
+export interface PwaReservationTicket {
+  reservationCode: string
+  attendeeName: string
+  eventName: string
+  eventStartAt: string
+  eventEndAt: string | null
+  timezone: string
+  venueName: string | null
+  venueAddress: string | null
+  ticketName: string
+  price: string
+  currency: string
+  approval: ReservationApproval
+  paymentStatus: string
+  ticketStatus: string
+  credentialStatus: string
+  credentialValidUntil: string | null
+  qr: string | null
+  seats: { id: string; label: string; passengerName: string | null; busName: string | null }[]
+}
+
 export interface ReservationStatus {
   reservationCode: string
   ticketId: string
@@ -231,6 +252,10 @@ export function fetchReservationStatus(eventId: string, params: ReservationStatu
   if (token) queryParams.set('token', token)
   if (params.email) queryParams.set('email', params.email)
   return api.get<ReservationStatus>(`/public/events/${eventId}/reservations/status?${queryParams.toString()}`)
+}
+
+export function fetchPwaReservationTicket(code: string, email: string) {
+  return api.post<PwaReservationTicket>('/public/reservations/status', { code: code.trim(), email: email.trim() })
 }
 
 export function resendReservationTicket(eventId: string, payload: { email: string; reservationCode?: string }) {

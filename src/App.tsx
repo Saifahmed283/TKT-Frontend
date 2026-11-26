@@ -14,6 +14,7 @@ const PastWorks = lazy(() => import('./pages/public/PastWorks'))
 const Contact = lazy(() => import('./pages/public/Contact'))
 const About = lazy(() => import('./pages/public/About'))
 const ReservationStatusPage = lazy(() => import('./pages/public/ReservationStatus'))
+const MyTicketPwaPage = lazy(() => import('./pages/public/MyTicketPwa'))
 
 // App pages are loaded on demand. The old static import graph put every
 // operations page (and libraries such as three, recharts and jspdf) into the
@@ -81,7 +82,7 @@ function ScrollToTop() {
     const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
     if (canonical) canonical.href = new URL(pathname, window.location.origin).toString()
 
-    const privateRoute = pathname.startsWith('/app') || pathname.startsWith('/reservation/') || pathname === '/login'
+    const privateRoute = pathname.startsWith('/app') || pathname.startsWith('/reservation/') || pathname === '/my-ticket' || pathname === '/login'
     let robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]')
     if (!robots) {
       robots = document.createElement('meta')
@@ -122,6 +123,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/events/:eventId/bus-tickets" element={<LegacyBusTicketsRedirect />} />
           <Route path="/reservation/:code" element={<ReservationStatusPage />} />
+          <Route path="/my-ticket" element={<MyTicketPwaPage />} />
           <Route
             path="/app"
             element={
