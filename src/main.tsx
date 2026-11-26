@@ -40,12 +40,30 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 )
 
-// Cache the app shell for the installable ticket experience. API responses,
-// customer details and credential QR payloads are never cached by the worker.
+// Cache the app shell and the same-origin static assets already loaded by this app.
+// API responses and reservation/credential data are deliberately excluded.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    void navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {
-      // Service-worker failure must not block the normal ticket site.
-    })
+    void (async () => {
+      try {
+        const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' })
+        await navigator.serviceWorker.ready
+        const urls = performance.getEntriesByType('resource')
+          .map((entry) => {
+            try {
+              const url = new URL(entry.name)
+              if (url.origin !== window.location.origin) return null
+              if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/public/')) return null
+              return /\\.(?:js|css|png|svg|webp|woff2?)$/i.test(url.pathname) ? url.pathname : null
+            } catch {
+              return null
+            }
+          })
+          .filter((value): value is string => Boolean(value))
+        registration.active?.postMessage({ type: 'PRECACHE_STATIC', urls })
+      } catch {
+        // A service-worker failure must never block the normal ticket site.
+      }
+    })()
   })
 }
