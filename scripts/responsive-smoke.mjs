@@ -84,6 +84,7 @@ try {
         robots: document.querySelector('meta[name="robots"]')?.getAttribute('content') ?? '',
         pathname: window.location.pathname,
         mainCount: document.querySelectorAll('main').length,
+        introVisible: Boolean(document.querySelector('.tkt-intro')),
         heroRenderer: document.querySelector('[data-testid="hero-emblem"]')?.getAttribute('data-renderer') ?? null,
         heroPointerEvents: (() => {
           const hero = document.querySelector('[data-testid="hero-emblem"]')
@@ -135,6 +136,9 @@ try {
         failures++
       } else if ((route.startsWith('/app') || route.startsWith('/reservation/') || route === '/my-ticket' || route === '/login') && metrics.robots !== 'noindex, nofollow') {
         console.error(`FAIL ${viewport.name} ${route}: private route must be noindex, nofollow`)
+        failures++
+      } else if (route === '/' && viewport.width < 1280 && metrics.introVisible) {
+        console.error(`FAIL ${viewport.name} /: brand intro must not block mobile/tablet first view`)
         failures++
       } else if (route === '/' && metrics.mainCount !== 1) {
         console.error(`FAIL ${viewport.name} /: expected exactly one main landmark, found ${metrics.mainCount}`)
