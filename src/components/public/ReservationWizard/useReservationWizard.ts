@@ -47,7 +47,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   const [confirmDiscard, setConfirmDiscard] = useState(false)
   const [holdAttempt, setHoldAttempt] = useState(0)
   const [now, setNow] = useState(() => Date.now())
-  const [pollUntil] = useState(() => Date.now() + 10 * 60_000)
+  const [pollUntil, setPollUntil] = useState<number | null>(null)
   const [pollActive, setPollActive] = useState(true)
   const [duplicateLoading, setDuplicateLoading] = useState(false)
   const [resending, setResending] = useState(false)
@@ -102,7 +102,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   const status = useReservationStatus(event.id, needsPolling && checkingCode ? checkingCode : null, {
     enabled: needsPolling && pollActive,
     pollMs: 5_000,
-    until: pollUntil,
+    until: pollUntil ?? undefined,
     email: email.trim(),
   })
   const secondsLeft = holdExpiresAt ? Math.max(0, Math.floor((new Date(holdExpiresAt).getTime() - now) / 1000)) : null
@@ -110,25 +110,22 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   const holdCountdown = secondsLeft == null ? '' : `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, '0')}`
 
   useEffect(() => {
-    if (!pollActive) return
+    if (!pollActive || pollUntil == null) return
     const timer = window.setTimeout(() => setPollActive(false), Math.max(0, pollUntil - Date.now()))
     return () => window.clearTimeout(timer)
   }, [pollActive, pollUntil])
 
   useEffect(() => {
-    if (!done || (done.approval === 'APPROVED' && done.qr)) return
-    if (status.data?.approval === 'APPROVED' && status.data.qr) {
-      setDone((prev) =>
-        prev
-          ? {
-              ...prev,
-              approval: 'APPROVED',
-              qr: status.data?.qr ?? prev.qr,
-              paymentStatus: status.data?.paymentStatus ?? prev.paymentStatus,
-            }
-          : prev,
-      )
-    }
+    const latestStatus = status.data
+    if (!done || !latestStatus) return
+    if (latestStatus.approval !== 'APPROVED' && latestStatus.approval !== 'REJECTED') return
+    setDone((prev) => {
+      if (!prev) return prev
+      const qr = latestStatus.approval === 'APPROVED' ? (latestStatus.qr ?? prev.qr) : null
+      const paymentStatus = latestStatus.paymentStatus ?? prev.paymentStatus
+      if (prev.approval === latestStatus.approval && prev.qr === qr && prev.paymentStatus === paymentStatus) return prev
+      return { ...prev, approval: latestStatus.approval, qr, paymentStatus }
+    })
   }, [done, status.data])
 
   useEffect(() => {
@@ -235,6 +232,16 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
     }
   }, [selected?.transportIncluded, busId, selectedSeatIds, holdToken, event.id, holdAttempt])
 
+  const startStatusPolling = (code: string) => {
+    setCheckingCode(code)
+    setPollUntil(Date.now() + 10 * 60_000)
+    setPollActive(true)
+  }
+
+  const checkStatus = () => {
+    if (done?.reservationCode) startStatusPolling(done.reservationCode)
+  }
+
   const reserve = useMutation({
     mutationFn: () =>
       api.post<ReservationResult>(`/public/events/${event.id}/reservations`, {
@@ -260,6 +267,9 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
       // when the wizard later unmounts.
       activeSeatHoldRef.current = null
       rememberReservationAccessToken(data.reservationCode, data.accessToken)
+      // Start status polling immediately so the async QR issuance (free tickets)
+      // and payment approval (paid tickets) are reflected in the result screen.
+      startStatusPolling(data.reservationCode)
       setDone(data)
       setExistingReservation(null)
       void qc.invalidateQueries({ queryKey: ['public-events'] })
@@ -318,7 +328,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
         qr: data.qr,
         seats: data.seats,
       })
-      setCheckingCode(data.reservationCode)
+      startStatusPolling(data.reservationCode)
       setExistingReservation(null)
     } catch {
       setResendMessage(t('reservationLoadFailed'))
@@ -368,7 +378,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
     selected, selectedProvider, selectedBus, seatUnitPrice, seatTotal, ticketPrice, totalPrice, isPaid,
     steps, activeStep, stepId, canGoBack, phoneValid, emailValid, identityValid, canContinue,
     qrUrl, pending, awaitingQr, status, holdCountdown, holdExpiring,
-    reserve, onSubmit, goNext, goBack, requestClose, openExisting, resendTicket, copyCode,
+    reserve, onSubmit, goNext, goBack, requestClose, openExisting, resendTicket, copyCode, checkStatus,
   }
 }
 

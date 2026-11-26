@@ -1,21 +1,22 @@
-import { CheckCircle2, Copy, Lock, QrCode, ShieldCheck } from 'lucide-react'
+import { CheckCircle2, Copy, Lock, QrCode, ShieldCheck, XCircle } from 'lucide-react'
 import type { ReservationWizard } from './useReservationWizard'
 import { money, QrDataImg } from './shared'
 import { TicketCardPreview } from './TicketDesigner'
 
 export function DoneScreen({ w, onClose }: { w: ReservationWizard; onClose: () => void }) {
-  const { t, lang, done, selected, qrUrl, awaitingQr, pending, status, setCheckingCode, copyCode, copied } = w
+  const { t, lang, done, selected, qrUrl, awaitingQr, pending, status, checkStatus, copyCode, copied } = w
   if (!done) return null
+  const rejected = done.approval === 'REJECTED'
   return (
     <div className="space-y-5">
-      <div className={`flex items-start gap-3 rounded-none border px-4 py-4 ${done.approval === 'APPROVED' ? 'border-ok/25 bg-ok/8' : 'border-signal/25 bg-signal/8'}`}>
-        <CheckCircle2 className={`mt-0.5 size-5 shrink-0 ${done.approval === 'APPROVED' ? 'text-ok' : 'text-signal'}`} />
+      <div className={`flex items-start gap-3 rounded-none border px-4 py-4 ${done.approval === 'APPROVED' ? 'border-ok/25 bg-ok/8' : rejected ? 'border-danger/25 bg-danger/8' : 'border-signal/25 bg-signal/8'}`}>
+        {rejected ? <XCircle className="mt-0.5 size-5 shrink-0 text-danger" /> : <CheckCircle2 className={`mt-0.5 size-5 shrink-0 ${done.approval === 'APPROVED' ? 'text-ok' : 'text-signal'}`} />}
         <div>
           <p className="font-display text-xl font-semibold tracking-tight text-ink-0">
-            {done.approval === 'APPROVED' ? t('ticketReady') : t('reservationPending')}
+            {done.approval === 'APPROVED' ? t('ticketReady') : rejected ? (lang === 'ar' ? 'لم تتم الموافقة على الحجز' : 'Reservation not approved') : t('reservationPending')}
           </p>
           <p className="mt-1 text-sm leading-relaxed text-ink-2">
-            {done.approval === 'APPROVED' ? t('ticketReadyBody') : t('pendingBody')}
+            {done.approval === 'APPROVED' ? t('ticketReadyBody') : rejected ? (lang === 'ar' ? 'لم يتم إصدار تذكرة لهذا الحجز. تواصل مع فريق الفعالية إذا كنت تعتقد أن هذا القرار غير صحيح.' : 'No ticket was issued for this reservation. Contact the event team if you believe this is a mistake.') : t('pendingBody')}
           </p>
         </div>
       </div>
@@ -41,6 +42,13 @@ export function DoneScreen({ w, onClose }: { w: ReservationWizard; onClose: () =
         <div className="flex flex-col items-center justify-center border border-line-soft bg-elevated/40 p-4">
           {done.approval === 'APPROVED' ? (
             qrUrl ? <img src={qrUrl} alt="Ticket QR" className="h-44 w-44 border border-line-soft bg-white p-2" /> : <div className="grid h-44 w-44 place-items-center border border-line-soft"><QrCode className="size-8 text-ink-3" /></div>
+          ) : rejected ? (
+            <div className="grid h-44 w-44 place-items-center border border-dashed border-danger/30 bg-danger/5 text-center">
+              <div>
+                <XCircle className="mx-auto size-7 text-danger" />
+                <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.16em] text-danger">{lang === 'ar' ? 'غير معتمد' : 'Not approved'}</p>
+              </div>
+            </div>
           ) : (
             <div className="grid h-44 w-44 place-items-center border border-dashed border-signal/30 bg-signal/5 text-center">
               <div>
@@ -98,7 +106,7 @@ export function DoneScreen({ w, onClose }: { w: ReservationWizard; onClose: () =
         <div className="border border-line-soft bg-elevated/20 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-ink-2"><span className="text-ink-3">{t('status')}:</span> {status.data?.approval ? t(status.data.approval.toLowerCase()) : t('pending')}</p>
-            <button type="button" onClick={() => setCheckingCode(done.reservationCode)} className="btn-ghost !px-3 !py-2 text-[11px]" disabled={status.isFetching}>
+            <button type="button" onClick={checkStatus} className="btn-ghost !px-3 !py-2 text-[11px]" disabled={status.isFetching}>
               {status.isFetching ? t('checkingStatus') : t('checkStatus')}
             </button>
           </div>
