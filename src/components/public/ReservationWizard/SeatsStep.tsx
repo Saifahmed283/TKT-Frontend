@@ -24,7 +24,7 @@ export function SeatsStep({ w }: { w: ReservationWizard }) {
       ) : (
         <>
           {buses.length > 1 && (
-            <select className="input" value={busId} onChange={(e) => { setBusId(e.target.value); setSelectedSeatIds([]); setSeatPassengers({}) }}>
+            <select className="input" value={busId} onChange={(e) => { setBusId(e.target.value); setSelectedSeatIds([]) }}>
               {buses.map(b => <option key={b.id} value={b.id}>{b.name} ({b.availableSeats} {t('left')})</option>)}
             </select>
           )}
