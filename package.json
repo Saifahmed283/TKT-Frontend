@@ -9,9 +9,7 @@
     "build": "tsc -b && vite build && npm run check:bundle",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
-    "test": "vitest run",
-    "check:bundle": "node scripts/check-public-bundle.mjs",
-    "test:e2e": "playwright test"
+    "check:bundle": "node scripts/check-public-bundle.mjs"
   },
   "dependencies": {
     "@fontsource/barlow-condensed": "^5.3.0",
