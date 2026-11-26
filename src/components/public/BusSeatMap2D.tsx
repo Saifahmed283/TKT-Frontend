@@ -140,7 +140,7 @@ function BusSeatMap2D({
   const text = copy[language]
   const uid = useId().replace(/:/g, '')
   const model = useMemo(() => resolveBusLayout(layout), [layout])
-  const byLabel = useMemo(() => new Map(seats.map((seat) => [seat.label, seat])), [seats])
+  const byLabel = useMemo(() => new Map(seats.map((seat) => [seat.label.trim().toUpperCase(), seat])), [seats])
   const selected = useMemo(() => new Set(selectedSeatIds), [selectedSeatIds])
 
   const shell = useMemo(() => {
@@ -154,7 +154,9 @@ function BusSeatMap2D({
     available: seats.filter((seat) => seat.state === 'AVAILABLE' && !selected.has(seat.id)).length,
     blocked: seats.filter((seat) => seat.state === 'HELD' || seat.state === 'RESERVED' || seat.state === 'UNAVAILABLE').length,
   }), [seats, selected])
-  const missing = model.seats.length > 0 && seats.length > 0 && model.seats.some((placement) => !byLabel.has(placement.label))
+  const missing = model.seats.length > 0 && seats.length > 0 && model.seats.some((placement) => !byLabel.has(placement.label.trim().toUpperCase()))
+  const mappedLabels = useMemo(() => new Set(model.seats.map((placement) => placement.label.trim().toUpperCase())), [model])
+  const unmappedSeats = useMemo(() => seats.filter((seat) => !mappedLabels.has(seat.label.trim().toUpperCase())), [seats, mappedLabels])
 
   const activate = (seat: CoachSeat) => {
     if (disabled || canInteract?.(seat) === false) return
@@ -227,7 +229,7 @@ function BusSeatMap2D({
           {model.features.map((feature) => <FeatureShape key={feature.id} feature={feature} text={text} uid={uid} />)}
 
           {model.seats.map((placement) => {
-            const seat = byLabel.get(placement.label)
+            const seat = byLabel.get(placement.label.trim().toUpperCase())
             if (!seat) return null
             const isSelected = selected.has(seat.id)
             const state = isSelected ? 'SELECTED' : seat.state
@@ -277,13 +279,13 @@ function BusSeatMap2D({
           })}
         </svg>
       </div>
-      {missing && (
+      {unmappedSeats.length > 0 && (
         <div className="space-y-2 border-t border-[#ded8cc] bg-[#f7f3eb] p-3" data-testid="unmapped-seat-fallback">
           <p className="text-[11px] font-semibold text-[#514b42]">
             {language === 'ar' ? 'مقاعد إضافية من سجل الباص' : 'Additional seats from the bus inventory'}
           </p>
           <div className="grid grid-cols-4 gap-2 min-[420px]:grid-cols-5">
-            {seats.filter((seat) => !model.seats.some((placement) => placement.label === seat.label)).map((seat) => {
+            {unmappedSeats.map((seat) => {
               const isSelected = selected.has(seat.id)
               const state = isSelected ? 'SELECTED' : seat.state
               const palette = PALETTE[state] ?? PALETTE.UNAVAILABLE
