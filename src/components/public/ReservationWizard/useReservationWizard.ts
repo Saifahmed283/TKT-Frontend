@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Bus, ClipboardList, CreditCard, Ticket, UserRound } from 'lucide-react'
+import { ClipboardList, CreditCard, Palette, Ticket, UserRound } from 'lucide-react'
 import { api, ApiError } from '../../../lib/api'
 import { useLanguage } from '../../../lib/i18n'
 import { DEFAULT_TICKET_DESIGN, fetchReservationStatus, normalizeTicketDesign, rememberReservationAccessToken, resendReservationTicket, useReservationStatus, type PublicEvent, type ReservationResult, type TicketDesignSelection } from '../../../lib/public'
@@ -16,6 +16,9 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+  const [gender, setGender] = useState<'male' | 'female' | 'other' | 'prefer_not_to_say'>('prefer_not_to_say')
+  const [nationality, setNationality] = useState<'EG' | 'OTHER'>('EG')
+  const [identityNumber, setIdentityNumber] = useState('')
   const [notes, setNotes] = useState('')
   const availableTypes = event.ticketTypes.filter((x) => x.isPublic !== false)
   const [ticketTypeId, setTicketTypeId] = useState(availableTypes.find((x) => !x.soldOut)?.id ?? availableTypes[0]?.id ?? '')
@@ -62,23 +65,33 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   const ticketPrice = Number(selected?.price ?? 0)
   const totalPrice = (Number.isFinite(ticketPrice) ? ticketPrice : 0) + seatTotal
   const isPaid = totalPrice > 0
+  // Keep five stable stages; transportation seat selection lives inside the ticket stage.
   const steps = [
     { id: 'ticket', label: t('stepTicket'), icon: Ticket },
-    ...(selected?.transportIncluded ? [{ id: 'seats', label: t('stepSeats'), icon: Bus }] : []),
     { id: 'details', label: t('stepDetails'), icon: UserRound },
-    ...(isPaid ? [{ id: 'payment', label: t('stepPayment'), icon: CreditCard }] : []),
+    { id: 'payment', label: t('stepPayment'), icon: CreditCard },
+    { id: 'design', label: lang === 'ar' ? 'تصميم التذكرة' : 'Ticket design', icon: Palette },
     { id: 'review', label: t('stepReview'), icon: ClipboardList },
   ]
   const activeStep = Math.min(stepIndex, steps.length - 1)
   const stepId = steps[activeStep]?.id
   const canGoBack = activeStep > 0
-  const phoneValid = phone.trim().length >= 6
+  const phoneDigits = phone.replace(/\D/g, '')
+  const phoneValid = phoneDigits.length >= 8 && phoneDigits.length <= 15
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+  const identityDigits = identityNumber.replace(/\s/g, '')
+  const identityValid = nationality === 'EG'
+    ? /^\d{14}$/.test(identityDigits)
+    : /^[A-Za-z0-9][A-Za-z0-9-]{4,19}$/.test(identityDigits)
   const canContinue = (() => {
-    if (stepId === 'ticket') return !!ticketTypeId && !selected?.soldOut
-    if (stepId === 'details') return name.trim().length >= 2 && emailValid && phoneValid
-    if (stepId === 'seats') return selectedSeatIds.length === 1 && !holding && !!holdExpiresAt && !holdError
-    if (stepId === 'payment') return !!(paymentProviderId || paymentReference.trim() || paymentProofUrl)
+    if (stepId === 'ticket') {
+      if (!ticketTypeId || !selected || selected.soldOut) return false
+      if (!selected.transportIncluded) return true
+      return selectedSeatIds.length === 1 && !holding && !!holdExpiresAt && !holdError
+    }
+    if (stepId === 'details') return name.trim().length >= 2 && emailValid && phoneValid && !!gender && identityValid
+    if (stepId === 'payment') return !isPaid || (!!selectedProvider && !!paymentReference.trim() && !!paymentProofUrl)
+    if (stepId === 'design') return !!selected && !!ticketDesign.templateId && /^#[0-9a-f]{6}$/i.test(ticketDesign.panelColor) && /^#[0-9a-f]{6}$/i.test(ticketDesign.accentColor) && /^#[0-9a-f]{6}$/i.test(ticketDesign.backgroundColor) && /^#[0-9a-f]{6}$/i.test(ticketDesign.textColor)
     return true
   })()
   const qrUrl = useQrDataUrl(done?.approval === 'APPROVED' && done.qr ? done.qr : null)
@@ -134,7 +147,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   }, [holdExpiresAt, secondsLeft, t])
 
   useEffect(() => {
-    if (stepId !== 'seats' || !seatScrollRef.current) {
+    if (stepId !== 'ticket' || !selected?.transportIncluded || !seatScrollRef.current) {
       setSeatScroll({ overflow: false, atEnd: false })
       return
     }
@@ -229,6 +242,9 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim(),
+        gender,
+        nationality,
+        identityNumber: identityNumber.trim(),
         notes: notes.trim() || undefined,
         ticketTypeId,
         ticketDesign: normalizeTicketDesign(ticketDesign),
@@ -340,7 +356,8 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
 
   return {
     event, t, lang, qc,
-    name, setName, email, setEmail, phone, setPhone, notes, setNotes,
+    name, setName, email, setEmail, phone, setPhone,
+    gender, setGender, nationality, setNationality, identityNumber, setIdentityNumber, notes, setNotes,
     availableTypes, ticketTypeId, setTicketTypeId, ticketDesign, setTicketDesign,
     paymentProviderId, setPaymentProviderId, paymentReference, setPaymentReference,
     paymentProofUrl, setPaymentProofUrl,
@@ -351,7 +368,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
     duplicateLoading, resending, resendMessage,
     seatScrollRef, seatScroll, setSeatScroll,
     selected, selectedProvider, selectedBus, seatUnitPrice, seatTotal, ticketPrice, totalPrice, isPaid,
-    steps, activeStep, stepId, canGoBack, phoneValid, emailValid, canContinue,
+    steps, activeStep, stepId, canGoBack, phoneValid, emailValid, identityValid, canContinue,
     qrUrl, pending, awaitingQr, status, holdCountdown, holdExpiring,
     reserve, onSubmit, goNext, goBack, requestClose, openExisting, resendTicket, copyCode,
   }
