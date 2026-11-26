@@ -1,15 +1,14 @@
 import { useState } from 'react'
 import type { ReservationWizard } from './useReservationWizard'
 import { money } from './shared'
-import { TicketDesigner } from './TicketDesigner'
+import { SeatsStep } from './SeatsStep'
 
 type TicketFilter = 'all' | 'program' | 'bus'
 
 export function TicketStep({ w }: { w: ReservationWizard }) {
   const {
     t, lang, event, availableTypes, ticketTypeId, setTicketTypeId,
-    setSelectedSeatIds, setHoldExpiresAt, selected, ticketDesign,
-    setTicketDesign, name, selectedSeatIds, selectedBus,
+    setSelectedSeatIds, setHoldExpiresAt, selected,
   } = w
   const [filter, setFilter] = useState<TicketFilter>('all')
   const hasProgramOnly = availableTypes.some((ticket) => !ticket.transportIncluded)
@@ -19,10 +18,7 @@ export function TicketStep({ w }: { w: ReservationWizard }) {
     if (filter === 'bus') return Boolean(ticket.transportIncluded)
     return true
   })
-  const seatLabel = selectedSeatIds
-    .map((id) => selectedBus?.seats.find((seat) => seat.id === id)?.label)
-    .filter(Boolean)
-    .join(', ')
+
 
   const changeFilter = (next: TicketFilter) => {
     setFilter(next)
@@ -117,17 +113,7 @@ export function TicketStep({ w }: { w: ReservationWizard }) {
         </p>
       )}
 
-      {selected && !selected.soldOut && (
-        <TicketDesigner
-          event={event}
-          ticketType={selected}
-          attendeeName={name}
-          seatLabel={seatLabel}
-          design={ticketDesign}
-          onChange={setTicketDesign}
-          lang={lang}
-        />
-      )}
+      {selected?.transportIncluded && <SeatsStep w={w} />}
     </div>
   )
 }
