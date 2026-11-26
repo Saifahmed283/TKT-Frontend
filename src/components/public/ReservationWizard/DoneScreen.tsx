@@ -1,4 +1,4 @@
-import { CheckCircle2, Copy, Lock, QrCode, ShieldCheck, XCircle } from 'lucide-react'
+import { CheckCircle2, Clock3, Copy, Lock, QrCode, ShieldCheck, XCircle } from 'lucide-react'
 import type { ReservationWizard } from './useReservationWizard'
 import { money, QrDataImg } from './shared'
 import { TicketCardPreview } from './TicketDesigner'
@@ -10,7 +10,11 @@ export function DoneScreen({ w, onClose }: { w: ReservationWizard; onClose: () =
   return (
     <div className="space-y-5">
       <div className={`flex items-start gap-3 rounded-none border px-4 py-4 ${done.approval === 'APPROVED' ? 'border-ok/25 bg-ok/8' : rejected ? 'border-danger/25 bg-danger/8' : 'border-signal/25 bg-signal/8'}`}>
-        {rejected ? <XCircle className="mt-0.5 size-5 shrink-0 text-danger" /> : <CheckCircle2 className={`mt-0.5 size-5 shrink-0 ${done.approval === 'APPROVED' ? 'text-ok' : 'text-signal'}`} />}
+        {rejected
+          ? <XCircle className="mt-0.5 size-5 shrink-0 text-danger" />
+          : done.approval === 'APPROVED'
+            ? <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-ok" />
+            : <Clock3 className="mt-0.5 size-5 shrink-0 text-signal" />}
         <div>
           <p className="font-display text-xl font-semibold tracking-tight text-ink-0">
             {done.approval === 'APPROVED' ? t('ticketReady') : rejected ? (lang === 'ar' ? 'لم تتم الموافقة على الحجز' : 'Reservation not approved') : t('reservationPending')}
@@ -20,6 +24,13 @@ export function DoneScreen({ w, onClose }: { w: ReservationWizard; onClose: () =
           </p>
         </div>
       </div>
+
+      {done.approval === 'PENDING' && (
+        <div className="border border-signal/25 bg-signal/5 p-4">
+          <p className="text-[13px] font-semibold text-ink-0">{t('notTicketYet')}</p>
+          <p className="mt-1 text-[12px] leading-relaxed text-ink-2">{t('notTicketYetBody')}</p>
+        </div>
+      )}
 
       {selected && (
         <div className="space-y-2">

@@ -18,8 +18,7 @@ export function SeatsStep({ w }: { w: ReservationWizard }) {
   }
 
   return (
-    <div data-testid="wizard-step-seats" className="space-y-3 border border-line-soft bg-elevated/20 p-4">
-      <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-signal">{t('chooseOneSeat')}</p>
+    <div data-testid="wizard-step-seats" className="space-y-4 border border-line-soft bg-elevated/20 p-4">
       {buses.length === 0 ? (
         <p className="border border-danger/30 bg-danger/5 px-3 py-3 text-sm text-danger">{t('noBusAvailable')}</p>
       ) : (

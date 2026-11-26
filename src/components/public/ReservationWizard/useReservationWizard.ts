@@ -1,10 +1,19 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ClipboardList, Ticket, UserRound } from 'lucide-react'
+import { Armchair, ClipboardList, CreditCard, Palette, Ticket, UserRound, type LucideIcon } from 'lucide-react'
 import { api, ApiError } from '../../../lib/api'
 import { useLanguage } from '../../../lib/i18n'
 import { DEFAULT_TICKET_DESIGN, fetchReservationStatus, normalizeTicketDesign, rememberReservationAccessToken, resendReservationTicket, useReservationStatus, type PublicEvent, type ReservationResult, type TicketDesignSelection } from '../../../lib/public'
 import { useQrDataUrl } from './shared'
+
+export type WizardStepId = 'ticket' | 'seats' | 'details' | 'payment' | 'design' | 'review'
+
+type WizardStep = {
+  id: WizardStepId
+  label: string
+  help: string
+  icon: LucideIcon
+}
 
 /**
  * All reservation-wizard state and side effects live here so each step file
@@ -43,7 +52,8 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   const [holdError, setHoldError] = useState<string | null>(null)
   const [holding, setHolding] = useState(false)
   const [seatView3d, setSeatView3d] = useState(false)
-  const [stepIndex, setStepIndex] = useState(0)
+  const [currentStep, setCurrentStep] = useState<WizardStepId>('ticket')
+  const [designConfirmed, setDesignConfirmed] = useState(false)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
   const [holdAttempt, setHoldAttempt] = useState(0)
   const [now, setNow] = useState(() => Date.now())
@@ -56,6 +66,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   const [seatScroll, setSeatScroll] = useState({ overflow: false, atEnd: false })
 
   const selected = availableTypes.find((x) => x.id === ticketTypeId)
+  const hasPaymentProvider = Boolean(event.paymentProviders?.length)
   const selectedProvider = event.paymentProviders?.find((p) => p.id === paymentProviderId) ?? null
   const selectedBus = buses.find(b => b.id === busId) ?? buses[0]
   const seatUnitPrice = Number(selectedBus?.seatPrice ?? 0)
@@ -64,14 +75,24 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   const ticketPrice = Number(selected?.price ?? 0)
   const totalPrice = (Number.isFinite(ticketPrice) ? ticketPrice : 0) + seatTotal
   const isPaid = totalPrice > 0
-  // Three clear stages: choose, complete details/payment, then review.
-  const steps = [
-    { id: 'ticket', label: t('stepTicket'), icon: Ticket },
-    { id: 'details', label: lang === 'ar' ? 'البيانات والدفع' : 'Details & payment', icon: UserRound },
-    { id: 'review', label: t('stepReview'), icon: ClipboardList },
+  // One task per screen. Conditional steps disappear cleanly when the ticket
+  // changes so users never land on a step that no longer applies to them.
+  const steps: WizardStep[] = [
+    { id: 'ticket', label: t('stepTicket'), help: t('ticketStepHelp'), icon: Ticket },
+    ...(selected?.transportIncluded
+      ? [{ id: 'seats' as const, label: t('stepSeats'), help: t('seatsStepHelp'), icon: Armchair }]
+      : []),
+    { id: 'details', label: t('stepDetails'), help: t('detailsStepHelp'), icon: UserRound },
+    ...(isPaid
+      ? [{ id: 'payment' as const, label: t('stepPayment'), help: t('paymentStepHelp'), icon: CreditCard }]
+      : []),
+    { id: 'design', label: t('stepDesign'), help: t('designStepHelp'), icon: Palette },
+    { id: 'review', label: t('stepReview'), help: t('reviewStepHelp'), icon: ClipboardList },
   ]
-  const activeStep = Math.min(stepIndex, steps.length - 1)
-  const stepId = steps[activeStep]?.id
+  const foundStep = steps.findIndex((step) => step.id === currentStep)
+  const activeStep = foundStep >= 0 ? foundStep : 0
+  const stepId = steps[activeStep]?.id ?? 'ticket'
+  const step = steps[activeStep] ?? steps[0]
   const canGoBack = activeStep > 0
   const phoneDigits = phone.replace(/\D/g, '')
   const phoneValid = phoneDigits.length >= 8 && phoneDigits.length <= 15
@@ -83,17 +104,32 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   const canContinue = (() => {
     if (stepId === 'ticket') {
       if (!ticketTypeId || !selected || selected.soldOut) return false
-      if (isPaid && !selectedProvider) return false
-      if (!selected.transportIncluded) return true
+      if (isPaid && !hasPaymentProvider) return false
+      return true
+    }
+    if (stepId === 'seats') {
       return selectedSeatIds.length === 1 && !holding && !!holdExpiresAt && !holdError
     }
     if (stepId === 'details') {
-      const detailsValid = name.trim().length >= 2 && emailValid && phoneValid && !!gender && identityValid
-      const paymentValid = !isPaid || (!!selectedProvider && !!paymentReference.trim() && !!paymentProofUrl)
-      return detailsValid && paymentValid
+      return name.trim().length >= 2 && emailValid && phoneValid && !!gender && identityValid
     }
+    if (stepId === 'payment') {
+      return !!selectedProvider && !!paymentReference.trim() && !!paymentProofUrl
+    }
+    if (stepId === 'design') return designConfirmed
     return true
   })()
+  const stepStillValid = currentStep === 'ticket'
+    || currentStep === 'details'
+    || currentStep === 'design'
+    || currentStep === 'review'
+    || (currentStep === 'seats' && Boolean(selected?.transportIncluded))
+    || (currentStep === 'payment' && isPaid)
+
+  useEffect(() => {
+    if (!stepStillValid) setCurrentStep('ticket')
+  }, [currentStep, stepStillValid])
+
   const qrUrl = useQrDataUrl(done?.approval === 'APPROVED' && done.qr ? done.qr : null)
   const pending = done?.approval === 'PENDING'
   // Free tickets are approved immediately, but the QR is minted after the
@@ -144,7 +180,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   }, [holdExpiresAt, secondsLeft, t])
 
   useEffect(() => {
-    if (stepId !== 'ticket' || !selected?.transportIncluded || !seatScrollRef.current) {
+    if (stepId !== 'seats' || !selected?.transportIncluded || !seatScrollRef.current) {
       setSeatScroll({ overflow: false, atEnd: false })
       return
     }
@@ -243,6 +279,18 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
     if (done?.reservationCode) startStatusPolling(done.reservationCode)
   }
 
+  const updateTicketDesign = (value: TicketDesignSelection) => {
+    setTicketDesign(normalizeTicketDesign(value))
+    setDesignConfirmed(true)
+  }
+
+  const confirmDesign = () => setDesignConfirmed(true)
+
+  const goToStep = (id: WizardStepId) => {
+    const target = steps.findIndex((item) => item.id === id)
+    if (target >= 0 && target <= activeStep) setCurrentStep(id)
+  }
+
   const reserve = useMutation({
     mutationFn: () =>
       api.post<ReservationResult>(`/public/events/${event.id}/reservations`, {
@@ -299,13 +347,17 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
 
   const goNext = () => {
     if (!canContinue) return
-    setStepIndex((i) => Math.min(i + 1, steps.length - 1))
+    const next = steps[activeStep + 1]
+    if (next) setCurrentStep(next.id)
   }
 
-  const goBack = () => setStepIndex((i) => Math.max(i - 1, 0))
+  const goBack = () => {
+    const previous = steps[activeStep - 1]
+    if (previous) setCurrentStep(previous.id)
+  }
 
   const hasEnteredDetails = [name, email, phone, notes, paymentReference].some((value) => value.trim())
-    || !!paymentProofUrl || selectedSeatIds.length > 0
+    || !!paymentProofUrl || selectedSeatIds.length > 0 || designConfirmed
   const requestClose = () => {
     if (!done && activeStep > 0 && hasEnteredDetails) setConfirmDiscard(true)
     else onClose()
@@ -367,19 +419,19 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
     event, t, lang, qc,
     name, setName, email, setEmail, phone, setPhone,
     gender, setGender, nationality, setNationality, identityNumber, setIdentityNumber, notes, setNotes,
-    availableTypes, ticketTypeId, setTicketTypeId, ticketDesign, setTicketDesign,
+    availableTypes, ticketTypeId, setTicketTypeId, ticketDesign, updateTicketDesign, designConfirmed, confirmDesign,
     paymentProviderId, setPaymentProviderId, paymentReference, setPaymentReference,
     paymentProofUrl, setPaymentProofUrl,
     done, checkingCode, setCheckingCode, copied, existingReservation,
     buses, busId, setBusId, selectedSeatIds, setSelectedSeatIds,
     holdToken, holdExpiresAt, setHoldExpiresAt, holdError, holding, seatView3d, setSeatView3d,
-    stepIndex, setStepIndex, confirmDiscard, setConfirmDiscard, holdAttempt, setHoldAttempt,
+    confirmDiscard, setConfirmDiscard, holdAttempt, setHoldAttempt,
     duplicateLoading, resending, resendMessage,
     seatScrollRef, seatScroll, setSeatScroll,
-    selected, selectedProvider, hasPaymentProvider: Boolean(event.paymentProviders?.length), selectedBus, seatUnitPrice, seatTotal, ticketPrice, totalPrice, isPaid,
-    steps, activeStep, stepId, canGoBack, phoneValid, emailValid, identityValid, canContinue,
+    selected, selectedProvider, hasPaymentProvider, selectedBus, seatUnitPrice, seatTotal, ticketPrice, totalPrice, isPaid,
+    steps, activeStep, step, stepId, canGoBack, phoneValid, emailValid, identityValid, canContinue,
     qrUrl, pending, awaitingQr, status, holdCountdown, holdExpiring,
-    reserve, onSubmit, goNext, goBack, requestClose, openExisting, resendTicket, copyCode, checkStatus,
+    reserve, onSubmit, goNext, goBack, goToStep, requestClose, openExisting, resendTicket, copyCode, checkStatus,
   }
 }
 

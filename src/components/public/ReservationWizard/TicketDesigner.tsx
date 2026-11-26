@@ -254,13 +254,14 @@ export function TicketDesigner({
   recommendedPaletteId?: TicketDesignSelection['paletteId']
 }) {
   const isAr = lang === 'ar'
+  const [showAdvancedColors, setShowAdvancedColors] = useState(false)
   return (
-    <section className="mt-5 space-y-4 border border-line-soft bg-elevated/20 p-3 sm:p-4" data-testid="ticket-designer">
+    <section className="space-y-4 border border-line-soft bg-elevated/20 p-3 sm:p-4" data-testid="ticket-designer">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-signal">{isAr ? 'صمّم تذكرتك' : 'MAKE IT YOURS'}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-signal">{isAr ? 'صمّم تذكرتك' : 'MAKE IT YOURS'}</p>
           <h3 className="mt-1 font-display text-lg font-semibold text-ink-0">{isAr ? 'اختر شكل التذكرة' : 'Choose your ticket design'}</h3>
-          <p className="mt-1 text-[11px] text-ink-3">{isAr ? 'المعاينة تتحدث مباشرة، ونفس التصميم سيظهر في البريد الإلكتروني.' : 'Live preview. This design is saved with your booking and used in your ticket email.'}</p>
+          <p className="mt-1 text-[12px] leading-relaxed text-ink-3">{isAr ? 'المعاينة تتحدث مباشرة، ونفس التصميم سيظهر في تذكرتك بعد الاعتماد.' : 'Live preview. This design is saved with your booking and used on your approved ticket.'}</p>
         </div>
         <span className="border border-signal/25 bg-signal/5 px-2 py-1 text-[9px] font-semibold uppercase tracking-[.12em] text-signal">LIVE PREVIEW</span>
       </div>
@@ -306,8 +307,8 @@ export function TicketDesigner({
                 <span className="mt-2 block h-1 w-1/2" style={{ backgroundColor: palette.accentColor }} />
               </span>
             </span>
-            <span className="block truncate text-[9px] font-semibold text-ink-2">{palette.label}</span>
-            {recommendedPaletteId === palette.id && <span className="mt-1 block text-[8px] font-semibold uppercase tracking-wider text-signal">{isAr ? 'مقترح لك' : 'Suggested'}</span>}
+            <span className="block truncate text-[10px] font-semibold text-ink-2">{palette.label}</span>
+            {recommendedPaletteId === palette.id && <span className="mt-1 block text-[9px] font-semibold uppercase tracking-wider text-signal">{isAr ? 'مقترح لك' : 'Suggested'}</span>}
           </button>
         ))}
       </div>
@@ -330,38 +331,48 @@ export function TicketDesigner({
                 className={`flex min-h-14 flex-col items-center justify-center gap-1 border px-2 py-2 transition-colors ${design.stickerId === sticker.id ? 'border-signal/60 bg-signal/10 text-signal' : 'border-line-soft bg-paper text-ink-2 hover:border-signal/30'}`}
               >
                 {Sticker ? <Sticker size={16} /> : <span className="text-[14px]">—</span>}
-                <span className="text-[9px] font-medium">{isAr ? sticker.labelAr : sticker.label}</span>
+                <span className="text-[10px] font-medium">{isAr ? sticker.labelAr : sticker.label}</span>
               </button>
             )
           })}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {([
-          ['panelColor', isAr ? 'اللوحة' : 'Panel'],
-          ['accentColor', isAr ? 'اللون المميز' : 'Accent'],
-          ['backgroundColor', isAr ? 'الخلفية' : 'Surface'],
-          ['textColor', isAr ? 'النص' : 'Text'],
-        ] as const).map(([key, label]) => (
-          <label key={key} className="flex min-w-0 items-center gap-2 border border-line-soft bg-paper px-2 py-2">
-            <input
-              type="color"
-              data-testid={`ticket-color-${key}`}
-              aria-label={label}
-              value={design[key]}
-              onChange={(e) => onChange({ ...design, paletteId: 'custom', [key]: e.target.value.toUpperCase() })}
-              className="h-7 w-8 shrink-0 cursor-pointer border-0 bg-transparent p-0"
-            />
-            <span className="min-w-0">
-              <span className="block text-[9px] text-ink-3">{label}</span>
-              <span className="block truncate font-mono text-[8px] text-ink-2">{design[key]}</span>
-            </span>
-          </label>
-        ))}
-      </div>
+      <details
+        className="border border-line-soft bg-paper/40"
+        open={showAdvancedColors}
+        onToggle={(event) => setShowAdvancedColors(event.currentTarget.open)}
+      >
+        <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-[11px] font-semibold text-ink-2">
+          <span>{isAr ? 'ألوان متقدمة' : 'Advanced colours'}</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink-3">{isAr ? 'اختياري' : 'Optional'}</span>
+        </summary>
+        <div className="grid grid-cols-2 gap-2 border-t border-line-soft p-2 sm:grid-cols-4">
+          {([
+            ['panelColor', isAr ? 'اللوحة' : 'Panel'],
+            ['accentColor', isAr ? 'اللون المميز' : 'Accent'],
+            ['backgroundColor', isAr ? 'الخلفية' : 'Surface'],
+            ['textColor', isAr ? 'النص' : 'Text'],
+          ] as const).map(([key, label]) => (
+            <label key={key} className="flex min-w-0 items-center gap-2 border border-line-soft bg-paper px-2 py-2">
+              <input
+                type="color"
+                data-testid={`ticket-color-${key}`}
+                aria-label={label}
+                value={design[key]}
+                onChange={(e) => onChange({ ...design, paletteId: 'custom', [key]: e.target.value.toUpperCase() })}
+                className="h-7 w-8 shrink-0 cursor-pointer border-0 bg-transparent p-0"
+              />
+              <span className="min-w-0">
+                <span className="block text-[10px] text-ink-3">{label}</span>
+                <span className="block truncate font-mono text-[9px] text-ink-2">{design[key]}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </details>
 
-      <div className="rounded-xl border border-line-soft bg-paper/70 p-2 sm:p-3">
+      <div className="border border-line-soft bg-paper/70 p-2 sm:p-3">
         <TicketCardPreview
           event={event}
           ticketType={ticketType}
