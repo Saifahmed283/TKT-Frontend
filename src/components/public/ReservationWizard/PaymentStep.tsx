@@ -61,7 +61,7 @@ export function PaymentStep({ w }: { w: ReservationWizard }) {
         </div>
       ) : null}
       <input data-testid="payment-reference" className="input" placeholder={t('paymentReference')} value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} />
-      <FileUploadField uploadEndpoint="/uploads/proof" label={t('paymentProof')} value={paymentProofUrl ?? ''} onChange={(v) => setPaymentProofUrl(v || null)} accept="image/*,application/pdf" hint={t('optional')} />
+      <FileUploadField uploadEndpoint="/uploads/proof" label={t('paymentProof')} value={paymentProofUrl ?? ''} onChange={(v) => setPaymentProofUrl(v || null)} accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,application/pdf" hint={t('optional')} />
       {!canContinue && <p className="text-[11px] text-danger">{t('paymentDetailsRequired')}</p>}
     </div>
   )
