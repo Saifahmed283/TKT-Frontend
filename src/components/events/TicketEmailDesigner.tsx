@@ -1,16 +1,8 @@
 import { useMemo, useState, type DragEvent } from 'react'
-import { GripVertical, ArrowUp, ArrowDown, Palette, Type, Image as ImageIcon, QrCode, Ticket } from 'lucide-react'
+import { GripVertical, ArrowUp, ArrowDown, Palette, Type, Image as ImageIcon, Ticket } from 'lucide-react'
+import { TicketEmailPreview, type TicketEmailDesign } from './TicketEmailPreview'
+export type { TicketEmailDesign } from './TicketEmailPreview'
 
-export type TicketEmailDesign = {
-  primaryColor?: string
-  accentColor?: string
-  backgroundColor?: string
-  headerColor?: string
-  panelColor?: string
-  logoUrl?: string
-  fontFamily?: 'Cairo' | 'Tahoma' | 'Arial' | 'Poppins'
-  layoutOrder?: string[]
-}
 
 type SectionId = 'intro' | 'details' | 'qr' | 'action' | 'footer' | 'legal'
 
@@ -69,24 +61,6 @@ export function TicketEmailDesigner({
   const drop = (event: DragEvent<HTMLDivElement>, target: SectionId) => {
     event.preventDefault()
     move(target)
-  }
-
-  const sectionContent = (id: SectionId) => {
-    switch (id) {
-      case 'intro':
-        return <div className="space-y-1 text-center"><p dir="rtl" className="text-lg font-bold">تم تأكيد حجزك بنجاح</p><p className="text-sm font-semibold">Your ticket is ready</p><p dir="rtl" className="text-xs leading-6 opacity-70">شكراً لحجزك معنا. ستجد أدناه تفاصيل الحجز ورمز التذكرة.</p></div>
-      case 'details':
-        return <div className="rounded-xl p-3 text-sm" style={{ background: design.panelColor }}><div className="mb-2 text-xs font-bold">تفاصيل الحجز · BOOKING DETAILS</div><div className="flex justify-between border-b border-black/10 py-2"><span>الفعالية</span><b>TKT Signature Event</b></div><div className="flex justify-between py-2"><span>نوع التذكرة</span><b>General Admission</b></div></div>
-      case 'qr':
-        return <div className="flex items-center justify-center gap-3 rounded-xl p-4" style={{ background: design.panelColor }}><div className="grid size-16 place-items-center border-4 border-white bg-white text-black"><QrCode size={42}/></div><div className="text-start"><b className="block text-sm">رمز QR الخاص بك</b><span className="text-xs opacity-70">Unique code per ticket</span></div></div>
-      case 'action':
-        return <div className="rounded-full px-4 py-3 text-center text-sm font-bold text-white" style={{ background: design.accentColor }}>عرض التذكرة / VIEW TICKET</div>
-      case 'footer':
-        return <div className="border-t border-black/10 pt-3 text-center text-xs"><b className="block">TKT · YOUR EXPERIENCE STARTS HERE</b><span className="opacity-60">Your Partner in Travel & Events</span></div>
-      case 'legal':
-        return <p className="text-center text-[10px] opacity-50">تم إرسال هذا البريد لتأكيد تفاصيل حجزك مع TKT.</p>
-    }
-    return null
   }
 
   return (
@@ -168,17 +142,8 @@ export function TicketEmailDesigner({
         </div>
 
         <div className="space-y-2">
-          <div className="text-xs font-semibold uppercase tracking-wider text-ink-3">Live layout preview</div>
-          <div className="overflow-hidden rounded-2xl border border-line-soft shadow-lg" style={{ background: design.backgroundColor, color: design.primaryColor, fontFamily: design.fontFamily }}>
-            <div className="flex min-h-20 items-center justify-between gap-3 p-5" style={{ background: design.headerColor }}>
-              {design.logoUrl ? <img src={design.logoUrl} alt="TKT logo preview" className="max-h-11 max-w-32 object-contain"/> : <span className="text-3xl font-semibold tracking-wider" style={{ color: design.accentColor }}>TKT</span>}
-              <div className="text-right text-white"><div dir="rtl" className="text-xs">رحلتك تبدأ معنا</div><div className="mt-1 text-[9px] tracking-widest">YOUR EXPERIENCE STARTS HERE</div></div>
-            </div>
-            <div className="space-y-4 p-4 sm:p-5">
-              {layoutOrder.map((id) => <div key={id}>{sectionContent(id)}</div>)}
-            </div>
-          </div>
-          <p className="text-[10px] leading-5 text-ink-3">The sample QR is illustrative. A unique signed QR PNG and real booking details are inserted when the reservation credential is issued.</p>
+          <div className="text-xs font-semibold uppercase tracking-wider text-ink-3">Live email preview</div>
+          <TicketEmailPreview design={design} eventName="TKT Signature Event" />
         </div>
       </div>
     </section>
