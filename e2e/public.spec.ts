@@ -257,6 +257,26 @@ test.describe('TKT E2E — public site', () => {
         }),
       })
     })
+    // This client-flow test uses a synthetic paid reservation code; mock its
+    // status endpoint too, rather than querying the local database for it.
+    await page.route(/\\/public\\/events\\/[^/]+\\/reservations\\/status\\?/, async (route) => {
+      const url = new URL(route.request().url())
+      if (url.searchParams.get('code') !== 'TKT-E2E-PAID') return route.continue()
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: {
+            reservationCode: 'TKT-E2E-PAID',
+            ticketId: 'e2e-transit-ticket',
+            attendeeId: 'e2e-transit-attendee',
+            approval: 'PENDING',
+            paymentStatus: 'PENDING',
+            qr: null,
+          },
+        }),
+      })
+    })
     await page.getByTestId('wizard-submit').click()
     await expect(page.getByText(/Reservation pending|قيد المراجعة/i).first()).toBeVisible({ timeout: 25_000 })
     await expect(page.getByText(/Reservation code|رمز الحجز|TKT-/i).first()).toBeVisible({ timeout: 25_000 })
