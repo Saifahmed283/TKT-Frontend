@@ -129,10 +129,11 @@ test.describe('TKT E2E — public site', () => {
     await expect(page.getByText(/Reservation code|رمز الحجز|TKT-/i).first()).toBeVisible({ timeout: 25_000 })
   })
 
-  test('transport reserve wizard requires one seat and payment details', async ({ page, request }) => {
+  test('mobile transport reservation keeps seat choice and payment flow simple', async ({ page, request }) => {
     const name = `E2E Transport Summit ${Date.now()}`
     await seedPaidTransportEvent(request, name)
     const email = `e2e.transport+${Date.now()}@example.com`
+    await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/upcoming')
     await page.getByText(name).first().waitFor({ timeout: 20_000 })
     const card = page.locator('article', { hasText: name }).first()
@@ -140,18 +141,21 @@ test.describe('TKT E2E — public site', () => {
     await expect(page.getByTestId('wizard-step-ticket')).toBeVisible()
     await page.getByTestId('ticket-option').filter({ hasText: 'Conference + Bus' }).click()
     await page.getByTestId('wizard-next').click()
+
+    // Seat choice comes before the attendee form and remains usable on narrow phones.
+    await expect(page.getByTestId('wizard-step-seats')).toBeVisible()
+    await expect(page.getByTestId('mobile-seat-picker')).toBeVisible()
+    await expect(page.getByTestId('wizard-next')).toBeDisabled()
+    await page.locator('[data-testid^="mobile-seat-"]').first().click()
+    await expect(page.getByTestId('wizard-next')).toBeEnabled()
+    await page.getByTestId('wizard-next').click()
+
+    await expect(page.getByTestId('wizard-step-details')).toBeVisible()
     await page.getByLabel(/Full name|الاسم/i).fill('E2E Transit')
     await page.getByLabel(/Email|البريد/i).fill(email)
     await page.getByTestId('reservation-phone').fill('+20 100 000 0001')
     await page.getByTestId('wizard-next').click()
-    await expect(page.getByTestId('wizard-step-seats')).toBeVisible()
-    await expect(page.getByTestId('wizard-next')).toBeDisabled()
-    const seats = page.getByTestId('seat-option')
-    await seats.nth(0).click()
-    await seats.nth(1).click()
-    await expect(page.getByTestId('wizard-next')).toBeDisabled()
-    await seats.nth(0).click()
-    await page.getByTestId('wizard-next').click()
+
     await expect(page.getByTestId('wizard-step-payment')).toBeVisible()
     await expect(page.getByTestId('payment-instructions')).toContainText('Transfer the total to the account')
     await expect(page.getByTestId('wizard-next')).toBeDisabled()
@@ -159,7 +163,7 @@ test.describe('TKT E2E — public site', () => {
     await page.getByTestId('wizard-next').click()
     await expect(page.getByTestId('wizard-review')).toBeVisible()
     await expect(page.getByTestId('wizard-review')).toContainText('Conference + Bus')
-    await expect(page.getByTestId('wizard-review')).toContainText('120')
+    await expect(page.getByTestId('wizard-review')).toContainText('100')
     await page.getByTestId('wizard-submit').click()
     await expect(page.getByText(/Reservation pending|قيد المراجعة/i).first()).toBeVisible({ timeout: 25_000 })
     await expect(page.getByText(/Reservation code|رمز الحجز|TKT-/i).first()).toBeVisible({ timeout: 25_000 })
