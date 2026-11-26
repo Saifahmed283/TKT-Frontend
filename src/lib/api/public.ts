@@ -42,7 +42,7 @@ export function normalizeTicketDesign(value: TicketDesignSelection): TicketDesig
   return {
     templateId: value.templateId,
     paletteId: value.paletteId,
-    stickerId: value.stickerId,
+    stickerId: value.stickerId ?? 'none',
     panelColor: value.panelColor,
     accentColor: value.accentColor,
     backgroundColor: value.backgroundColor,
