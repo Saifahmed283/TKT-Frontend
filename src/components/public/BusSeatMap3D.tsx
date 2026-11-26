@@ -203,6 +203,85 @@ function CabinShell({ model, roof }: { model: ResolvedBusLayout; roof: boolean }
   )
 }
 
+function ExteriorShell({ model }: { model: ResolvedBusLayout }) {
+  const { width, length } = model.cabin
+  const sideX = width / 2 + 0.075
+  const wheelZ = [-length / 2 + 1.15, length / 2 - 1.15]
+
+  return (
+    <group>
+      {([-1, 1] as const).map((side) => (
+        <group key={side} position={[side * sideX, 0, 0]}>
+          {/* Lower exterior bodywork leaves the glazed cabin and seats visible. */}
+          <RoundedBox args={[0.16, 0.48, length - 0.55]} radius={0.055} smoothness={3} position={[0, 0.27, 0]} castShadow receiveShadow>
+            <meshStandardMaterial color="#e8e5de" metalness={0.24} roughness={0.38} />
+          </RoundedBox>
+          <mesh position={[side * 0.086, 0.52, 0]}>
+            <boxGeometry args={[0.012, 0.035, length - 0.8]} />
+            <meshStandardMaterial color="#c8a25c" metalness={0.68} roughness={0.28} />
+          </mesh>
+          {wheelZ.map((z) => (
+            <group key={z} position={[0, 0.37, z]}>
+              <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
+                <cylinderGeometry args={[0.47, 0.47, 0.2, 32]} />
+                <meshStandardMaterial color="#111216" roughness={0.86} />
+              </mesh>
+              <mesh rotation={[0, 0, Math.PI / 2]} position={[side * 0.11, 0, 0]}>
+                <cylinderGeometry args={[0.25, 0.25, 0.205, 28]} />
+                <meshStandardMaterial color="#aeb1b7" metalness={0.82} roughness={0.24} />
+              </mesh>
+              <mesh rotation={[0, 0, Math.PI / 2]} position={[side * 0.218, 0, 0]}>
+                <torusGeometry args={[0.18, 0.018, 8, 28]} />
+                <meshStandardMaterial color="#d6d8dc" metalness={0.8} roughness={0.25} />
+              </mesh>
+            </group>
+          ))}
+          <RoundedBox args={[0.13, 0.16, 0.32]} radius={0.035} smoothness={2} position={[0, 0.69, -length / 2 + 0.72]}>
+            <meshStandardMaterial color="#202329" metalness={0.42} roughness={0.34} />
+          </RoundedBox>
+        </group>
+      ))}
+
+      {/* Front fascia and panoramic windscreen frame. */}
+      <RoundedBox args={[width + 0.18, 0.5, 0.22]} radius={0.075} smoothness={3} position={[0, 0.28, -length / 2 - 0.08]} castShadow>
+        <meshStandardMaterial color="#202329" metalness={0.42} roughness={0.34} />
+      </RoundedBox>
+      <RoundedBox args={[width - 0.24, 0.88, 0.075]} radius={0.09} smoothness={4} position={[0, 1.48, -length / 2 - 0.045]}>
+        <meshPhysicalMaterial color="#7896a7" transparent opacity={0.28} roughness={0.12} metalness={0.18} clearcoat={0.9} clearcoatRoughness={0.12} side={THREE.DoubleSide} depthWrite={false} />
+      </RoundedBox>
+      {([-1, 1] as const).map((side) => (
+        <group key={side}>
+          <RoundedBox args={[0.28, 0.13, 0.055]} radius={0.035} smoothness={3} position={[side * (width / 2 - 0.22), 0.42, -length / 2 - 0.205]}>
+            <meshStandardMaterial color="#f4e7c9" emissive="#fff0c8" emissiveIntensity={0.32} roughness={0.24} />
+          </RoundedBox>
+          <RoundedBox args={[0.22, 0.075, 0.055]} radius={0.025} smoothness={2} position={[side * (width / 2 - 0.2), 0.22, -length / 2 - 0.205]}>
+            <meshStandardMaterial color="#c8a25c" emissive="#c8a25c" emissiveIntensity={0.16} roughness={0.3} />
+          </RoundedBox>
+          <group position={[side * (width / 2 + 0.1), 1.32, -length / 2 + 0.3]}>
+            <RoundedBox args={[0.12, 0.11, 0.48]} radius={0.035} smoothness={3} rotation={[0.08, side * 0.12, side * -0.12]}>
+              <meshStandardMaterial color="#25282e" metalness={0.5} roughness={0.3} />
+            </RoundedBox>
+            <RoundedBox args={[0.28, 0.24, 0.075]} radius={0.07} smoothness={4} position={[side * 0.13, 0.02, -0.18]}>
+              <meshPhysicalMaterial color="#26313a" metalness={0.55} roughness={0.18} clearcoat={1} />
+            </RoundedBox>
+          </group>
+        </group>
+      ))}
+      <RoundedBox args={[width + 0.18, 0.34, 0.2]} radius={0.06} smoothness={3} position={[0, 0.27, length / 2 + 0.08]} castShadow>
+        <meshStandardMaterial color="#202329" metalness={0.42} roughness={0.36} />
+      </RoundedBox>
+      <mesh position={[0, 1.34, length / 2 + 0.035]}>
+        <planeGeometry args={[width - 0.36, 0.48]} />
+        <meshPhysicalMaterial color="#7896a7" transparent opacity={0.22} roughness={0.14} metalness={0.12} side={THREE.DoubleSide} depthWrite={false} />
+      </mesh>
+      <mesh position={[0, 0.47, length / 2 + 0.19]}>
+        <boxGeometry args={[width * 0.56, 0.035, 0.025]} />
+        <meshStandardMaterial color="#c8a25c" metalness={0.7} roughness={0.25} />
+      </mesh>
+    </group>
+  )
+}
+
 function Fixtures({ model, project }: { model: ResolvedBusLayout; project: ReturnType<typeof cabinProjection> }) {
   const features = model.features
   const driver = features.find((feature) => feature.kind === 'driver')
@@ -441,6 +520,7 @@ function Scene({ model, seats, statuses, onSeatClick, preset, roof, controls, di
         <shadowMaterial transparent opacity={0.32} />
       </mesh>
 
+      <ExteriorShell model={model} />
       <CabinShell model={model} roof={roof} />
       <Fixtures model={model} project={project} />
       {seats.map((seat) => {
@@ -535,7 +615,7 @@ export default function BusSeatMap3D({
 
         <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
           <div className="pointer-events-auto rounded-lg border border-[#ffb020]/40 bg-[#111317]/85 px-3 py-2 backdrop-blur">
-            <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-[#ffb020]">{model.modelCode} · 3D CABIN</p>
+            <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-[#ffb020]">{model.modelCode} · 3D COACH · OPEN ROOF</p>
             <p className="mt-0.5 text-[11px] font-semibold text-[#f6f2e8]">{model.name}</p>
           </div>
           <div className="pointer-events-auto flex flex-wrap justify-end gap-1">
@@ -552,14 +632,14 @@ export default function BusSeatMap3D({
           <div className="pointer-events-auto flex gap-1">
             <button type="button" aria-pressed={roof} onClick={() => setRoof((value) => !value)}
               className={`rounded border px-2 py-1 text-[10px] font-semibold ${roof ? 'border-[#ffb020] bg-[#ffb020] text-[#111317]' : 'border-[#ffffff25] bg-[#111317]/80 text-[#d8d4cc]'}`}>
-              Roof: {roof ? 'on' : 'off'}
+              {roof ? 'Hide roof' : 'Show roof'}
             </button>
             <button type="button" onClick={() => { setPreset('iso'); setRoof(false) }}
               className="rounded border border-[#ffffff25] bg-[#111317]/80 px-2 py-1 text-[10px] font-semibold text-[#d8d4cc]">
               Reset view
             </button>
           </div>
-          <p className="rounded bg-[#111317]/70 px-2 py-1 text-[10px] text-[#cfcbc2]">Drag to orbit · Scroll to zoom · Click a seat to select</p>
+          <p className="rounded bg-[#111317]/70 px-2 py-1 text-[10px] text-[#cfcbc2]">Rotate to explore · Scroll to zoom · Select a seat</p>
         </div>
       </div>
 
