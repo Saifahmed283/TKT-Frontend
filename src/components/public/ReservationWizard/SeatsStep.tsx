@@ -61,7 +61,34 @@ export function SeatsStep({ w }: { w: ReservationWizard }) {
                     disabled={holding}
                   />
                 )}
-                <div className="mt-3 space-y-2">
+                <div className="mt-4 space-y-3">
+                  <section className="space-y-2 sm:hidden" data-testid="mobile-seat-picker" aria-label={w.lang === 'ar' ? 'اختيار المقعد' : 'Seat picker'}>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11px] font-semibold text-ink-1">{w.lang === 'ar' ? 'اختر من المقاعد المتاحة' : 'Choose from available seats'}</p>
+                      <span className="text-[10px] text-ink-3">{bus.seats.length} {w.lang === 'ar' ? 'مقعد' : 'seats'}</span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2 min-[420px]:grid-cols-5">
+                      {[...bus.seats].sort((a, b) => a.row - b.row || a.col - b.col).map((seat) => {
+                        const active = selectedSeatIds.includes(seat.id)
+                        const available = seat.state === 'AVAILABLE' || active
+                        return (
+                          <button
+                            key={seat.id}
+                            type="button"
+                            data-testid={`mobile-seat-${seat.label}`}
+                            aria-label={`${w.lang === 'ar' ? 'مقعد' : 'Seat'} ${seat.label}`}
+                            aria-pressed={active}
+                            disabled={holding || !available}
+                            onClick={() => toggleSeat(seat.id)}
+                            className={`min-h-11 rounded-md border px-2 py-2 text-sm font-semibold tabular-nums transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${active ? 'border-signal bg-signal text-black shadow-sm' : available ? 'border-line-soft bg-panel text-ink-1 hover:border-signal/50' : 'border-line-soft bg-elevated/60 text-ink-3'}`}
+                          >
+                            {seat.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    <p className="text-[10px] text-ink-3">{w.lang === 'ar' ? 'يمكنك اختيار المقعد من المخطط أو من القائمة هنا.' : 'Select a seat from the map or this list.'}</p>
+                  </section>
                   <div className="flex flex-wrap items-center gap-2 text-[11px] text-ink-2">
                     <span>{t('selectedSeats')}: {bus.seats.filter(s => selectedSeatIds.includes(s.id)).map(s => s.label).join(', ') || '—'}</span>
                     {holding && <span className="inline-flex items-center gap-1 text-signal"><Clock3 size={12} /> {t('holding')}</span>}
