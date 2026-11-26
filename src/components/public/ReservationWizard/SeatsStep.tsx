@@ -9,7 +9,7 @@ export function SeatsStep({ w }: { w: ReservationWizard }) {
   const {
     t, buses, busId, setBusId, selectedSeatIds, setSelectedSeatIds,
     holding, holdExpiresAt, holdError, setHoldAttempt,
-    name, email, phone, seatPassengers, setSeatPassengers, seatView3d, setSeatView3d,
+    seatView3d, setSeatView3d,
   } = w
 
   const toggleSeat = (seatId: string) => {
@@ -101,14 +101,7 @@ export function SeatsStep({ w }: { w: ReservationWizard }) {
                     )}
                     {selectedSeatIds.length !== 1 && <span className="text-danger">{t('seatRequired')}</span>}
                   </div>
-                  {bus.seats.filter(s => selectedSeatIds.includes(s.id)).map(s => (
-                    <div key={s.id} className="grid gap-2 rounded-none border border-line-soft bg-panel/40 p-2 sm:grid-cols-3">
-                      <div className="text-[11px] font-semibold text-signal sm:col-span-3">{t('seatPassenger')} {s.label}</div>
-                      <input className="input !py-1.5 text-[12px]" placeholder={t('fullName')} value={seatPassengers[s.id]?.name ?? name} onChange={e => setSeatPassengers(prev => ({ ...prev, [s.id]: { name: e.target.value, email: prev[s.id]?.email ?? email, phone: prev[s.id]?.phone ?? phone } }))} />
-                      <input className="input !py-1.5 text-[12px]" placeholder={t('email')} value={seatPassengers[s.id]?.email ?? email} onChange={e => setSeatPassengers(prev => ({ ...prev, [s.id]: { name: prev[s.id]?.name ?? name, email: e.target.value, phone: prev[s.id]?.phone ?? phone } }))} />
-                      <input className="input !py-1.5 text-[12px]" placeholder={t('phone')} value={seatPassengers[s.id]?.phone ?? phone} onChange={e => setSeatPassengers(prev => ({ ...prev, [s.id]: { name: prev[s.id]?.name ?? name, email: prev[s.id]?.email ?? email, phone: e.target.value } }))} />
-                    </div>
-                  ))}
+
                 </div>
               </div>
             )
