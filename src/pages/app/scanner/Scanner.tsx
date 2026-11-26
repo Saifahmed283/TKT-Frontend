@@ -62,7 +62,7 @@ export default function ScannerPage() {
   const memberships = useMemo(() => user?.eventMemberships ?? [], [user])
   const events = memberships.filter((m) => ['event_manager', 'access_scanner', 'team_lead', 'support_staff'].includes(m.role.code))
 
-  const activeMembership = memberships.find((m) => m.event.id === eventId)
+  const activeMembership = events.find((m) => m.event.id === eventId)
 
   const areasQ = useQuery({
     queryKey: ['areas', eventId],
@@ -111,11 +111,16 @@ export default function ScannerPage() {
   }, [queue])
 
   useEffect(() => {
-    if (memberships[0]) {
-      const em = memberships.find((m) => ['event_manager', 'access_scanner', 'team_lead'].includes(m.role.code)) ?? memberships[0]
-      setEventId(em.event.id)
+    if (events.length === 0) {
+      setEventId('')
+      setAreaId('')
+      return
     }
-  }, [memberships])
+    if (!events.some((membership) => membership.event.id === eventId)) {
+      setEventId(events[0].event.id)
+      setAreaId('')
+    }
+  }, [events, eventId])
 
   const registerDevice = useCallback(async () => {
     setRegistering(true)
@@ -236,6 +241,9 @@ export default function ScannerPage() {
     },
   })
 
+  const validateRef = useRef(validate)
+  validateRef.current = validate
+
   const syncQueue = useMutation({
     mutationFn: async () => {
       if (!device) throw new Error('Device not registered')
@@ -279,6 +287,7 @@ export default function ScannerPage() {
   useEffect(() => {
     let stream: MediaStream | null = null
     let raf: number | null = null
+    let disposed = false
     let detector: BarcodeDetectorLike | null = null
     const nav = navigator as NavigatorWithBarcodeDetector
     if (nav.BarcodeDetector) {
@@ -289,8 +298,10 @@ export default function ScannerPage() {
       }
     }
     const stop = () => {
-      if (raf) cancelAnimationFrame(raf)
+      disposed = true
+      if (raf !== null) cancelAnimationFrame(raf)
       stream?.getTracks().forEach((t) => t.stop())
+      if (videoRef.current) videoRef.current.srcObject = null
     }
     if (cameraOn) {
       if (!navigator.mediaDevices?.getUserMedia) {
@@ -304,14 +315,24 @@ export default function ScannerPage() {
       navigator.mediaDevices
         .getUserMedia({ video: { facingMode: 'environment' } })
         .then((s) => {
+          if (disposed) {
+            s.getTracks().forEach((track) => track.stop())
+            return
+          }
           stream = s
           if (videoRef.current) {
             videoRef.current.srcObject = s
-            videoRef.current.play()
+            void videoRef.current.play().catch(() => {
+              if (!disposed) {
+                setCameraError('The camera opened but video playback was blocked. Tap Use camera again or paste the code manually.')
+                setCameraOn(false)
+              }
+            })
           }
           const loop = async () => {
+            if (disposed) return
             const video = videoRef.current
-            if (video && video.readyState >= 2 && !validate.isPending) {
+            if (video && video.readyState >= 2 && !validateRef.current.isPending) {
               frame += 1
               let raw = ''
               if (detector) {
@@ -350,18 +371,19 @@ export default function ScannerPage() {
                 }
               }
               if (raw) {
-                setCode(raw)
-                validate.mutate(raw)
                 stop()
+                setCode(raw)
+                validateRef.current.mutate(raw)
                 setCameraOn(false)
                 return
               }
             }
-            raf = requestAnimationFrame(loop)
+            if (!disposed) raf = requestAnimationFrame(loop)
           }
           raf = requestAnimationFrame(loop)
         })
         .catch((err: unknown) => {
+          if (disposed) return
           setCameraOn(false)
           setCameraError(
             err instanceof DOMException && err.name === 'NotAllowedError'
@@ -371,7 +393,7 @@ export default function ScannerPage() {
         })
     }
     return stop
-  }, [cameraOn, validate])
+  }, [cameraOn])
 
   const big = decision?.result === 'GRANTED'
   const manualCode = code.trim()
@@ -379,6 +401,12 @@ export default function ScannerPage() {
   return (
     <div className="animate-fade-in mx-auto max-w-3xl">
       <PageHeader title="Gate Scanner" subtitle="Validate credentials at the gate." />
+
+      {events.length === 0 ? (
+        <div className="card p-6 text-sm text-ink-3">
+          Your account does not have an event role that permits gate scanning. Ask an event administrator to assign scanner access.
+        </div>
+      ) : null}
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <select className="input w-72" value={eventId} onChange={(e) => { setEventId(e.target.value); setAreaId('') }}>
