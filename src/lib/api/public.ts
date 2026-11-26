@@ -255,8 +255,7 @@ export function fetchReservationStatus(eventId: string, params: ReservationStatu
 }
 
 export function fetchPwaReservationTicket(code: string, email: string) {
-  const params = new URLSearchParams({ code: code.trim(), email: email.trim() })
-  return api.get<PwaReservationTicket>(`/public/reservations/status?${params.toString()}`)
+  return api.post<PwaReservationTicket>('/public/reservations/status', { code: code.trim(), email: email.trim() })
 }
 
 export function resendReservationTicket(eventId: string, payload: { email: string; reservationCode?: string }) {
