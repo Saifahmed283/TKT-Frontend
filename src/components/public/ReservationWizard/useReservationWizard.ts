@@ -42,7 +42,6 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   const [holdExpiresAt, setHoldExpiresAt] = useState<string | null>(null)
   const [holdError, setHoldError] = useState<string | null>(null)
   const [holding, setHolding] = useState(false)
-  const [seatPassengers, setSeatPassengers] = useState<Record<string, { name: string; email: string; phone: string }>>({})
   const [seatView3d, setSeatView3d] = useState(false)
   const [stepIndex, setStepIndex] = useState(0)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
@@ -255,7 +254,6 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
         busId: selected?.transportIncluded ? busId || undefined : undefined,
         seatIds: selected?.transportIncluded ? selectedSeatIds : undefined,
         holdToken: selected?.transportIncluded ? holdToken : undefined,
-        seatPassengers: selected?.transportIncluded ? selectedSeatIds.map(id => ({ seatId: id, name: seatPassengers[id]?.name?.trim() || name.trim(), email: seatPassengers[id]?.email?.trim() || email.trim(), phone: seatPassengers[id]?.phone?.trim() || phone.trim() })) : undefined,
       }),
     onSuccess: (data) => {
       // The seat is now ticket-linked and no longer held. Do not release it
@@ -363,7 +361,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
     paymentProofUrl, setPaymentProofUrl,
     done, checkingCode, setCheckingCode, copied, existingReservation,
     buses, busId, setBusId, selectedSeatIds, setSelectedSeatIds,
-    holdToken, holdExpiresAt, setHoldExpiresAt, holdError, holding, seatPassengers, setSeatPassengers, seatView3d, setSeatView3d,
+    holdToken, holdExpiresAt, setHoldExpiresAt, holdError, holding, seatView3d, setSeatView3d,
     stepIndex, setStepIndex, confirmDiscard, setConfirmDiscard, holdAttempt, setHoldAttempt,
     duplicateLoading, resending, resendMessage,
     seatScrollRef, seatScroll, setSeatScroll,
