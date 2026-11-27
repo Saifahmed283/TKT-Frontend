@@ -60,6 +60,8 @@ function describeDecision(decision: AccessDecision): string {
       return 'This pass has already been scanned.'
     case 'INVALID_CREDENTIAL':
       return 'This QR code is not a valid pass.'
+    case 'WRONG_EVENT':
+      return 'This QR code belongs to a different event.'
     case 'WRONG_AREA':
       return 'This pass is not valid for this gate area.'
     case 'AREA_INACTIVE':
@@ -67,9 +69,9 @@ function describeDecision(decision: AccessDecision): string {
     case 'INSUFFICIENT_PERMISSION':
       return 'Your account is not assigned to this gate area.'
     case 'WRONG_TICKET_ENTITLEMENT':
-      return 'This ticket type is not entitled to enter.'
+      return 'This pass is not on the valid entry list for this event.'
     case 'ATTENDEE_BLOCKED':
-      return 'This attendee is blocked.'
+      return 'This attendee is banned from this event.'
     case 'REVOKED':
       return 'This pass was revoked.'
     case 'SUSPENDED':
