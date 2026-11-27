@@ -115,6 +115,22 @@
       scroll-behavior: smooth;
     }
   }
+
+  /* Landing is a single fixed screen. The class is added only while home is
+     mounted so other routes keep their normal document scroll. */
+  html.tkt-home-locked,
+  body.tkt-home-locked {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  @media (max-width: 639px) {
+    body.tkt-home-locked {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+    }
+  }
   :root {
     --upcoming-count-label: var(--color-signal);
   }

@@ -77,6 +77,10 @@ const dict = {
     en: 'From intimate gatherings to grand celebrations, TKT crafts seamless access to the moments that matter most.',
     ar: 'من اللقاءات الحميمة إلى الاحتفالات الكبرى، تصنع TKT وصولاً سلساً إلى اللحظات الأكثر أهمية.',
   },
+  heroBodyShort: {
+    en: 'Curated events. Seamless access. Unforgettable moments.',
+    ar: 'فعاليات منتقاة، وصول سلس، ولحظات لا تُنسى.',
+  },
   dragToExplore: { en: 'Drag to explore', ar: 'اسحب للاستكشاف' },
   browseUpcoming: { en: 'Explore Events', ar: 'استكشف الفعاليات' },
 

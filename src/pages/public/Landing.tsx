@@ -78,6 +78,19 @@ export default function Landing() {
     return () => media.removeEventListener('change', update)
   }, [])
 
+  useEffect(() => {
+    // Home is a single fixed screen on phones. Locking html/body prevents the
+    // small overscroll caused by browser chrome and touch momentum.
+    const root = document.documentElement
+    const body = document.body
+    root.classList.add('tkt-home-locked')
+    body.classList.add('tkt-home-locked')
+    return () => {
+      root.classList.remove('tkt-home-locked')
+      body.classList.remove('tkt-home-locked')
+    }
+  }, [])
+
   return (
     <div className="overflow-x-hidden bg-paper text-ink">
       <a href="#main-content" className="sr-only z-[100] bg-paper px-4 py-3 text-ink focus:fixed focus:left-4 focus:top-4 focus:not-sr-only">
@@ -86,10 +99,9 @@ export default function Landing() {
       <PublicNav />
 
       <main id="main-content" className="relative">
-        {/* Only the hero owns the viewport height. Centering it on small
-            screens left large empty bands under the fixed nav; desktop keeps
-            its centered 3D composition. */}
-        <header className="relative flex min-h-[100svh] flex-col justify-start overflow-x-clip px-4 pb-12 pt-24 sm:px-6 sm:pb-16 sm:pt-28 lg:justify-center lg:px-8 lg:pb-16 lg:pt-32">
+        {/* The hero is the whole first screen on every breakpoint. Mobile uses
+            a compact centered composition; desktop keeps its 3D sculpture. */}
+        <header className="relative flex h-[100svh] min-h-0 flex-col justify-center overflow-x-clip px-4 pb-6 pt-[4.5rem] sm:px-6 sm:pb-12 sm:pt-28 lg:px-8 lg:pb-16 lg:pt-32">
           <style>{`
             .tkt-hero-vignette{background:radial-gradient(circle at 68% 45%,rgba(11,11,12,.08) 0%,rgba(11,11,12,.48) 48%,rgba(11,11,12,.78) 78%,var(--color-canvas) 100%)}
             :root[data-theme='light'] .tkt-hero-vignette{background:radial-gradient(circle at 68% 45%,rgba(247,244,238,0) 0%,rgba(247,244,238,.12) 42%,rgba(247,244,238,.42) 70%,var(--color-canvas) 100%)}
@@ -108,7 +120,10 @@ export default function Landing() {
             <Bloom tone="warm" className="start-[6%] bottom-[-18%] h-[320px] w-[320px] opacity-45" />
             <Sparkles count={7} className="opacity-55" />
             <div className="tkt-hero-vignette absolute inset-0" />
-            <div className="absolute inset-x-0 top-[4.5rem] h-px bg-gradient-to-r from-transparent via-signal/30 to-transparent" />
+            <div aria-hidden="true" className="pointer-events-none absolute -end-[18%] top-[12%] z-0 w-[210px] opacity-[0.14] sm:hidden">
+              <HeroEmblemFallback />
+            </div>
+            <div className="absolute inset-x-0 top-[3.75rem] h-px bg-gradient-to-r from-transparent via-signal/30 to-transparent sm:top-[4.5rem]" />
           </div>
 
           {desktop3D && (
@@ -158,7 +173,7 @@ export default function Landing() {
             </div>
           )}
 
-          <div className="pointer-events-none relative z-10 mx-auto grid w-full max-w-7xl shrink-0 items-center gap-6 py-0 sm:grid-cols-[minmax(0,1fr)_minmax(0,0.82fr)] sm:gap-6 lg:grid-cols-[minmax(0,620px)_1fr] lg:py-0">
+          <div className="pointer-events-none relative z-10 mx-auto grid w-full max-w-7xl shrink-0 items-center gap-4 py-0 sm:grid-cols-[minmax(0,1fr)_minmax(0,0.82fr)] sm:gap-6 lg:grid-cols-[minmax(0,620px)_1fr] lg:py-0">
             {!desktop3D && showStaticHero && (
               <div aria-hidden="true" data-testid="hero-emblem" data-renderer="static" className="order-2 w-full sm:order-2 sm:justify-self-center">
                 <HeroVisual />
@@ -166,25 +181,38 @@ export default function Landing() {
             )}
 
             <div className="tkt-hero-copy pointer-events-auto order-1 max-w-[620px] sm:order-1">
-              <div className="mb-4 flex items-center gap-3 sm:mb-[18px]">
-                <span className="h-px w-7 bg-signal-dim" aria-hidden="true" />
-                <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-signal-dim">{t('heroEyebrow')}</p>
+              <div className="mb-3 flex items-center gap-2.5 sm:mb-[18px] sm:gap-3">
+                <span className="h-px w-5 bg-signal-dim sm:w-7" aria-hidden="true" />
+                <p className="text-[10px] font-medium uppercase leading-snug tracking-[0.14em] text-signal-dim sm:text-[11px] sm:tracking-[0.22em]">
+                  {t('heroEyebrow')}
+                </p>
               </div>
 
-              <h1 className="font-display text-[clamp(2.25rem,5.5vw,4.6rem)] font-normal leading-[1.12] tracking-[-0.01em] text-ink-0">
+              <h1 className="font-display text-[clamp(2rem,8.8vw,2.75rem)] font-normal leading-[1.08] tracking-[-0.01em] text-ink-0 sm:text-[clamp(2.5rem,5.5vw,4.6rem)] sm:leading-[1.12]">
                 <span className="block">{t('heroTitleA')}</span>
                 <span className="block text-signal">{t('heroTitleB')}</span>
               </h1>
 
-              <p className="mt-5 max-w-[500px] text-[14px] leading-[1.7] text-ink-2/90 sm:mt-6 sm:text-[15.5px] sm:leading-[1.75]">
+              <p className="mt-3 max-w-[500px] text-[13px] leading-[1.55] text-ink-2/90 sm:hidden">
+                {t('heroBodyShort')}
+              </p>
+              <p className="mt-5 hidden max-w-[500px] text-[14px] leading-[1.7] text-ink-2/90 sm:mt-6 sm:block sm:text-[15.5px] sm:leading-[1.75]">
                 {t('heroBody')}
               </p>
 
-              <div className="mt-7 sm:mt-9">
-                <Link to="/upcoming" className="btn-primary !px-7 !py-3.5 text-[11px] shadow-[0_10px_30px_-12px_color-mix(in_srgb,var(--color-signal)_45%,transparent)] sm:text-xs">
+              <div className="mt-5 sm:mt-9">
+                <Link
+                  to="/upcoming"
+                  className="btn-primary !px-6 !py-3 text-[10px] shadow-[0_10px_30px_-12px_color-mix(in_srgb,var(--color-signal)_45%,transparent)] sm:!px-7 sm:!py-3.5 sm:text-xs"
+                >
                   {t('browseUpcoming')}
                   <ArrowRight size={15} className="rtl:rotate-180" aria-hidden="true" />
                 </Link>
+              </div>
+
+              <div className="mt-5 flex items-center gap-3 sm:hidden" aria-hidden="true">
+                <span className="h-px w-8 bg-signal/40" />
+                <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-ink-3">TKT · Access</span>
               </div>
             </div>
             <div className="order-2 hidden lg:block" aria-hidden="true" />
