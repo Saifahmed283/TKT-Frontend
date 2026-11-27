@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { api, refreshSession, setAccessToken } from './api'
 import type { User } from './types'
 
@@ -19,6 +19,22 @@ const AuthContext = createContext<AuthState | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const hydratedFor = useRef<string | null>(null)
+
+  // Older sessions can still hold a minimal auth user without memberships.
+  // Hydrate once from /auth/me so permission gates and the gate scanner do
+  // not treat a valid staff account as role-less.
+  const ensureFullUser = useCallback(async (value: User | null): Promise<User | null> => {
+    if (!value) return null
+    if (Array.isArray(value.eventMemberships) && Array.isArray(value.orgMemberships)) return value
+    if (hydratedFor.current === value.id) return value
+    hydratedFor.current = value.id
+    try {
+      return await api<User>('/auth/me')
+    } catch {
+      return value
+    }
+  }, [])
 
   const applySession = useCallback((session: Awaited<ReturnType<typeof refreshSession>>) => {
     if (session) {
@@ -41,7 +57,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void (async () => {
       try {
         const session = await refreshSession()
-        if (alive) applySession(session)
+        const next = session
+          ? { ...session, user: await ensureFullUser(session.user as User) }
+          : null
+        if (alive) applySession(next)
       } catch {
         if (alive) applySession(null)
       } finally {
@@ -51,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       alive = false
     }
-  }, [applySession])
+  }, [applySession, ensureFullUser])
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await api<{ token: string; user: User }>('/auth/login', {
@@ -59,8 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ email, password }),
     })
     setAccessToken(res.token)
-    setUser(res.user)
-  }, [])
+    setUser(await ensureFullUser(res.user))
+  }, [ensureFullUser])
 
   const register = useCallback(async (name: string, email: string, password: string) => {
     const res = await api<{ token: string; user: User }>('/auth/register', {
@@ -68,8 +87,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ name, email, password }),
     })
     setAccessToken(res.token)
-    setUser(res.user)
-  }, [])
+    setUser(await ensureFullUser(res.user))
+  }, [ensureFullUser])
 
   const logout = useCallback(async () => {
     try {
