@@ -12,6 +12,7 @@ import { useState, useEffect, type FormEvent } from 'react'
 import { Dialog } from '@/components/ui/dialog'
 import { TicketEmailDesigner, type TicketEmailDesign } from '@/components/events/TicketEmailDesigner'
 import { TicketEmailPreview } from '@/components/events/TicketEmailPreview'
+import { egyptDateTimeLocalToIso, toEgyptDateTimeLocal } from '@/lib/time'
 
 type EmailTemplate = {
   subject?: string
@@ -117,10 +118,10 @@ export function EventSettingsPage() {
               </select>
             </Field>
             <Field label="Opens at">
-              <input type="datetime-local" className="input" value={event.settings?.registration?.startAt?.slice(0, 16) ?? ''} onChange={e => saveSettings.mutate({ registration: { ...event.settings?.registration, startAt: e.target.value ? new Date(e.target.value).toISOString() : undefined } })} />
+              <input type="datetime-local" className="input" value={toEgyptDateTimeLocal(event.settings?.registration?.startAt)} onChange={e => saveSettings.mutate({ registration: { ...event.settings?.registration, startAt: egyptDateTimeLocalToIso(e.target.value) } })} />
             </Field>
             <Field label="Closes at">
-              <input type="datetime-local" className="input" value={event.settings?.registration?.endAt?.slice(0, 16) ?? ''} onChange={e => saveSettings.mutate({ registration: { ...event.settings?.registration, endAt: e.target.value ? new Date(e.target.value).toISOString() : undefined } })} />
+              <input type="datetime-local" className="input" value={toEgyptDateTimeLocal(event.settings?.registration?.endAt)} onChange={e => saveSettings.mutate({ registration: { ...event.settings?.registration, endAt: egyptDateTimeLocalToIso(e.target.value) } })} />
             </Field>
           </div>
         </Panel>

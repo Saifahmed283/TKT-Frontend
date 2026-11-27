@@ -11,6 +11,7 @@ import { Table, Td, EmptyState } from '@/components/ui/table'
 import { Dialog, ConfirmDialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
+import { formatEgyptDateTime } from '@/lib/time'
 
 type AppRow = { id: string; fullName: string; email?: string | null; phone?: string | null; requestedRoleCode?: string | null; status: string; notes?: string | null; convertedUserId?: string | null }
 type Profile = { id: string; userId: string; workerCode?: string | null; onboardingComplete: boolean; idCardIssuedAt?: string | null; user?: { id: string; name: string; email: string } }
@@ -53,7 +54,7 @@ export function WorkforcePage() {
 
   const issueId = useMutation({
     mutationFn: (userId: string) => api.post<{ token: string; expiresAt: string }>(`/events/${eventId}/workforce/id-token`, { userId }),
-    onSuccess: (d) => { navigator.clipboard?.writeText(d.token).catch(() => {}); toast.success(`ID token issued (copied). Expires ${new Date(d.expiresAt).toLocaleString()}`); qc.invalidateQueries({ queryKey: ['workforce-profiles'] }) },
+    onSuccess: (d) => { navigator.clipboard?.writeText(d.token).catch(() => {}); toast.success(`ID token issued (copied). Expires ${formatEgyptDateTime(d.expiresAt)}`); qc.invalidateQueries({ queryKey: ['workforce-profiles'] }) },
     onError: (e: any) => toast.error(e?.message ?? 'Could not issue ID token'),
   })
 
@@ -119,7 +120,7 @@ export function WorkforcePage() {
                 <Td><div className="text-[13px] font-medium">{p.user?.name ?? p.userId}</div><div className="text-[11px] text-ink-3">{p.user?.email ?? ''}</div></Td>
                 <Td className="font-mono text-[12px]">{p.workerCode || '—'}</Td>
                 <Td><Badge tone={p.onboardingComplete ? 'ok' : 'warn'}>{p.onboardingComplete ? 'Complete' : 'Pending'}</Badge></Td>
-                <Td className="text-[12px]">{p.idCardIssuedAt ? new Date(p.idCardIssuedAt).toLocaleString() : '—'}</Td>
+                <Td className="text-[12px]">{p.idCardIssuedAt ? formatEgyptDateTime(p.idCardIssuedAt) : '—'}</Td>
                 <Td>
                   <div className="flex justify-end gap-1">
                     <Button size="sm" variant="ghost" icon={<IdCard className="size-4" />} onClick={() => issueId.mutate(p.userId)}>Issue ID token</Button>

@@ -6,6 +6,7 @@ import { api } from '../../lib/api'
 import type { Overview } from '../../lib/types'
 import { ErrorBanner, PageHeader, Spinner, StatCard, StatusBadge, fmtDateTime, fmtTime, Corners, Blink } from '../../components/ui'
 import { useConfirm } from '@/components/ui/dialog'
+import { EGYPT_TIME_LABEL, egyptDateTimeLocalToIso, toEgyptDateTimeLocal } from '../../lib/time'
 
 const moduleCards = [
   { to: 'attendees', icon: Users, label: 'Attendees', desc: 'People, check-in status, demographics' },
@@ -101,8 +102,8 @@ export default function EventDetail() {
   const reg = q.data?.event.settings?.registration ?? {}
 
   useEffect(() => {
-    setWinStart(reg.startAt ? reg.startAt.slice(0, 16) : '')
-    setWinEnd(reg.endAt ? reg.endAt.slice(0, 16) : '')
+    setWinStart(reg.startAt ? toEgyptDateTimeLocal(reg.startAt) : '')
+    setWinEnd(reg.endAt ? toEgyptDateTimeLocal(reg.endAt) : '')
   }, [eventId, reg.startAt, reg.endAt])
 
   if (q.isLoading) return <Spinner label="Loading event…" />
@@ -114,7 +115,7 @@ export default function EventDetail() {
     <div className="animate-fade-in">
       <PageHeader
         title={event.name}
-        subtitle={`${(event as any).category || event.type} · ${fmtDateTime(event.startAt)} · ${event.timezone}${event.venueName ? ` · ${event.venueName}` : ''}`}
+        subtitle={`${(event as any).category || event.type} · ${fmtDateTime(event.startAt)} · ${EGYPT_TIME_LABEL}${event.venueName ? ` · ${event.venueName}` : ''}`}
         actions={
           <>
             <StatusBadge status={event.status} />
@@ -211,8 +212,8 @@ export default function EventDetail() {
           <button
             onClick={() =>
               saveReg.mutate({
-                startAt: winStart ? new Date(winStart).toISOString() : null,
-                endAt: winEnd ? new Date(winEnd).toISOString() : null,
+                startAt: egyptDateTimeLocalToIso(winStart) ?? null,
+                endAt: egyptDateTimeLocalToIso(winEnd) ?? null,
               })
             }
             disabled={saveReg.isPending}

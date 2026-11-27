@@ -3,6 +3,7 @@ import { CheckCircle2, XCircle, Clock, ScanLine } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Corners, Blink } from '@/components/instruments'
 import { Badge } from '@/components/ui/badge'
+import { formatEgyptDateTime } from '@/lib/time'
 
 export type FeedActivity = {
   id: string
@@ -28,7 +29,7 @@ function ResultIcon({ result }: { result: string }) {
 function formatDateTime(value: string) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '—'
-  return date.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  return formatEgyptDateTime(date, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
 export function LiveActivityFeed({ activities }: { activities: FeedActivity[] }) {

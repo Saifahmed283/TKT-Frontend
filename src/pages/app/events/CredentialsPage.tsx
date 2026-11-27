@@ -13,6 +13,7 @@ import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { useState, type FormEvent } from 'react'
 import { BadgeCheck, QrCode, Ban, Download, CreditCard, Send, Trash2 } from 'lucide-react'
 import { downloadTicketPdf, downloadIdCardPdf, type CardIdentity } from '@/lib/cards'
+import { formatEgyptDate, formatEgyptDateTime } from '@/lib/time'
 
 type Credential = {
   id: string
@@ -77,7 +78,7 @@ export function CredentialsPage() {
 
   const pdfIdentity = (c: Credential): CardIdentity => ({
     eventName: event.data?.name ?? 'TKT Event',
-    eventDate: event.data?.startAt ? new Date(event.data.startAt).toLocaleDateString() : '',
+    eventDate: formatEgyptDate(event.data?.startAt),
     venue: event.data?.venueName ?? null,
     attendeeName: c.attendee?.name ?? 'Attendee',
     ticketType: ticketTypeName(c),
@@ -248,7 +249,7 @@ export function CredentialsPage() {
             <div key={d.id} className="border border-line-soft bg-elevated/20 px-3 py-2">
               <div className="flex items-center justify-between gap-3 text-[12px]">
                 <span className="font-mono text-ink-2">{d.channel} · {d.status}</span>
-                <span className="text-ink-3">{new Date(d.createdAt).toLocaleString()}</span>
+                <span className="text-ink-3">{formatEgyptDateTime(d.createdAt)}</span>
               </div>
               <p className="mt-1 font-mono text-[10px] text-ink-3">{d.recipient ?? '—'} · attempt {d.attempt}{d.provider ? ` · ${d.provider}` : ''}{d.error ? ` · ${d.error}` : ''}</p>
             </div>

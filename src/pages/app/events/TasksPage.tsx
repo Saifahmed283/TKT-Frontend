@@ -12,6 +12,7 @@ import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { useState, type FormEvent } from 'react'
 import { motion } from 'motion/react'
 import { ListTodo, Plus, Check, Clock, Flag, Siren, Trash2 } from 'lucide-react'
+import { egyptDateTimeLocalToIso } from '@/lib/time'
 
 type Task = {
   id: string
@@ -61,7 +62,7 @@ export function TasksPage() {
         description: form.description || null,
         priority: form.priority,
         assigneeId: form.assigneeId || null,
-        dueAt: form.dueAt ? new Date(form.dueAt).toISOString() : null,
+        dueAt: egyptDateTimeLocalToIso(form.dueAt) ?? null,
       }),
     onSuccess: () => {
       toast.success('Task created')

@@ -4,6 +4,7 @@ import { api } from '../../lib/api'
 import { useTaxonomy } from '../../lib/taxonomy'
 import type { Organization } from '../../lib/types'
 import { ErrorBanner, Modal } from '../ui'
+import { EGYPT_TIME_ZONE, egyptDateTimeLocalToIso, toEgyptDateTimeLocal } from '../../lib/time'
 
 export function EventFormModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const qc = useQueryClient()
@@ -28,7 +29,7 @@ export function EventFormModal({ open, onClose }: { open: boolean; onClose: () =
     if (open) {
       const first = orgsQ.data?.[0]
       setOrgId(first?.id ?? '')
-      setStartAt(new Date(Date.now() + 7 * 86400_000).toISOString().slice(0, 16))
+      setStartAt(toEgyptDateTimeLocal(new Date(Date.now() + 7 * 86400_000)))
       setEndAt('')
     }
   }, [open, orgsQ.data])
@@ -43,8 +44,9 @@ export function EventFormModal({ open, onClose }: { open: boolean; onClose: () =
           type,
           category,
           domain,
-          startAt: new Date(startAt).toISOString(),
-          ...(endAt ? { endAt: new Date(endAt).toISOString() } : {}),
+          startAt: egyptDateTimeLocalToIso(startAt),
+          ...(endAt ? { endAt: egyptDateTimeLocalToIso(endAt) } : {}),
+          timezone: EGYPT_TIME_ZONE,
           ...(venueName ? { venueName } : {}),
           ...(description ? { description } : {}),
         }),

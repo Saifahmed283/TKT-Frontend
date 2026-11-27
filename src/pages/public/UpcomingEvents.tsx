@@ -12,6 +12,7 @@ import { usePublicEvents, type PublicEvent, type PublicTicketType, type Reservat
 import { useDebouncedValue } from '../../lib/useDebouncedValue'
 import SpotlightCard from '../../components/reactbits/SpotlightCard'
 import BlurText from '../../components/reactbits/BlurText'
+import { formatEgyptDate, formatInEgypt } from '../../lib/time'
 import ShinyText from '../../components/reactbits/ShinyText'
 import { PageAccents } from '../../components/public/PlayfulBits'
 
@@ -106,7 +107,6 @@ export function EventCard({ e, i, onReserve }: { e: PublicEvent; i: number; onRe
   const avail = e.registration.availability
   const canReserve = avail === 'open'
   const opensSoon = avail === 'upcoming' && e.registration.window.start
-  const date = new Date(e.startAt)
   const locale = lang === 'ar' ? 'ar-EG' : 'en-US'
 
   return (
@@ -125,14 +125,14 @@ export function EventCard({ e, i, onReserve }: { e: PublicEvent; i: number; onRe
           <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-3">EVT-{String(i + 1).padStart(2, '0')}</p>
           <div className="mt-4 flex items-end gap-3 lg:block">
             <p className="font-display text-5xl font-semibold leading-none tracking-tight text-ink-0 tabular-nums sm:text-6xl">
-              {date.getDate()}
+              {formatEgyptDate(e.startAt, { day: 'numeric' }, locale)}
             </p>
             <div className="pb-1 lg:mt-2 lg:pb-0">
               <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-signal">
-                {date.toLocaleDateString(locale, { month: 'short' })}
+                {formatEgyptDate(e.startAt, { month: 'short' }, locale)}
               </p>
               <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-3">
-                {date.toLocaleDateString(locale, { year: 'numeric' })}
+                {formatEgyptDate(e.startAt, { year: 'numeric' }, locale)}
               </p>
             </div>
           </div>
@@ -160,7 +160,7 @@ export function EventCard({ e, i, onReserve }: { e: PublicEvent; i: number; onRe
           <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2.5 text-[12px] text-ink-2">
             <span className="inline-flex items-center gap-2">
               <Calendar size={14} className="shrink-0 text-signal-dim" />
-              {date.toLocaleString(locale, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              {formatInEgypt(e.startAt, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }, locale)}
             </span>
             <span className="inline-flex items-center gap-2">
               <MapPin size={14} className="shrink-0 text-signal-dim" />

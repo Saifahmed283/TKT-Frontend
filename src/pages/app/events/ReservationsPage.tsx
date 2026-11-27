@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 import { api, ApiError } from '@/lib/api'
 import { timeAgo } from '@/lib/utils'
+import { formatEgyptDateTime } from '@/lib/time'
 import { PageHeader } from '@/components/layout/page-header'
 import { Table, Td, Pagination, EmptyState } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
@@ -331,7 +332,7 @@ export function ReservationsPage() {
             <div key={d.id} className="border border-line-soft bg-elevated/20 px-3 py-2">
               <div className="flex items-center justify-between gap-3 text-[12px]">
                 <span className="font-mono text-ink-2">{d.channel} · {d.status}</span>
-                <span className="text-ink-3">{new Date(d.createdAt).toLocaleString()}</span>
+                <span className="text-ink-3">{formatEgyptDateTime(d.createdAt)}</span>
               </div>
               <p className="mt-1 font-mono text-[10px] text-ink-3">{d.recipient ?? '—'} · attempt {d.attempt}{d.provider ? ` · ${d.provider}` : ''}{d.error ? ` · ${d.error}` : ''}</p>
             </div>

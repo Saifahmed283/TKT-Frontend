@@ -7,6 +7,7 @@ import type { AccessDecision, Area } from '../../../lib/types'
 import { ErrorBanner, PageHeader } from '../../../components/ui'
 import { useAuth } from '../../../lib/auth'
 import { useConfirm } from '@/components/ui/dialog'
+import { formatEgyptDate } from '../../../lib/time'
 
 type BarcodeDetectorLike = {
   detect: (source: CanvasImageSource) => Promise<Array<{ rawValue?: string }>>
@@ -140,7 +141,7 @@ export default function ScannerPage() {
       const res = await api<Device>(`/events/${eventId}/access/device/register`, {
         method: 'POST',
         body: JSON.stringify({
-          deviceName: `Gate Scanner ${new Date().toLocaleDateString()}`,
+          deviceName: `Gate Scanner ${formatEgyptDate(new Date())}`,
           publicKey: pem,
           deviceType: /Mobi|Android/i.test(navigator.userAgent) ? 'MOBILE' : /iPad|Tablet/i.test(navigator.userAgent) ? 'TABLET' : 'DESKTOP',
           fingerprint: navigator.userAgent.slice(0, 120),

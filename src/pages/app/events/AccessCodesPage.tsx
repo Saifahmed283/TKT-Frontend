@@ -12,6 +12,7 @@ import { Table, Td, EmptyState } from '@/components/ui/table'
 import { ConfirmDialog, Dialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
+import { egyptDateTimeLocalToIso, toEgyptDateTimeLocal } from '@/lib/time'
 
 type AccessCode = {
   id: string
@@ -60,7 +61,7 @@ export function AccessCodesPage() {
         ticketTypeId: form.ticketTypeId || undefined,
         notes: form.notes || undefined,
         maxRedemptions: Number(form.maxRedemptions || 1),
-        expiresAt: form.expiresAt ? new Date(form.expiresAt).toISOString() : null,
+        expiresAt: egyptDateTimeLocalToIso(form.expiresAt) ?? null,
       }
       return editing ? api.patch(`/events/${eventId}/access-codes/${editing.id}`, payload) : api.post(`/events/${eventId}/access-codes`, payload)
     },
@@ -101,7 +102,7 @@ export function AccessCodesPage() {
               <Td><Badge tone={c.status === 'ACTIVE' ? 'ok' : c.status === 'REDEEMED' ? 'warn' : 'danger'}>{c.status}</Badge></Td>
               <Td>
                 <div className="flex justify-end gap-1">
-                  <Button variant="ghost" size="sm" aria-label="Edit access code" onClick={() => { setEditing(c); setForm({ code: c.code, type: c.type, fullName: c.fullName ?? '', email: c.email ?? '', phone: c.phone ?? '', attendeeCategory: c.attendeeCategory ?? '', ticketTypeId: c.ticketTypeId ?? '', notes: c.notes ?? '', maxRedemptions: String(c.maxRedemptions), expiresAt: c.expiresAt ? c.expiresAt.slice(0, 16) : '' }); setOpen(true) }} icon={<Pencil className="size-3.5" />} />
+                  <Button variant="ghost" size="sm" aria-label="Edit access code" onClick={() => { setEditing(c); setForm({ code: c.code, type: c.type, fullName: c.fullName ?? '', email: c.email ?? '', phone: c.phone ?? '', attendeeCategory: c.attendeeCategory ?? '', ticketTypeId: c.ticketTypeId ?? '', notes: c.notes ?? '', maxRedemptions: String(c.maxRedemptions), expiresAt: toEgyptDateTimeLocal(c.expiresAt) }); setOpen(true) }} icon={<Pencil className="size-3.5" />} />
                   {c.status !== 'REVOKED' && <Button variant="ghost" size="sm" aria-label="Revoke access code" onClick={() => revoke.mutate(c.id)} icon={<Ban className="size-3.5" />} />}
                   {c.redemptionCount === 0 && <ConfirmDialog title="Delete access code" body={`Delete access code "${c.code}"? This cannot be undone.`} confirmLabel="Delete code" onConfirm={() => remove.mutate(c.id)}><Button variant="ghost" size="sm" aria-label="Delete access code" className="text-danger" icon={<Trash2 className="size-3.5" />} /></ConfirmDialog>}
                 </div>

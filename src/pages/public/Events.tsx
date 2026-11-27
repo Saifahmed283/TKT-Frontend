@@ -6,6 +6,7 @@ import type { EventSummary } from '../../lib/types'
 import { PageHeader, StatusBadge, Spinner, ErrorBanner, EmptyState, fmtDateTime, Corners } from '../../components/ui'
 import { EventFormModal } from '../../components/events/EventFormModal'
 import { useState } from 'react'
+import { EGYPT_TIME_LABEL } from '../../lib/time'
 
 export default function EventsPage() {
   const [createOpen, setCreateOpen] = useState(false)
@@ -56,7 +57,7 @@ export default function EventsPage() {
               </p>
               <div className="mt-4 flex items-center justify-between border-t border-line-soft pt-3 font-mono text-[10px] uppercase tracking-[0.15em] text-ink-3">
                 <span>{fmtDateTime(e.startAt)}</span>
-                <span className="text-signal">{e.timezone}</span>
+                <span className="text-signal">{EGYPT_TIME_LABEL}</span>
               </div>
             </Link>
           ))}

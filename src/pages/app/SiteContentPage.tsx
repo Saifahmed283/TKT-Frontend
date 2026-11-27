@@ -10,6 +10,7 @@ import { Field, Input, Textarea } from '@/components/ui/input'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { useToast } from '@/components/ui/toast'
 import { FileUploadField } from '@/components/ui/file-upload'
+import { formatEgyptDateTime } from '@/lib/time'
 
 type Section = 'team' | 'partners' | 'reports'
 
@@ -368,7 +369,7 @@ export function SiteContentPage() {
         )}
 
         <p className="border-t border-line pt-4 text-[11px] text-ink-3">
-          {data?.updatedAt ? `Last published ${new Date(data.updatedAt).toLocaleString()}` : 'Using default content until you save changes.'}
+          {data?.updatedAt ? `Last published ${formatEgyptDateTime(data.updatedAt)}` : 'Using default content until you save changes.'}
         </p>
       </form>
     </div>

@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import { Corners, CountUp } from './instruments'
 import { useLanguage } from '../lib/i18n'
 import type { EventStatus } from '../lib/types'
+import { formatEgyptDate, formatEgyptDateTime, formatEgyptTime } from '../lib/time'
 
 export { Corners, CountUp, Blink } from './instruments'
 
@@ -159,16 +160,13 @@ export function StatCard({ label, value, sub, accent }: { label: string; value: 
 }
 
 export function fmtDate(iso: string | null | undefined, opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' }) {
-  if (!iso) return '—'
-  return new Date(iso).toLocaleDateString(undefined, opts)
+  return formatEgyptDate(iso, opts)
 }
 
 export function fmtTime(iso: string | null | undefined) {
-  if (!iso) return '—'
-  return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+  return formatEgyptTime(iso)
 }
 
 export function fmtDateTime(iso: string | null | undefined) {
-  if (!iso) return '—'
-  return new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return formatEgyptDateTime(iso)
 }

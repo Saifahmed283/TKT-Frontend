@@ -10,6 +10,7 @@ import SpotlightCard from '../../components/reactbits/SpotlightCard'
 import BlurText from '../../components/reactbits/BlurText'
 import ShinyText from '../../components/reactbits/ShinyText'
 import { PageAccents } from '../../components/public/PlayfulBits'
+import { formatEgyptDate } from '../../lib/time'
 
 function Reveal({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
   const reduce = useReducedMotion()
@@ -107,7 +108,6 @@ export default function PastWorks() {
               ) : (
                 events.map((e, i) => {
                   const done = e.status === 'COMPLETED'
-                  const date = new Date(e.startAt)
                   return (
                     <Reveal key={e.id} delay={i * 0.05}>
                       <SpotlightCard
@@ -121,9 +121,9 @@ export default function PastWorks() {
                           <div className="grid gap-0 lg:grid-cols-[180px_1fr_280px]">
                         <div className="border-b border-line-soft/70 p-5 sm:p-6 lg:border-b-0 lg:border-e lg:border-line-soft/70">
                           <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-3">ARC-{String(i + 1).padStart(2, '0')}</p>
-                          <p className="mt-4 font-display text-5xl font-semibold leading-none tracking-tight text-ink-0 tabular-nums">{date.getDate()}</p>
-                          <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.2em] text-signal">{date.toLocaleDateString(locale, { month: 'short' })}</p>
-                          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-3">{date.toLocaleDateString(locale, { year: 'numeric' })}</p>
+                          <p className="mt-4 font-display text-5xl font-semibold leading-none tracking-tight text-ink-0 tabular-nums">{formatEgyptDate(e.startAt, { day: 'numeric' }, locale)}</p>
+                          <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.2em] text-signal">{formatEgyptDate(e.startAt, { month: 'short' }, locale)}</p>
+                          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-3">{formatEgyptDate(e.startAt, { year: 'numeric' }, locale)}</p>
                         </div>
 
                         <div className="min-w-0 p-5 sm:p-6 lg:p-7">
@@ -135,7 +135,7 @@ export default function PastWorks() {
                           <h2 className="mt-4 font-display text-2xl font-semibold leading-[1.15] tracking-tight text-ink-0 sm:text-3xl">{e.name}</h2>
                           {e.description && <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-2 line-clamp-2">{e.description}</p>}
                           <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2.5 text-[12px] text-ink-2">
-                            <span className="inline-flex items-center gap-2"><Calendar size={14} className="shrink-0 text-signal-dim" />{date.toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                            <span className="inline-flex items-center gap-2"><Calendar size={14} className="shrink-0 text-signal-dim" />{formatEgyptDate(e.startAt, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }, locale)}</span>
                             <span className="inline-flex items-center gap-2"><MapPin size={14} className="shrink-0 text-signal-dim" /><span className="truncate">{e.venueName || t('venueTba')}</span></span>
                           </div>
                         </div>

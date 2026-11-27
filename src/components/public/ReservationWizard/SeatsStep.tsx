@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import type { ReservationWizard } from './useReservationWizard'
 import BusSeatMap2D from '../BusSeatMap2D'
 import { resolveBusLayout } from '../../../lib/domain/busLayouts'
+import { formatEgyptTime } from '../../../lib/time'
 
 const BusSeatMap3D = lazy(() => import('../BusSeatMap3D'))
 
@@ -102,7 +103,7 @@ export function SeatsStep({ w }: { w: ReservationWizard }) {
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <span>{t('selectedSeats')}: <bdi className="font-mono text-ink-0">{bus.seats.filter(s => selectedSeatIds.includes(s.id)).map(s => s.label).join(', ') || '—'}</bdi></span>
                     {holding && <span className="inline-flex items-center gap-1 text-signal"><Clock3 size={12} /> {t('holding')}</span>}
-                    {holdExpiresAt && !holding && <span className="inline-flex items-center gap-1 text-ok"><Clock3 size={12} /> {t('heldUntil')} {new Date(holdExpiresAt).toLocaleTimeString(w.lang === 'ar' ? 'ar' : undefined)}</span>}
+                    {holdExpiresAt && !holding && <span className="inline-flex items-center gap-1 text-ok"><Clock3 size={12} /> {t('heldUntil')} {formatEgyptTime(holdExpiresAt, { hour: '2-digit', minute: '2-digit' }, w.lang === 'ar' ? 'ar-EG' : 'en-GB')}</span>}
                     {selectedSeatIds.length !== 1 && <span className="text-danger">{t('seatRequired')}</span>}
                   </div>
                   {holdError && (

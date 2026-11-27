@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { API_BASE, getAccessToken } from './api'
+import { formatEgyptDateTime } from './time'
 
 const escape = (v: unknown): string => {
   const s = v == null ? '' : String(v)
@@ -47,7 +48,7 @@ export function exportPdf(filename: string, title: string, headers: string[], ro
   doc.setTextColor('#8f8f99')
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(7)
-  doc.text(`${new Date().toLocaleString()}  ·  ${rows.length} rows`, 10, 20)
+  doc.text(`${formatEgyptDateTime(new Date())}  ·  ${rows.length} rows`, 10, 20)
   autoTable(doc, {
     head: [headers],
     body: rows.map((r) => r.map((v) => (v == null ? '' : String(v)))),

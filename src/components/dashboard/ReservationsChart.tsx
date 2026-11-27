@@ -1,5 +1,6 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts'
 import { Corners } from '@/components/instruments'
+import { formatEgyptDate } from '@/lib/time'
 
 export function ReservationsChart({ data }: { data: { date: string; count: number }[] }) {
   const rows = data ?? []
@@ -24,7 +25,7 @@ export function ReservationsChart({ data }: { data: { date: string; count: numbe
                 fontSize: 12,
               }}
               labelStyle={{ color: 'var(--color-ink-2)' }}
-              labelFormatter={(v) => new Date(`${String(v)}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+              labelFormatter={(v) => formatEgyptDate(`${String(v)}T12:00:00Z`, { month: 'short', day: 'numeric' })}
             />
             <Line
               type="monotone"

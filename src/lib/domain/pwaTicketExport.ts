@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf'
 import QRCode from 'qrcode'
 import type { PwaReservationTicket } from '../api/public'
+import { formatTicketDateTime } from '../time'
 
 export type TicketExportLang = 'en' | 'ar'
 
@@ -84,12 +85,9 @@ function loadImage(src: string) {
   })
 }
 
-function formatDate(value: string, lang: TicketExportLang, timezone: string) {
-  const date = new Date(value)
-  if (!Number.isFinite(date.getTime())) return value
-  return new Intl.DateTimeFormat(lang === 'ar' ? 'ar-EG' : 'en-GB', {
-    dateStyle: 'long', timeStyle: 'short', timeZone: timezone || undefined,
-  }).format(date)
+function formatDate(value: string, lang: TicketExportLang, _timezone: string) {
+  const formatted = formatTicketDateTime(value, lang === 'ar' ? 'ar-EG' : 'en-GB')
+  return formatted === '—' ? value : formatted
 }
 
 async function buildCanvas(ticket: PwaReservationTicket, lang: TicketExportLang) {

@@ -11,6 +11,7 @@ import { Badge } from '../../../components/ui/badge'
 import { ConfirmDialog } from '../../../components/ui/dialog'
 import { useSse } from '../../../lib/sse'
 import { Corners } from '../../../components/instruments'
+import { egyptDateTimeLocalToIso, toEgyptDateTimeLocal } from '../../../lib/time'
 
 type TicketTypeRow = {
   id: string
@@ -78,7 +79,7 @@ export default function TicketsPage() {
     placeholderData: (prev) => prev,
   })
 
-  const toDateInput = (v?: string | null) => (v ? new Date(v).toISOString().slice(0, 16) : '')
+  const toDateInput = (v?: string | null) => toEgyptDateTimeLocal(v)
   const payloadFrom = (f: typeof form, includeActive = false, active = true) => ({
     name: f.name,
     description: f.description || null,
@@ -87,8 +88,8 @@ export default function TicketsPage() {
     price: f.price === '' ? null : Number(f.price),
     currency: f.currency || 'EGP',
     quota: f.quota === '' ? null : Number(f.quota),
-    salesStartAt: f.salesStartAt ? new Date(f.salesStartAt).toISOString() : null,
-    salesEndAt: f.salesEndAt ? new Date(f.salesEndAt).toISOString() : null,
+    salesStartAt: egyptDateTimeLocalToIso(f.salesStartAt) ?? null,
+    salesEndAt: egyptDateTimeLocalToIso(f.salesEndAt) ?? null,
     isPublic: f.isPublic,
     transportIncluded: f.transportIncluded,
     sortOrder: f.sortOrder === '' ? 0 : Number(f.sortOrder),

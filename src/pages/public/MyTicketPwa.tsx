@@ -3,6 +3,7 @@ import { ArrowDownToLine, CheckCircle2, Copy, Download, FileImage, FileText, Loc
 import QRCode from 'qrcode'
 import { fetchPwaReservationTicket, type PwaReservationTicket } from '../../lib/api/public'
 import { downloadTicketImage, downloadTicketPdf } from '../../lib/domain/pwaTicketExport'
+import { formatTicketDateTime } from '../../lib/time'
 import { useLanguage } from '../../lib/i18n'
 
 const STORAGE_KEY = 'tkt-pwa-saved-ticket-v1'
@@ -25,12 +26,9 @@ function valid(ticket: TicketData) {
     && (!ticket.credentialValidUntil || new Date(ticket.credentialValidUntil).getTime() > Date.now())
 }
 
-function formatDate(value: string, lang: string, timezone: string) {
-  const date = new Date(value)
-  if (!Number.isFinite(date.getTime())) return value
-  return new Intl.DateTimeFormat(lang === 'ar' ? 'ar-EG' : 'en-GB', {
-    dateStyle: 'long', timeStyle: 'short', timeZone: timezone || undefined,
-  }).format(date)
+function formatDate(value: string, lang: string, _timezone: string) {
+  const formatted = formatTicketDateTime(value, lang === 'ar' ? 'ar-EG' : 'en-GB')
+  return formatted === '—' ? value : formatted
 }
 
 export default function MyTicketPwaPage() {

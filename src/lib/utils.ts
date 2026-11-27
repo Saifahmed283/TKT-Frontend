@@ -1,27 +1,17 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import { formatEgyptDate, formatEgyptDateTime } from './time'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
 export function formatDate(input: string | Date | null | undefined): string {
-  if (!input) return '—'
-  const d = typeof input === 'string' ? new Date(input) : input
-  if (Number.isNaN(d.getTime())) return '—'
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+  return formatEgyptDate(input)
 }
 
 export function formatDateTime(input: string | Date | null | undefined): string {
-  if (!input) return '—'
-  const d = typeof input === 'string' ? new Date(input) : input
-  if (Number.isNaN(d.getTime())) return '—'
-  return d.toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  return formatEgyptDateTime(input)
 }
 
 export function timeAgo(input: string | Date | number | null | undefined): string {
@@ -36,7 +26,7 @@ export function timeAgo(input: string | Date | number | null | undefined): strin
   if (hours < 24) return `${hours}h ago`
   const days = Math.round(hours / 24)
   if (days < 7) return `${days}d ago`
-  return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  return formatEgyptDate(ts, { month: 'short', day: 'numeric' })
 }
 
 export function money(value: number | string | null | undefined, currency = 'EGP'): string {

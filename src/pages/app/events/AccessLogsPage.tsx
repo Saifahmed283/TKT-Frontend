@@ -10,6 +10,7 @@ import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { ScanLine, FileText, FileSpreadsheet } from 'lucide-react'
 import { useState } from 'react'
 import { exportCsv, exportPdf } from '@/lib/export'
+import { formatEgyptDateTime } from '@/lib/time'
 
 type AccessLog = {
   id: string
@@ -53,7 +54,7 @@ export function AccessLogsPage() {
       l.metadata?.parseSource ?? '',
       l.metadata?.lookupMethod ?? '',
       l.operator?.name ?? '',
-      new Date(l.timestamp).toLocaleString(),
+      formatEgyptDateTime(l.timestamp),
     ])
     if (kind === 'csv') exportCsv(`access-logs-${eid.slice(0, 8)}`, headers, rows)
     else exportPdf(`access-logs-${eid.slice(0, 8)}`, 'Access Logs', headers, rows)
