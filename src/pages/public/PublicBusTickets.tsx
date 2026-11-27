@@ -190,7 +190,9 @@ export default function PublicBusTickets() {
   const isPaid = total > 0
 
   const reservationMutation = useMutation({
-    mutationFn: (body: any) => api.post<{ data: any }>(`/public/events/${eventId}/reservations`, body),
+    // Reservation creation awaits durable outbox work before responding;
+    // Neon cold starts have been observed near 15s, above the 10s API default.
+    mutationFn: (body: any) => api.post<{ data: any }>(`/public/events/${eventId}/reservations`, body, { timeoutMs: 45_000 }),
     onSuccess: (res) => {
       // The server has converted this hold to a ticket-linked reservation.
       // Never release a successfully reserved seat during the route cleanup.

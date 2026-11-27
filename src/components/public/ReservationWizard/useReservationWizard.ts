@@ -284,6 +284,8 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   }
 
   const reserve = useMutation({
+    // The server awaits outbox delivery before replying; allow for cold starts
+    // so a slow-but-successful create is not retried into a false duplicate.
     mutationFn: () =>
       api.post<ReservationResult>(`/public/events/${event.id}/reservations`, {
         name: name.trim(),
@@ -301,7 +303,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
         busId: selected?.transportIncluded ? busId || undefined : undefined,
         seatIds: selected?.transportIncluded ? selectedSeatIds : undefined,
         holdToken: selected?.transportIncluded ? holdToken : undefined,
-      }),
+      }, { timeoutMs: 45_000 }),
     onSuccess: (data) => {
       // The seat is now ticket-linked and no longer held. Do not release it
       // when the wizard later unmounts.
