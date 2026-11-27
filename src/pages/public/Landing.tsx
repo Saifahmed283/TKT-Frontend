@@ -79,8 +79,9 @@ export default function Landing() {
   }, [])
 
   useEffect(() => {
-    // Home is a single fixed screen on phones. Locking html/body prevents the
-    // small overscroll caused by browser chrome and touch momentum.
+    // Home is a single fixed screen. Dynamic viewport units keep the hero
+    // flush with the visible area when mobile browser chrome hides, so no
+    // blank strip appears underneath it.
     const root = document.documentElement
     const body = document.body
     root.classList.add('tkt-home-locked')
@@ -92,7 +93,7 @@ export default function Landing() {
   }, [])
 
   return (
-    <div className="overflow-x-hidden bg-paper text-ink">
+    <div className="h-[100dvh] overflow-hidden bg-paper text-ink">
       <a href="#main-content" className="sr-only z-[100] bg-paper px-4 py-3 text-ink focus:fixed focus:left-4 focus:top-4 focus:not-sr-only">
         {lang === 'ar' ? 'تخطي إلى المحتوى الرئيسي' : 'Skip to main content'}
       </a>
@@ -101,7 +102,7 @@ export default function Landing() {
       <main id="main-content" className="relative">
         {/* The hero is the whole first screen on every breakpoint. Mobile uses
             a compact centered composition; desktop keeps its 3D sculpture. */}
-        <header className="relative flex h-[100svh] min-h-0 flex-col justify-center overflow-x-clip px-4 pb-6 pt-[4.5rem] sm:px-6 sm:pb-12 sm:pt-28 lg:px-8 lg:pb-16 lg:pt-32">
+        <header className="relative flex h-[100dvh] min-h-0 flex-col justify-center overflow-clip px-4 pb-6 pt-[4.5rem] sm:px-6 sm:pb-12 sm:pt-28 lg:px-8 lg:pb-16 lg:pt-32">
           <style>{`
             .tkt-hero-vignette{background:radial-gradient(circle at 68% 45%,rgba(11,11,12,.08) 0%,rgba(11,11,12,.48) 48%,rgba(11,11,12,.78) 78%,var(--color-canvas) 100%)}
             :root[data-theme='light'] .tkt-hero-vignette{background:radial-gradient(circle at 68% 45%,rgba(247,244,238,0) 0%,rgba(247,244,238,.12) 42%,rgba(247,244,238,.42) 70%,var(--color-canvas) 100%)}

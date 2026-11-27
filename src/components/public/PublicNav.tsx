@@ -124,7 +124,7 @@ export default function PublicNav() {
 
       <div
         id="tkt-mobile-nav"
-        className={`max-h-[calc(100svh-3.75rem)] overflow-y-auto border-t border-line-soft bg-paper/97 backdrop-blur-xl animate-slide-up sm:max-h-[calc(100svh-4.5rem)] lg:hidden ${open ? 'block' : 'hidden'}`}
+        className={`max-h-[calc(100dvh-3.75rem)] overflow-y-auto border-t border-line-soft bg-paper/97 backdrop-blur-xl animate-slide-up sm:max-h-[calc(100dvh-4.5rem)] lg:hidden ${open ? 'block' : 'hidden'}`}
       >
         <div className="mx-auto max-w-7xl px-3 pb-3 pt-2 sm:px-6 sm:pb-4">
           <div className="mb-2 flex items-center justify-between border-b border-line-soft/70 pb-2">
