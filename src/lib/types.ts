@@ -173,6 +173,10 @@ export type AccessDecision = {
   seats?: { id: string; label: string; passengerName?: string | null; busName?: string | null }[]
   area: { id: string; name: string } | null
   at: string | null
+  preview?: boolean
+  validFrom?: string | null
+  validUntil?: string | null
+  eventStatus?: string | null
 }
 
 export type Task = {

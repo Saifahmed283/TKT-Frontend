@@ -7,7 +7,7 @@ import type { AccessDecision, Area } from '../../../lib/types'
 import { ErrorBanner, PageHeader } from '../../../components/ui'
 import { useAuth } from '../../../lib/auth'
 import { useConfirm } from '@/components/ui/dialog'
-import { formatEgyptDate } from '../../../lib/time'
+import { formatEgyptDate, formatTicketDateTime } from '../../../lib/time'
 
 type BarcodeDetectorLike = {
   detect: (source: CanvasImageSource) => Promise<Array<{ rawValue?: string }>>
@@ -43,6 +43,44 @@ async function signPayload(privateKey: CryptoKey, payload: string): Promise<stri
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
+function describeDecision(decision: AccessDecision): string {
+  if (decision.preview) return 'Preview pass — checks bypassed for testing. Not checked in.'
+  switch (decision.reason) {
+    case 'OUTSIDE_TIME_WINDOW':
+      return decision.validFrom
+        ? `Entry opens ${formatTicketDateTime(decision.validFrom)} (Egypt time).`
+        : 'This pass is not valid yet.'
+    case 'EVENT_NOT_LIVE':
+      return 'This event is not live at the gate yet.'
+    case 'EXPIRED':
+      return decision.validUntil
+        ? `This pass expired ${formatTicketDateTime(decision.validUntil)} (Egypt time).`
+        : 'This pass has expired.'
+    case 'ALREADY_USED':
+      return 'This pass has already been scanned.'
+    case 'INVALID_CREDENTIAL':
+      return 'This QR code is not a valid pass.'
+    case 'WRONG_AREA':
+      return 'This pass is not valid for this gate area.'
+    case 'AREA_INACTIVE':
+      return 'This gate area is inactive.'
+    case 'INSUFFICIENT_PERMISSION':
+      return 'Your account is not assigned to this gate area.'
+    case 'WRONG_TICKET_ENTITLEMENT':
+      return 'This ticket type is not entitled to enter.'
+    case 'ATTENDEE_BLOCKED':
+      return 'This attendee is blocked.'
+    case 'REVOKED':
+      return 'This pass was revoked.'
+    case 'SUSPENDED':
+      return 'This pass is suspended.'
+    default:
+      return decision.reason || 'Scan failed.'
+  }
+}
+
+const SCAN_COOLDOWN_MS = 2500
+
 export default function ScannerPage() {
   const { user } = useAuth()
   const confirm = useConfirm()
@@ -59,6 +97,7 @@ export default function ScannerPage() {
   const [cameraOn, setCameraOn] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const lastScanRef = useRef<{ code: string; at: number }>({ code: '', at: 0 })
 
   const memberships = useMemo(() => user?.eventMemberships ?? [], [user])
   const events = memberships.filter((m) => ['event_manager', 'access_scanner', 'team_lead', 'support_staff'].includes(m.role.code))
@@ -344,39 +383,39 @@ export default function ScannerPage() {
                   /* frame skipped */
                 }
               }
-              if (!raw && ctx && video.videoWidth && video.videoHeight) {
-                if (frame % 3 === 0) {
-                  const size = Math.min(video.videoWidth, video.videoHeight)
-                  const target = Math.min(size, 900)
-                  canvas.width = target
-                  canvas.height = target
-                  ctx.drawImage(
-                    video,
-                    Math.floor((video.videoWidth - size) / 2),
-                    Math.floor((video.videoHeight - size) / 2),
-                    size,
-                    size,
-                    0,
-                    0,
-                    target,
-                    target,
-                  )
-                  try {
-                    const qr = jsQR(ctx.getImageData(0, 0, target, target).data, target, target, {
-                      inversionAttempts: 'attemptBoth',
-                    })
-                    raw = String(qr?.data ?? '').trim()
-                  } catch {
-                    /* frame skipped */
-                  }
+              if (!raw && ctx && video.videoWidth && video.videoHeight && frame % 2 === 0) {
+                const size = Math.min(video.videoWidth, video.videoHeight)
+                const target = Math.min(size, 900)
+                canvas.width = target
+                canvas.height = target
+                ctx.drawImage(
+                  video,
+                  Math.floor((video.videoWidth - size) / 2),
+                  Math.floor((video.videoHeight - size) / 2),
+                  size,
+                  size,
+                  0,
+                  0,
+                  target,
+                  target,
+                )
+                try {
+                  const qr = jsQR(ctx.getImageData(0, 0, target, target).data, target, target, {
+                    inversionAttempts: 'attemptBoth',
+                  })
+                  raw = String(qr?.data ?? '').trim()
+                } catch {
+                  /* frame skipped */
                 }
               }
               if (raw) {
-                stop()
-                setCode(raw)
-                validateRef.current.mutate(raw)
-                setCameraOn(false)
-                return
+                const last = lastScanRef.current
+                const now = Date.now()
+                if (raw !== last.code || now - last.at > SCAN_COOLDOWN_MS) {
+                  lastScanRef.current = { code: raw, at: now }
+                  setCode(raw)
+                  validateRef.current.mutate(raw)
+                }
               }
             }
             if (!disposed) raf = requestAnimationFrame(loop)
@@ -477,8 +516,8 @@ export default function ScannerPage() {
                     <span className="absolute bottom-0 left-0 h-6 w-6 border-b-2 border-l-2 border-signal" />
                     <span className="absolute bottom-0 right-0 h-6 w-6 border-b-2 border-r-2 border-signal" />
                   </div>
-                  <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[9px] font-medium uppercase tracking-[0.18em] text-signal">
-                    {validate.isPending ? 'Validating…' : 'Scanning for QR'}
+                  <span className="absolute bottom-2 left-1/2 w-full -translate-x-1/2 text-center text-[9px] font-medium uppercase tracking-[0.18em] text-signal">
+                    {validate.isPending ? 'Validating…' : 'Camera stays on · show next QR'}
                   </span>
                 </div>
               </div>
@@ -517,12 +556,23 @@ export default function ScannerPage() {
               }`}
             >
               {big ? <CheckCircle2 size={44} className="mx-auto text-ok-400" /> : <XCircle size={44} className="mx-auto text-err-400" />}
-              <p className={`mt-3 font-mono text-2xl font-bold ${big ? 'text-ok-400' : 'text-err-400'}`}>{decision.result}</p>
+              {decision.preview && (
+                <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-signal">Preview · no entry recorded</p>
+              )}
+              <p className={`mt-3 font-mono text-2xl font-bold ${big ? 'text-ok-400' : 'text-err-400'}`}>
+                {decision.preview && big ? 'PREVIEW OK' : decision.result}
+              </p>
               {decision.attendee && <p className="mt-1 text-sm text-ink-200">{decision.attendee.name}</p>}
               {decision.ticketType && <p className="mt-1 text-xs text-ink-300">{decision.ticketType}</p>}
               {decision.seats && decision.seats.length > 0 && <p className="mt-1 text-xs text-signal">{decision.seats.map(s => `${s.busName ? s.busName + ' ' : ''}${s.label}${s.passengerName ? ` (${s.passengerName})` : ''}`).join(', ')}</p>}
-              {decision.reason && <p className="mt-1 text-sm text-ink-400">{decision.reason}</p>}
-              <button className="btn-ghost mt-4 py-1.5 text-xs" onClick={() => setDecision(null)}>
+              <p className="mt-1 text-sm text-ink-400">{describeDecision(decision)}</p>
+              <button
+                className="btn-ghost mt-4 py-1.5 text-xs"
+                onClick={() => {
+                  lastScanRef.current = { code: '', at: 0 }
+                  setDecision(null)
+                }}
+              >
                 <RotateCcw size={12} /> Clear
               </button>
             </div>
