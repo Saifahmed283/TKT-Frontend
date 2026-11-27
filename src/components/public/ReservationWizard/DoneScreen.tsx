@@ -1,7 +1,6 @@
 import { CheckCircle2, Clock3, Copy, Lock, QrCode, ShieldCheck, XCircle } from 'lucide-react'
 import type { ReservationWizard } from './useReservationWizard'
 import { money, QrDataImg } from './shared'
-import { TicketCardPreview } from './TicketDesigner'
 
 export function DoneScreen({ w, onClose }: { w: ReservationWizard; onClose: () => void }) {
   const { t, lang, done, selected, qrUrl, awaitingQr, pending, status, checkStatus, copyCode, copied } = w
@@ -29,23 +28,6 @@ export function DoneScreen({ w, onClose }: { w: ReservationWizard; onClose: () =
         <div className="border border-signal/25 bg-signal/5 p-4">
           <p className="text-[13px] font-semibold text-ink-0">{t('notTicketYet')}</p>
           <p className="mt-1 text-[12px] leading-relaxed text-ink-2">{t('notTicketYetBody')}</p>
-        </div>
-      )}
-
-      {selected && (
-        <div className="space-y-2">
-          <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-signal">
-            {lang === 'ar' ? 'معاينة تذكرتك' : 'YOUR TICKET DESIGN'}
-          </p>
-          <TicketCardPreview
-            event={w.event}
-            ticketType={selected}
-            attendeeName={w.name}
-            seatLabel={done.seats?.map((seat) => seat.label).join(', ')}
-            design={w.ticketDesign}
-            lang={lang}
-            qrUrl={qrUrl}
-          />
         </div>
       )}
 

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { RefreshCw, Users, UserCheck, Clock, Smartphone, ScanLine, CheckCircle2, XCircle, CalendarDays, ArrowRight } from 'lucide-react'
-import { api } from '../../lib/api'
+import { RefreshCw, Users, UserCheck, Clock, Smartphone, ScanLine, CheckCircle2, XCircle, CalendarDays, ArrowRight, Ticket } from 'lucide-react'
+import { api, request } from '../../lib/api'
 import { StatCard } from '../../components/dashboard/StatCard'
 import { ReservationsChart } from '../../components/dashboard/ReservationsChart'
 import { LiveActivityFeed, type FeedActivity } from '../../components/dashboard/LiveActivityFeed'
@@ -31,6 +31,18 @@ const REFRESH_MS = 30_000
 export default function Dashboard() {
   const { t } = useLanguage()
   const [showChart, setShowChart] = useState(false)
+  const [passBusy, setPassBusy] = useState(false)
+
+  async function openPassAdmin() {
+    if (passBusy) return
+    setPassBusy(true)
+    try {
+      const result = await request<{ url: string }>('/passes/handoff', { method: 'POST' })
+      if (result?.url) window.location.assign(result.url)
+    } finally {
+      setPassBusy(false)
+    }
+  }
 
   const q = useQuery({
     queryKey: ['dashboard'],
@@ -56,6 +68,10 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <button className="btn-ghost min-h-10 text-xs sm:min-h-11" onClick={openPassAdmin} disabled={passBusy}>
+            <Ticket className="size-3.5" />
+            {passBusy ? 'Opening…' : 'TKT-PASS'}
+          </button>
           <Link to="/app/events" className="btn-ghost min-h-10 text-xs sm:min-h-11">
             All events <ArrowRight size={13} />
           </Link>

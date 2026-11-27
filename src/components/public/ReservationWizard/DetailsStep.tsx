@@ -31,8 +31,6 @@ export function DetailsStep({ w }: { w: ReservationWizard }) {
           <select id="res-gender" className="input" value={gender} onChange={(e) => setGender(e.target.value as typeof gender)} required>
             <option value="male">{isAr ? 'ذكر' : 'Male'}</option>
             <option value="female">{isAr ? 'أنثى' : 'Female'}</option>
-            <option value="other">{isAr ? 'آخر' : 'Other'}</option>
-            <option value="prefer_not_to_say">{isAr ? 'أفضل عدم الإفصاح' : 'Prefer not to say'}</option>
           </select>
         </div>
         <div>

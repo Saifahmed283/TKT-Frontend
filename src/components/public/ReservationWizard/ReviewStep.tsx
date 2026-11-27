@@ -1,7 +1,6 @@
 import { Ticket } from 'lucide-react'
 import { resolveUploadPreviewUrl } from '../../ui/file-upload'
 import type { ReservationWizard, WizardStepId } from './useReservationWizard'
-import { TicketCardPreview } from './TicketDesigner'
 import { money } from './shared'
 
 function EditLink({ step, label, onClick }: { step: WizardStepId; label: string; onClick: (id: WizardStepId) => void }) {
@@ -14,9 +13,9 @@ function EditLink({ step, label, onClick }: { step: WizardStepId; label: string;
 
 export function ReviewStep({ w }: { w: ReservationWizard }) {
   const {
-    t, lang, event, name, email, phone, notes, gender, nationality, identityNumber,
+    t, lang, name, email, phone, notes, gender, nationality, identityNumber,
     selected, selectedBus, selectedProvider, paymentReference, paymentProofUrl,
-    isPaid, totalPrice, selectedSeatIds, ticketDesign, goToStep,
+    isPaid, totalPrice, selectedSeatIds, goToStep,
   } = w
   const proofPreviewUrl = paymentProofUrl ? resolveUploadPreviewUrl(paymentProofUrl) : ''
   const proofPath = (paymentProofUrl ?? '').split(/[?#]/, 1)[0].toLowerCase()
@@ -42,26 +41,6 @@ export function ReviewStep({ w }: { w: ReservationWizard }) {
         <span className="shrink-0 border border-ok/30 bg-ok/5 px-2.5 py-1 text-[10px] font-semibold text-ok">{isAr ? 'مكتمل' : 'READY'}</span>
       </div>
 
-      {selected && (
-        <section className="space-y-3 border border-line-soft bg-elevated/20 p-4">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-signal">{isAr ? 'تصميم تذكرتك' : 'Your ticket design'}</p>
-            <EditLink step="design" label={t('editDesign')} onClick={goToStep} />
-          </div>
-          <div className="max-w-md border border-line-soft bg-paper/60 p-2">
-            <TicketCardPreview
-              event={event}
-              ticketType={selected}
-              attendeeName={name}
-              seatLabel={seatLabel || null}
-              design={ticketDesign}
-              lang={lang}
-              compact
-            />
-          </div>
-        </section>
-      )}
-
       <section className="space-y-2 border border-line-soft bg-elevated/20 p-4">
         <div className="flex items-center justify-between gap-3">
           <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-signal">{isAr ? 'البيانات الشخصية' : 'Personal information'}</p>
@@ -71,7 +50,7 @@ export function ReviewStep({ w }: { w: ReservationWizard }) {
           [t('fullName'), name.trim()],
           [t('email'), email.trim()],
           [t('phone'), phone.trim()],
-          [isAr ? 'النوع' : 'Gender', ({ male: isAr ? 'ذكر' : 'Male', female: isAr ? 'أنثى' : 'Female', other: isAr ? 'آخر' : 'Other', prefer_not_to_say: isAr ? 'أفضل عدم الإفصاح' : 'Prefer not to say' } as Record<string, string>)[gender]],
+          [isAr ? 'النوع' : 'Gender', gender === 'male' ? (isAr ? 'ذكر' : 'Male') : (isAr ? 'أنثى' : 'Female')],
           [isAr ? 'الجنسية' : 'Nationality', nationality === 'EG' ? (isAr ? 'مصري' : 'Egyptian') : (isAr ? 'غير مصري' : 'Non-Egyptian')],
           [identityLabel, maskedIdentityValue],
         ].map(([label, value]) => (

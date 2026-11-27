@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Armchair, ClipboardList, CreditCard, Palette, Ticket, UserRound, type LucideIcon } from 'lucide-react'
+import { Armchair, ClipboardList, CreditCard, Ticket, UserRound, type LucideIcon } from 'lucide-react'
 import { api, ApiError } from '../../../lib/api'
 import { useLanguage } from '../../../lib/i18n'
-import { DEFAULT_TICKET_DESIGN, fetchReservationStatus, normalizeTicketDesign, rememberReservationAccessToken, resendReservationTicket, useReservationStatus, type PublicEvent, type ReservationResult, type TicketDesignSelection } from '../../../lib/public'
+import { fetchReservationStatus, rememberReservationAccessToken, resendReservationTicket, useReservationStatus, type PublicEvent, type ReservationResult } from '../../../lib/public'
 import { useQrDataUrl } from './shared'
 
-export type WizardStepId = 'ticket' | 'seats' | 'details' | 'payment' | 'design' | 'review'
+export type WizardStepId = 'ticket' | 'seats' | 'details' | 'payment' | 'review'
 
 type WizardStep = {
   id: WizardStepId
@@ -25,13 +25,12 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
-  const [gender, setGender] = useState<'male' | 'female' | 'other' | 'prefer_not_to_say'>('prefer_not_to_say')
+  const [gender, setGender] = useState<'male' | 'female'>('male')
   const [nationality, setNationality] = useState<'EG' | 'OTHER'>('EG')
   const [identityNumber, setIdentityNumber] = useState('')
   const [notes, setNotes] = useState('')
   const availableTypes = event.ticketTypes.filter((x) => x.isPublic !== false)
   const [ticketTypeId, setTicketTypeId] = useState(availableTypes.find((x) => !x.soldOut)?.id ?? availableTypes[0]?.id ?? '')
-  const [ticketDesign, setTicketDesign] = useState<TicketDesignSelection>(DEFAULT_TICKET_DESIGN)
   const [paymentProviderId, setPaymentProviderId] = useState(event.paymentProviders?.[0]?.id ?? '')
   const [paymentReference, setPaymentReference] = useState('')
   const [paymentProofUrl, setPaymentProofUrl] = useState<string | null>(null)
@@ -53,7 +52,6 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   const [holding, setHolding] = useState(false)
   const [seatView3d, setSeatView3d] = useState(false)
   const [currentStep, setCurrentStep] = useState<WizardStepId>('ticket')
-  const [designConfirmed, setDesignConfirmed] = useState(false)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
   const [holdAttempt, setHoldAttempt] = useState(0)
   const [now, setNow] = useState(() => Date.now())
@@ -86,7 +84,6 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
     ...(isPaid
       ? [{ id: 'payment' as const, label: t('stepPayment'), help: t('paymentStepHelp'), icon: CreditCard }]
       : []),
-    { id: 'design', label: t('stepDesign'), help: t('designStepHelp'), icon: Palette },
     { id: 'review', label: t('stepReview'), help: t('reviewStepHelp'), icon: ClipboardList },
   ]
   const foundStep = steps.findIndex((step) => step.id === currentStep)
@@ -116,12 +113,10 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
     if (stepId === 'payment') {
       return !!selectedProvider && !!paymentReference.trim() && !!paymentProofUrl
     }
-    if (stepId === 'design') return designConfirmed
     return true
   })()
   const stepStillValid = currentStep === 'ticket'
     || currentStep === 'details'
-    || currentStep === 'design'
     || currentStep === 'review'
     || (currentStep === 'seats' && Boolean(selected?.transportIncluded))
     || (currentStep === 'payment' && isPaid)
@@ -279,13 +274,6 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
     if (done?.reservationCode) startStatusPolling(done.reservationCode)
   }
 
-  const updateTicketDesign = (value: TicketDesignSelection) => {
-    setTicketDesign(normalizeTicketDesign(value))
-    setDesignConfirmed(true)
-  }
-
-  const confirmDesign = () => setDesignConfirmed(true)
-
   const goToStep = (id: WizardStepId) => {
     const target = steps.findIndex((item) => item.id === id)
     if (target >= 0 && target <= activeStep) setCurrentStep(id)
@@ -302,7 +290,6 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
         identityNumber: identityNumber.trim(),
         notes: notes.trim() || undefined,
         ticketTypeId,
-        ticketDesign: normalizeTicketDesign(ticketDesign),
         paymentProviderId: isPaid && paymentProviderId ? paymentProviderId : undefined,
         paymentReference: isPaid && paymentReference.trim() ? paymentReference.trim() : undefined,
         paymentProofUrl: isPaid && paymentProofUrl ? paymentProofUrl : undefined,
@@ -357,7 +344,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   }
 
   const hasEnteredDetails = [name, email, phone, notes, paymentReference].some((value) => value.trim())
-    || !!paymentProofUrl || selectedSeatIds.length > 0 || designConfirmed
+    || !!paymentProofUrl || selectedSeatIds.length > 0
   const requestClose = () => {
     if (!done && activeStep > 0 && hasEnteredDetails) setConfirmDiscard(true)
     else onClose()
@@ -419,7 +406,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
     event, t, lang, qc,
     name, setName, email, setEmail, phone, setPhone,
     gender, setGender, nationality, setNationality, identityNumber, setIdentityNumber, notes, setNotes,
-    availableTypes, ticketTypeId, setTicketTypeId, ticketDesign, updateTicketDesign, designConfirmed, confirmDesign,
+    availableTypes, ticketTypeId, setTicketTypeId,
     paymentProviderId, setPaymentProviderId, paymentReference, setPaymentReference,
     paymentProofUrl, setPaymentProofUrl,
     done, checkingCode, setCheckingCode, copied, existingReservation,

@@ -166,7 +166,7 @@ function BusSeatMap2D({
   }
 
   return (
-    <section className={`tc-map ${className}`} dir={language === 'ar' ? 'rtl' : 'ltr'} aria-label={text.title}>
+    <section className={`tc-map ${compact ? 'tc-compact' : ''} ${className}`} dir={language === 'ar' ? 'rtl' : 'ltr'} aria-label={text.title}>
       {!compact && (
         <>
           <header className="tc-header">
@@ -348,7 +348,15 @@ function BusSeatMap2D({
         .tc-footer div{display:flex; flex-direction:column; gap:1px}
         .tc-footer strong{font-size:18px; font-variant-numeric:tabular-nums}
         .tc-footer span,.tc-footer small{font-size:10px; color:#777066}
-        @media(max-width:600px){.tc-header{padding:14px}.tc-header h3{font-size:19px}.tc-counter{min-width:56px; min-height:56px}.tc-legend{gap:9px}.tc-svg{min-width:400px}}
+        .tc-compact .tc-header{padding:12px 14px;gap:10px}
+        .tc-compact .tc-header h3{font-size:18px}
+        .tc-compact .tc-header p{font-size:10px}
+        .tc-compact .tc-counter{min-width:52px;min-height:52px}
+        .tc-compact .tc-counter strong{font-size:18px}
+        .tc-compact .tc-legend{padding:8px 12px;gap:8px}
+        .tc-compact .tc-canvas{padding:10px 4px}
+        .tc-compact .tc-svg{min-width:340px}
+        @media(max-width:600px){.tc-header{padding:14px}.tc-header h3{font-size:19px}.tc-counter{min-width:56px; min-height:56px}.tc-legend{gap:9px}.tc-map:not(.tc-compact) .tc-svg{min-width:400px}}
         @media(prefers-reduced-motion:reduce){.tc-seat{transition:none}}
       `}</style>
     </section>

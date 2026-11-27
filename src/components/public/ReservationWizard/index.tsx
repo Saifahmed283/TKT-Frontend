@@ -7,7 +7,6 @@ import { TicketStep } from './TicketStep'
 import { SeatsStep } from './SeatsStep'
 import { DetailsStep } from './DetailsStep'
 import { PaymentStep } from './PaymentStep'
-import { DesignStep } from './DesignStep'
 import { ReviewStep } from './ReviewStep'
 import { DoneScreen } from './DoneScreen'
 
@@ -29,9 +28,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
         ? t('detailsRequired')
         : stepId === 'payment'
           ? t('paymentDetailsRequired')
-          : stepId === 'design'
-            ? t('designRequired')
-            : ''
+          : ''
 
   return (
     <Modal
@@ -181,7 +178,6 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
           {stepId === 'seats' && <SeatsStep w={w} />}
           {stepId === 'details' && <DetailsStep w={w} />}
           {stepId === 'payment' && <PaymentStep w={w} />}
-          {stepId === 'design' && <DesignStep w={w} />}
           {stepId === 'review' && <ReviewStep w={w} />}
 
           {stepId !== 'review' ? (

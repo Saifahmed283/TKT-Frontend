@@ -1,10 +1,23 @@
 import { Clock3, Grid3X3, Box } from 'lucide-react'
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import type { ReservationWizard } from './useReservationWizard'
 import BusSeatMap2D from '../BusSeatMap2D'
 import { resolveBusLayout } from '../../../lib/domain/busLayouts'
 
 const BusSeatMap3D = lazy(() => import('../BusSeatMap3D'))
+
+function useIsMobile() {
+  const [mobile, setMobile] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches,
+  )
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 639px)')
+    const onChange = () => setMobile(media.matches)
+    media.addEventListener('change', onChange)
+    return () => media.removeEventListener('change', onChange)
+  }, [])
+  return mobile
+}
 
 export function SeatsStep({ w }: { w: ReservationWizard }) {
   const {
@@ -12,13 +25,14 @@ export function SeatsStep({ w }: { w: ReservationWizard }) {
     holding, holdExpiresAt, holdError, setHoldAttempt,
     seatView3d, setSeatView3d, seatScrollRef, seatScroll,
   } = w
+  const isMobile = useIsMobile()
 
   const toggleSeat = (seatId: string) => {
     setSelectedSeatIds((current) => current.includes(seatId) ? [] : [seatId])
   }
 
   return (
-    <div data-testid="wizard-step-seats" className="space-y-4 border border-line-soft bg-elevated/20 p-4">
+    <div data-testid="wizard-step-seats" className="space-y-3 border border-line-soft bg-elevated/20 p-3 sm:space-y-4 sm:p-4">
       {buses.length === 0 ? (
         <p className="border border-danger/30 bg-danger/5 px-3 py-3 text-sm text-danger">{t('noBusAvailable')}</p>
       ) : (
@@ -34,11 +48,11 @@ export function SeatsStep({ w }: { w: ReservationWizard }) {
             const model = resolveBusLayout(bus.layout)
             return (
               <div>
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border border-line-soft bg-panel/60 px-3 py-3">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border border-line-soft bg-panel/60 px-3 py-2 sm:py-3">
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-ink-0">{bus.name}</p>
-                    <p className="mt-1 text-[11px] text-ink-3">{w.lang === 'ar' ? model.nameAr : model.name}</p>
-                    <p className="mt-0.5 text-[10px] text-ink-3">
+                    <p className="mt-1 hidden text-[11px] text-ink-3 sm:block">{w.lang === 'ar' ? model.nameAr : model.name}</p>
+                    <p className="mt-0.5 hidden text-[10px] text-ink-3 sm:block">
                       {w.lang === 'ar'
                         ? String(model.rows) + ' صفوف · ' + String(model.cols) + ' مقاعد في الصف'
                         : String(model.rows) + ' rows · ' + String(model.cols) + ' seats per row'}
@@ -46,7 +60,7 @@ export function SeatsStep({ w }: { w: ReservationWizard }) {
                   </div>
                   <div className="shrink-0 text-right">
                     <p className="flex items-baseline justify-end gap-1 font-mono text-sm font-semibold tabular-nums text-ink-0">{bus.availableSeats}<span className="text-[10px] font-normal text-ink-3">{w.lang === 'ar' ? 'متاح' : 'available'}</span></p>
-                    <p className="mt-0.5 text-[10px] text-ink-3">{bus.totalSeats} {w.lang === 'ar' ? 'مقعد إجمالي' : 'seats total'}</p>
+                    <p className="mt-0.5 hidden text-[10px] text-ink-3 sm:block">{bus.totalSeats} {w.lang === 'ar' ? 'مقعد إجمالي' : 'seats total'}</p>
                   </div>
                   <div className="inline-flex items-center gap-1 border border-line-soft bg-panel/50 p-1">
                     <button type="button" aria-pressed={!seatView3d} onClick={() => setSeatView3d(false)} className={`inline-flex min-h-9 items-center gap-1 px-2 py-1 text-[10px] ${!seatView3d ? 'bg-signal/10 text-signal' : 'text-ink-3 hover:text-ink'}`}><Grid3X3 size={12} /> 2D</button>
@@ -74,6 +88,7 @@ export function SeatsStep({ w }: { w: ReservationWizard }) {
                         language={w.lang}
                         maxSelectable={1}
                         disabled={holding}
+                        compact={isMobile}
                       />
                     </div>
                     {seatScroll.overflow && !seatScroll.atEnd && (
@@ -83,50 +98,21 @@ export function SeatsStep({ w }: { w: ReservationWizard }) {
                     )}
                   </>
                 )}
-                <div className="mt-4 space-y-3">
-                  <section className="space-y-2 sm:hidden" data-testid="mobile-seat-picker" aria-label={w.lang === 'ar' ? 'اختيار المقعد' : 'Seat picker'}>
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-[11px] font-semibold text-ink-1">{w.lang === 'ar' ? 'اختر من المقاعد المتاحة' : 'Choose from available seats'}</p>
-                      <span className="text-[10px] text-ink-3">{bus.seats.length} {w.lang === 'ar' ? 'مقعد' : 'seats'}</span>
-                    </div>
-                    <div className="grid grid-cols-4 gap-2 min-[420px]:grid-cols-5">
-                      {[...bus.seats].sort((a, b) => a.row - b.row || a.col - b.col).map((seat) => {
-                        const active = selectedSeatIds.includes(seat.id)
-                        const available = seat.state === 'AVAILABLE' || active
-                        return (
-                          <button
-                            key={seat.id}
-                            type="button"
-                            data-testid={`mobile-seat-${seat.label}`}
-                            aria-label={`${w.lang === 'ar' ? 'مقعد' : 'Seat'} ${seat.label}`}
-                            aria-pressed={active}
-                            disabled={holding || !available}
-                            onClick={() => toggleSeat(seat.id)}
-                            className={`min-h-11 border px-2 py-2 text-sm font-semibold tabular-nums transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${active ? 'border-signal bg-signal/10 text-signal' : available ? 'border-line-soft bg-panel/60 text-ink hover:border-signal/50' : 'border-line-soft bg-elevated/60 text-ink-3'}`}
-                          >
-                            {seat.label}
-                          </button>
-                        )
-                      })}
-                    </div>
-                    <p className="text-[10px] text-ink-3">{w.lang === 'ar' ? 'يمكنك اختيار المقعد من المخطط أو من القائمة هنا.' : 'Select a seat from the map or this list.'}</p>
-                  </section>
-                  <div className="mt-3 space-y-2 border-t border-line-soft pt-3 text-[11px] text-ink-2">
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <span>{t('selectedSeats')}: <bdi className="font-mono text-ink-0">{bus.seats.filter(s => selectedSeatIds.includes(s.id)).map(s => s.label).join(', ') || '—'}</bdi></span>
-                      {holding && <span className="inline-flex items-center gap-1 text-signal"><Clock3 size={12} /> {t('holding')}</span>}
-                      {holdExpiresAt && !holding && <span className="inline-flex items-center gap-1 text-ok"><Clock3 size={12} /> {t('heldUntil')} {new Date(holdExpiresAt).toLocaleTimeString(w.lang === 'ar' ? 'ar' : undefined)}</span>}
-                      {selectedSeatIds.length !== 1 && <span className="text-danger">{t('seatRequired')}</span>}
-                    </div>
-                    {holdError && (
-                      <div className="flex flex-wrap items-center gap-2 text-danger">
-                        <span>{holdError}</span>
-                        <button type="button" data-testid="retry-hold" className="btn-ghost !px-2 !py-1 text-[11px]" onClick={() => setHoldAttempt((n) => n + 1)}>
-                          {t('retryHold')}
-                        </button>
-                      </div>
-                    )}
+                <div className="mt-2 space-y-2 border-t border-line-soft pt-2 text-[11px] text-ink-2 sm:mt-4 sm:pt-3">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span>{t('selectedSeats')}: <bdi className="font-mono text-ink-0">{bus.seats.filter(s => selectedSeatIds.includes(s.id)).map(s => s.label).join(', ') || '—'}</bdi></span>
+                    {holding && <span className="inline-flex items-center gap-1 text-signal"><Clock3 size={12} /> {t('holding')}</span>}
+                    {holdExpiresAt && !holding && <span className="inline-flex items-center gap-1 text-ok"><Clock3 size={12} /> {t('heldUntil')} {new Date(holdExpiresAt).toLocaleTimeString(w.lang === 'ar' ? 'ar' : undefined)}</span>}
+                    {selectedSeatIds.length !== 1 && <span className="text-danger">{t('seatRequired')}</span>}
                   </div>
+                  {holdError && (
+                    <div className="flex flex-wrap items-center gap-2 text-danger">
+                      <span>{holdError}</span>
+                      <button type="button" data-testid="retry-hold" className="btn-ghost !px-2 !py-1 text-[11px]" onClick={() => setHoldAttempt((n) => n + 1)}>
+                        {t('retryHold')}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )

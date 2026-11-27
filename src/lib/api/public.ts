@@ -1,55 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from './api'
 
-export interface TicketDesignSelection {
-  templateId: 'signature-split' | 'editorial-wide'
-  paletteId: 'obsidian-gold' | 'rose-noir' | 'champagne' | 'midnight-azure' | 'emerald-ink' | 'lavender-silk' | 'custom'
-  stickerId: 'none' | 'sparkle' | 'star' | 'flower' | 'heart' | 'bolt' | 'crown'
-  panelColor: string
-  accentColor: string
-  backgroundColor: string
-  textColor: string
-}
-
-export const DEFAULT_TICKET_DESIGN: TicketDesignSelection = {
-  templateId: 'signature-split',
-  paletteId: 'obsidian-gold',
-  stickerId: 'none',
-  panelColor: '#0B0B0C',
-  accentColor: '#C8A25C',
-  backgroundColor: '#F1EDE4',
-  textColor: '#171717',
-}
-
-export const TICKET_DESIGN_PALETTES: Array<{
-  id: TicketDesignSelection['paletteId']
-  label: string
-  panelColor: string
-  accentColor: string
-  backgroundColor: string
-  textColor: string
-}> = [
-  { id: 'obsidian-gold', label: 'Obsidian Gold', panelColor: '#0B0B0C', accentColor: '#C8A25C', backgroundColor: '#F1EDE4', textColor: '#171717' },
-  { id: 'rose-noir', label: 'Rose Noir', panelColor: '#350D24', accentColor: '#F22586', backgroundColor: '#FFF2F7', textColor: '#2A1020' },
-  { id: 'champagne', label: 'Champagne', panelColor: '#9B7A42', accentColor: '#E7C984', backgroundColor: '#FCF8F0', textColor: '#332918' },
-  { id: 'midnight-azure', label: 'Midnight Azure', panelColor: '#101C38', accentColor: '#63B4E8', backgroundColor: '#EDF6FC', textColor: '#14243A' },
-  { id: 'emerald-ink', label: 'Emerald Ink', panelColor: '#0C3028', accentColor: '#72C6A2', backgroundColor: '#EFF8F2', textColor: '#16392F' },
-  { id: 'lavender-silk', label: 'Lavender Silk', panelColor: '#302445', accentColor: '#B59BDB', backgroundColor: '#F7F1FC', textColor: '#332744' },
-]
-
-/** Keep the public API payload limited to the fields accepted by the backend. */
-export function normalizeTicketDesign(value: TicketDesignSelection): TicketDesignSelection {
-  return {
-    templateId: value.templateId,
-    paletteId: value.paletteId,
-    stickerId: value.stickerId ?? 'none',
-    panelColor: value.panelColor,
-    accentColor: value.accentColor,
-    backgroundColor: value.backgroundColor,
-    textColor: value.textColor,
-  }
-}
-
 export interface PublicTicketType {
   id: string
   name: string
