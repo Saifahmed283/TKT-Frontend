@@ -203,6 +203,7 @@ const dict = {
   seats: { en: 'Seats', ar: 'المقاعد' },
   viewReservation: { en: 'View reservation', ar: 'عرض الحجز' },
   reservationExists: { en: 'A reservation already exists for this email.', ar: 'يوجد حجز بالفعل لهذا البريد الإلكتروني.' },
+  existingReservation: { en: 'Existing reservation', ar: 'حجز موجود' },
   transportIncluded: { en: 'Transport included', ar: 'يشمل المواصلات' },
   transportTicketHint: { en: 'This ticket includes transport, so you will choose exactly one bus seat in the next step.', ar: 'هذه التذكرة تشمل المواصلات، لذا ستختار مقعداً واحداً فقط في الخطوة التالية.' },
   phoneRequired: { en: 'Enter a valid phone number so we can contact you about your reservation.', ar: 'أدخل رقم هاتف صالحاً حتى نتمكن من التواصل معك بخصوص حجزك.' },

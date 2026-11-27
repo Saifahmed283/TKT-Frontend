@@ -13,7 +13,6 @@ import { Button } from '../../components/ui/button'
 import { Corners, Blink } from '../../components/instruments'
 import { useToast } from '../../components/ui/toast'
 import { FileUploadField } from '../../components/ui/file-upload'
-import { ApiError } from '../../lib/api'
 
 const BusSeatMap3D = lazy(() => import('../../components/public/BusSeatMap3D'))
 
@@ -181,8 +180,6 @@ export default function PublicBusTickets() {
   const [paymentProviderId, setPaymentProviderId] = useState('')
   const [paymentReference, setPaymentReference] = useState('')
   const [paymentProofUrl, setPaymentProofUrl] = useState('')
-  const [submitError, setSubmitError] = useState<string | null>(null)
-  const [existingReservation, setExistingReservation] = useState<{ reservationCode: string; approval?: string; qr?: string | null } | null>(null)
   const paymentProviders = event?.paymentProviders ?? []
   useEffect(() => { if (!paymentProviderId && paymentProviders[0]) setPaymentProviderId(paymentProviders[0].id) }, [paymentProviderId, paymentProviders])
   const selectedPaymentProvider = paymentProviders.find(p => p.id === paymentProviderId) ?? null
@@ -200,8 +197,6 @@ export default function PublicBusTickets() {
       activeSeatHoldRef.current = null
       const { reservationCode, approval, accessToken } = res.data
       rememberReservationAccessToken(reservationCode, accessToken)
-      setSubmitError(null)
-      setExistingReservation(null)
       setSelectedSeats([])
       setSeatPassengers({})
       setHoldToken(null)
@@ -213,18 +208,9 @@ export default function PublicBusTickets() {
       navigate(`/reservation/${reservationCode}?event=${eventId}`)
     },
     onError: (e: any) => {
-      if (e instanceof ApiError && e.code === 'RESERVATION_EXISTS') {
-        // The server deliberately omits the existing code and credential.
-        const msg = isAr
-          ? 'يوجد حجز سابق لهذا البريد. تحقق من رسالة البريد أو استخدم بريدًا آخر.'
-          : 'A reservation for this email already exists. Check your email for the ticket; the code is not shown here.'
-        setExistingReservation(null)
-        setSubmitError(msg)
-        toast.error(msg)
-        return
-      }
-      const msg = e?.message ?? 'Reservation failed'
-      setSubmitError(msg)
+      // Surface the server's message as-is (for example the duplicate-email
+      // error) so callers see the exact reason without an inline form banner.
+      const msg = e instanceof Error && e.message ? e.message : 'Reservation failed'
       toast.error(msg)
     }
   })
@@ -258,12 +244,11 @@ export default function PublicBusTickets() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    setSubmitError(null)
-    if (!activeBus || selectedSeats.length !== 1) { setSubmitError(isAr ? 'اختر مقعدًا واحدًا' : 'Select exactly one seat'); return }
-    if (!formData.name.trim() || !formData.email.trim()) { setSubmitError(isAr ? 'الاسم والبريد مطلوبان' : 'Name and email are required'); return }
-    if (!selectedTicketType?.id) { setSubmitError(isAr ? 'اختر نوع التذكرة' : 'Select a ticket type'); return }
+    if (!activeBus || selectedSeats.length !== 1) { toast.error(isAr ? 'اختر مقعدًا واحدًا' : 'Select exactly one seat'); return }
+    if (!formData.name.trim() || !formData.email.trim()) { toast.error(isAr ? 'الاسم والبريد مطلوبان' : 'Name and email are required'); return }
+    if (!selectedTicketType?.id) { toast.error(isAr ? 'اختر نوع التذكرة' : 'Select a ticket type'); return }
     if (isPaid && !paymentProviderId && !paymentReference.trim() && !paymentProofUrl) {
-      setSubmitError(isAr ? 'أضف بيانات الدفع أو إثبات الدفع للمراجعة' : 'Add payment details or proof for review')
+      toast.error(isAr ? 'أضف بيانات الدفع أو إثبات الدفع للمراجعة' : 'Add payment details or proof for review')
       return
     }
 
@@ -490,16 +475,6 @@ export default function PublicBusTickets() {
                             <div className="font-display text-xl font-bold text-signal">{fmtMoney(total, activeBus.currency ?? 'EGP')}</div>
                           </div>
 
-                          {(submitError || existingReservation) && (
-                            <div className="border border-danger/30 bg-danger/10 px-3 py-2 text-[12px] text-danger">
-                              {submitError}
-                              {existingReservation && (
-                                <button type="button" className="ml-2 text-signal underline" onClick={() => navigate(`/reservation/${existingReservation.reservationCode}?event=${eventId}`)}>
-                                  {isAr ? 'عرض الحجز' : 'View reservation'}
-                                </button>
-                              )}
-                            </div>
-                          )}
                           <Button className="w-full !py-3.5" onClick={handleSubmit} disabled={reservationMutation.isPending || !selectedTicketType || !formData.name.trim() || !formData.email.trim() || selectedSeats.length === 0} loading={reservationMutation.isPending}>
                             {reservationMutation.isPending ? (
                               isPaid ? (isAr ? 'جارٍ إرسال الحجز...' : 'Submitting reservation…') : (isAr ? 'جارٍ تأكيد الحجز...' : 'Confirming reservation…')

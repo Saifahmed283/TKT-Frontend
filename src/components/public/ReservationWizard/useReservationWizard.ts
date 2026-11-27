@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Armchair, ClipboardList, CreditCard, Ticket, UserRound, type LucideIcon } from 'lucide-react'
 import { api, ApiError } from '../../../lib/api'
 import { useLanguage } from '../../../lib/i18n'
+import { useToast } from '../../ui/toast'
 import { fetchReservationStatus, rememberReservationAccessToken, resendReservationTicket, useReservationStatus, type PublicEvent, type ReservationResult } from '../../../lib/public'
 import { useQrDataUrl } from './shared'
 
@@ -22,6 +23,7 @@ type WizardStep = {
 export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   const qc = useQueryClient()
   const { t, lang } = useLanguage()
+  const toast = useToast()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
@@ -59,7 +61,6 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   const [pollActive, setPollActive] = useState(true)
   const [duplicateLoading, setDuplicateLoading] = useState(false)
   const [resending, setResending] = useState(false)
-  const [resendMessage, setResendMessage] = useState<string | null>(null)
   const seatScrollRef = useRef<HTMLDivElement>(null)
   const [seatScroll, setSeatScroll] = useState({ overflow: false, atEnd: false })
 
@@ -171,6 +172,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
     if (holdExpiresAt && secondsLeft === 0) {
       setHoldExpiresAt(null)
       setHoldError(t('holdExpired'))
+      toast.warning(t('holdExpired'))
     }
   }, [holdExpiresAt, secondsLeft, t])
 
@@ -239,8 +241,10 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
         }
       } catch (e: unknown) {
         if (alive) {
-          setHoldError(e instanceof Error ? e.message : 'Could not hold selected seats. Please reselect.')
+          const message = e instanceof Error ? e.message : 'Could not hold selected seats. Please reselect.'
+          setHoldError(message)
           setHoldExpiresAt(null)
+          toast.error(message)
         }
       } finally {
         if (alive) setHolding(false)
@@ -311,6 +315,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
       void qc.invalidateQueries({ queryKey: ['public-events'] })
     },
     onError: (error) => {
+      toast.error(error instanceof Error && error.message ? error.message : t('error'))
       if (error instanceof ApiError && error.code === 'RESERVATION_EXISTS') {
         const d = (error.data ?? {}) as { reservationCode?: string; approval?: string; qr?: string | null }
         // New responses omit the code and credential; older ones may still
@@ -321,7 +326,6 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
           qr: d.qr ?? null,
         })
         if (d.reservationCode) setCheckingCode(d.reservationCode)
-        else setResendMessage(t('reservationExists'))
       }
     },
   })
@@ -371,7 +375,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
       startStatusPolling(data.reservationCode)
       setExistingReservation(null)
     } catch {
-      setResendMessage(t('reservationLoadFailed'))
+      toast.error(t('reservationLoadFailed'))
     } finally {
       setDuplicateLoading(false)
     }
@@ -380,15 +384,14 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
   const resendTicket = async () => {
     if (resending) return
     setResending(true)
-    setResendMessage(null)
     try {
       await resendReservationTicket(event.id, {
         email: email.trim(),
         reservationCode: existingReservation?.reservationCode || undefined,
       })
-      setResendMessage(t('ticketResent'))
+      toast.success(t('ticketResent'))
     } catch {
-      setResendMessage(t('resendFailed'))
+      toast.error(t('resendFailed'))
     } finally {
       setResending(false)
     }
@@ -413,7 +416,7 @@ export function useReservationWizard(event: PublicEvent, onClose: () => void) {
     buses, busId, setBusId, selectedSeatIds, setSelectedSeatIds,
     holdToken, holdExpiresAt, setHoldExpiresAt, holdError, holding, seatView3d, setSeatView3d,
     confirmDiscard, setConfirmDiscard, holdAttempt, setHoldAttempt,
-    duplicateLoading, resending, resendMessage,
+    duplicateLoading, resending,
     seatScrollRef, seatScroll, setSeatScroll,
     selected, selectedProvider, hasPaymentProvider, selectedBus, seatUnitPrice, seatTotal, ticketPrice, totalPrice, isPaid,
     steps, activeStep, step, stepId, canGoBack, phoneValid, emailValid, identityValid, canContinue,

@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight, Check, Clock3 } from 'lucide-react'
-import { Modal, ErrorBanner } from '../../ui'
+import { Modal } from '../../ui'
 import type { PublicEvent } from '../../../lib/public'
 import { useReservationWizard } from './useReservationWizard'
 import { money } from './shared'
@@ -15,7 +15,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
   const {
     t, lang, done, stepId, step, activeStep, steps, selected, totalPrice, selectedSeatIds,
     selectedBus, holdExpiresAt, holdExpiring, holdCountdown, confirmDiscard, setConfirmDiscard,
-    reserve, existingReservation, duplicateLoading, resending, resendMessage, openExisting,
+    reserve, existingReservation, duplicateLoading, resending, openExisting,
     resendTicket, canGoBack, goBack, goNext, goToStep, canContinue, onSubmit, requestClose,
   } = w
 
@@ -132,10 +132,9 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
             </div>
           )}
 
-          {reserve.error && <ErrorBanner error={reserve.error} />}
           {existingReservation && (
             <div data-testid="wizard-existing-reservation" className="rounded-none border border-signal/25 bg-signal/8 px-4 py-3 text-sm text-ink-1">
-              <p className="font-medium text-ink-0">{t('reservationExists')}</p>
+              <p className="font-medium text-ink-0">{t('existingReservation')}</p>
               {existingReservation.reservationCode && (
                 <p className="mt-1 font-mono text-[12px] text-signal">{existingReservation.reservationCode}</p>
               )}
@@ -170,7 +169,6 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
                   {t('forgotCode')}
                 </button>
               </div>
-              {resendMessage && <p className="mt-2 text-[11px] text-ink-2" role="status">{resendMessage}</p>}
             </div>
           )}
 
