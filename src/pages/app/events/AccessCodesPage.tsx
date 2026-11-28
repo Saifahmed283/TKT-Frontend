@@ -11,6 +11,7 @@ import { Field, Input, Select } from '@/components/ui/input'
 import { Table, Td, EmptyState } from '@/components/ui/table'
 import { ConfirmDialog, Dialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
+import { IconButton } from '@/components/ui/icon-button'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { egyptDateTimeLocalToIso, toEgyptDateTimeLocal } from '@/lib/time'
 
@@ -102,9 +103,9 @@ export function AccessCodesPage() {
               <Td><Badge tone={c.status === 'ACTIVE' ? 'ok' : c.status === 'REDEEMED' ? 'warn' : 'danger'}>{c.status}</Badge></Td>
               <Td>
                 <div className="flex justify-end gap-1">
-                  <Button variant="ghost" size="sm" aria-label="Edit access code" onClick={() => { setEditing(c); setForm({ code: c.code, type: c.type, fullName: c.fullName ?? '', email: c.email ?? '', phone: c.phone ?? '', attendeeCategory: c.attendeeCategory ?? '', ticketTypeId: c.ticketTypeId ?? '', notes: c.notes ?? '', maxRedemptions: String(c.maxRedemptions), expiresAt: toEgyptDateTimeLocal(c.expiresAt) }); setOpen(true) }} icon={<Pencil className="size-3.5" />} />
-                  {c.status !== 'REVOKED' && <Button variant="ghost" size="sm" aria-label="Revoke access code" onClick={() => revoke.mutate(c.id)} icon={<Ban className="size-3.5" />} />}
-                  {c.redemptionCount === 0 && <ConfirmDialog title="Delete access code" body={`Delete access code "${c.code}"? This cannot be undone.`} confirmLabel="Delete code" onConfirm={() => remove.mutate(c.id)}><Button variant="ghost" size="sm" aria-label="Delete access code" className="text-danger" icon={<Trash2 className="size-3.5" />} /></ConfirmDialog>}
+                  <IconButton tone="muted" aria-label="Edit access code" onClick={() => { setEditing(c); setForm({ code: c.code, type: c.type, fullName: c.fullName ?? '', email: c.email ?? '', phone: c.phone ?? '', attendeeCategory: c.attendeeCategory ?? '', ticketTypeId: c.ticketTypeId ?? '', notes: c.notes ?? '', maxRedemptions: String(c.maxRedemptions), expiresAt: toEgyptDateTimeLocal(c.expiresAt) }); setOpen(true) }}><Pencil className="size-3.5" /></IconButton>
+                  {c.status !== 'REVOKED' && <IconButton tone="muted" aria-label="Revoke access code" onClick={() => revoke.mutate(c.id)}><Ban className="size-3.5" /></IconButton>}
+                  {c.redemptionCount === 0 && <ConfirmDialog title="Delete access code" body={`Delete access code "${c.code}"? This cannot be undone.`} confirmLabel="Delete code" onConfirm={() => remove.mutate(c.id)}><IconButton tone="danger" aria-label="Delete access code"><Trash2 className="size-3.5" /></IconButton></ConfirmDialog>}
                 </div>
               </Td>
             </tr>

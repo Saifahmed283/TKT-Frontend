@@ -2,16 +2,19 @@ import { jsPDF } from 'jspdf'
 import QRCode from 'qrcode'
 import type { PwaReservationTicket } from '../api/public'
 import { formatTicketDateTime } from '../time'
+import { BRAND_COLORS } from './brandColors'
 
 export type TicketExportLang = 'en' | 'ar'
 
 const W = 1200
 const H = 1800
-const INK = '#171A20'
-const PAPER = '#F8F7F3'
-const MUTED = '#77766F'
-const SIGNAL = '#FFB020'
-const LINE = '#D8D6CF'
+const {
+  passInk: INK,
+  passPaper: PAPER,
+  passMuted: MUTED,
+  signal: SIGNAL,
+  passLine: LINE,
+} = BRAND_COLORS
 
 const labels = {
   en: {
@@ -97,7 +100,7 @@ async function buildCanvas(ticket: PwaReservationTicket, lang: TicketExportLang)
     errorCorrectionLevel: 'H',
     margin: 2,
     width: 900,
-    color: { dark: '#0B0B0C', light: '#FFFFFF' },
+    color: { dark: BRAND_COLORS.qrDark, light: BRAND_COLORS.qrLight },
   })
   const qr = await loadImage(qrUrl)
   const canvas = document.createElement('canvas')
@@ -118,25 +121,25 @@ async function buildCanvas(ticket: PwaReservationTicket, lang: TicketExportLang)
   ctx.fillStyle = SIGNAL
   ctx.font = font(lang, 'bold', 44)
   ctx.fillText('TKT', 80, 110)
-  ctx.fillStyle = '#FFFFFF'
+  ctx.fillStyle = BRAND_COLORS.white
   ctx.font = font(lang, 'normal', 22)
   ctx.fillText(labels[lang].pass, 80, 165)
 
-  ctx.fillStyle = '#FFFFFF'
+  ctx.fillStyle = BRAND_COLORS.white
   ctx.font = font(lang, 'bold', 56)
   const eventLines = wrap(ctx, ticket.eventName, W - 160)
   drawLines(ctx, eventLines, 80, 245, 64, 2)
-  ctx.fillStyle = '#B9BBC1'
+  ctx.fillStyle = BRAND_COLORS.passMutedLight
   ctx.font = font(lang, 'normal', 28)
   ctx.fillText(ticket.ticketName.slice(0, 70), 80, 325)
 
-  ctx.fillStyle = '#FFFFFF'
+  ctx.fillStyle = BRAND_COLORS.white
   ctx.fillRect(100, 420, W - 200, 800)
   const qrSize = 690
   ctx.drawImage(qr, (W - qrSize) / 2, 462, qrSize, qrSize)
   ctx.textAlign = 'center'
   ctx.direction = lang === 'ar' ? 'rtl' : 'ltr'
-  ctx.fillStyle = '#16794C'
+  ctx.fillStyle = BRAND_COLORS.passSuccess
   ctx.font = font(lang, 'bold', 28)
   ctx.fillText(labels[lang].ready, W / 2, 1185)
 

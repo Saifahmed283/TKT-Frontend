@@ -1,13 +1,12 @@
-import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from 'react'
-import { X } from 'lucide-react'
-import { Corners, CountUp } from './instruments'
-import { useLanguage } from '../lib/i18n'
+import type { ReactNode } from 'react'
+import { Corners } from './instruments'
 import type { EventStatus } from '../lib/types'
 import { formatEgyptDate, formatEgyptDateTime, formatEgyptTime } from '../lib/time'
 
 export { Corners, CountUp, Blink } from './instruments'
 
-export function StatusBadge({ status }: { status: EventStatus | string }) {
+/** Event lifecycle statuses only (DRAFT/PLANNING/READY/PUBLISHED/LIVE/ENDED/ARCHIVED). */
+export function EventStatusBadge({ status }: { status: EventStatus | string }) {
   const map: Record<string, string> = {
     DRAFT: 'badge-neutral',
     PLANNING: 'badge-neutral',
@@ -46,76 +45,6 @@ export function EmptyState({ icon, title, body, action }: { icon: ReactNode; tit
   )
 }
 
-export function Modal({ open, onClose, title, children, wide, extraWide }: { open: boolean; onClose: () => void; title: string; children: ReactNode; wide?: boolean; extraWide?: boolean }) {
-  const { t } = useLanguage()
-  const panelRef = useRef<HTMLDivElement>(null)
-  const titleId = useId()
-  const closeRef = useRef(onClose)
-  closeRef.current = onClose
-
-  useEffect(() => {
-    if (!open) return
-    const trigger = document.activeElement as HTMLElement | null
-    panelRef.current?.focus()
-    return () => { trigger?.focus?.() }
-  }, [open])
-
-  if (!open) return null
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Escape') {
-      event.stopPropagation()
-      closeRef.current()
-      return
-    }
-    if (event.key !== 'Tab') return
-    const focusable = Array.from(
-      panelRef.current?.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
-      ) ?? [],
-    ).filter((el) => el.offsetParent !== null)
-    if (!focusable.length) {
-      event.preventDefault()
-      panelRef.current?.focus()
-      return
-    }
-    const first = focusable[0]!
-    const last = focusable[focusable.length - 1]!
-    const active = document.activeElement
-    if (event.shiftKey && (active === first || active === panelRef.current)) {
-      event.preventDefault()
-      last.focus()
-    } else if (!event.shiftKey && active === last) {
-      event.preventDefault()
-      first.focus()
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-2 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => closeRef.current()}>
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-        onKeyDown={handleKeyDown}
-        className={`animate-fade-in relative max-h-[calc(100dvh-1rem)] w-full ${extraWide ? 'max-w-5xl' : wide ? 'max-w-2xl' : 'max-w-md'} overflow-y-auto border border-line-soft bg-raised shadow-float sm:max-h-[calc(100dvh-2rem)]`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <Corners />
-        <div className="flex items-center justify-between border-b border-line-soft px-5 py-4">
-          <h2 id={titleId} className="font-display text-lg font-semibold uppercase tracking-wide text-ink-0">{title}</h2>
-          <button onClick={() => closeRef.current()} className="grid min-h-11 min-w-11 place-items-center rounded-none text-ink-3 transition-colors hover:bg-elevated hover:text-ink-0" aria-label={t('closeDialog')}>
-            <X size={16} />
-          </button>
-        </div>
-        <div className="p-4 sm:p-5">{children}</div>
-      </div>
-    </div>
-  )
-}
-
 export function ErrorBanner({ error }: { error: unknown }) {
   const message = error instanceof Error ? error.message : 'Something went wrong'
   return (
@@ -138,23 +67,6 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
         {subtitle && <p className="mt-1.5 break-words font-mono text-[11px] tracking-[0.05em] text-ink-3">{subtitle}</p>}
       </div>
       {actions && <div className="flex min-w-0 flex-wrap items-center gap-2">{actions}</div>}
-    </div>
-  )
-}
-
-export function StatCard({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent?: boolean }) {
-  return (
-    <div className="panel group relative p-5 transition-colors duration-300 hover:border-signal/40">
-      <Corners className="opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-      <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-ink-3">{label}</p>
-      {typeof value === 'number' ? (
-        <p className={`mt-2 font-display text-4xl font-semibold leading-none tracking-tight tabular-nums ${accent ? 'text-signal' : 'text-ink-0'}`}>
-          <CountUp value={value} />
-        </p>
-      ) : (
-        <p className={`mt-2 font-display text-4xl font-semibold leading-none tracking-tight tabular-nums ${accent ? 'text-signal' : 'text-ink-0'}`}>{value}</p>
-      )}
-      {sub && <p className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.15em] text-ink-3">{sub}</p>}
     </div>
   )
 }

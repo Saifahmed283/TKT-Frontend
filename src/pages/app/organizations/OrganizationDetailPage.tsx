@@ -9,9 +9,11 @@ import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Field, Input, Select } from '@/components/ui/input'
 import { FileUploadField } from '@/components/ui/file-upload'
-import { Table, Td, EmptyState } from '@/components/ui/table'
-import { Dialog } from '@/components/ui/dialog'
+import { Td, EmptyState } from '@/components/ui/table'
+import { ResponsiveTable } from '@/components/ui/responsive-table'
+import { Dialog, ConfirmDialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
+import { IconButton } from '@/components/ui/icon-button'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 
 type OrgFolder = { id: string; name: string; color?: string | null; sortOrder: number; _count?: { events: number } }
@@ -58,7 +60,7 @@ function RoleEditor({ open, onClose, initial, catalog, onSave, saving, error }: 
         <Field label="Permissions">
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <div className="relative flex-1"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" /><Input className="pl-8" value={q} onChange={e => setQ(e.target.value)} placeholder="Search permissions..." /></div>
+              <div className="relative flex-1"><Search size={14} className="absolute start-3 top-1/2 -translate-y-1/2 text-ink-3" /><Input className="ps-8" aria-label="Search permissions" value={q} onChange={e => setQ(e.target.value)} placeholder="Search permissions..." /></div>
               <Badge tone="default">{permissions.length} selected</Badge>
             </div>
             <div className="max-h-[50vh] overflow-auto rounded-none border border-[--color-structure] p-3 space-y-4">
@@ -168,6 +170,13 @@ export function OrganizationDetailPage() {
     onSuccess: () => { toast.success('Event moved'); invalidate() },
     onError: (e) => toast.error(e instanceof ApiError ? e.message : 'Failed to move event'),
   })
+  const assignableRoles = useMemo(() => {
+    const byCode = new Map([...(rolesQ.data?.system ?? []), ...(rolesQ.data?.custom ?? [])].map(r => [r.code, r]))
+    for (const code of ['OWNER', 'ADMIN', 'MEMBER']) {
+      if (!byCode.has(code)) byCode.set(code, { id: code, code, name: code, scope: 'ORGANIZATION', permissions: [] })
+    }
+    return [...byCode.values()]
+  }, [rolesQ.data])
 
   if (orgQ.isLoading) return <FullPageSpinner />
   if (orgQ.error || !orgQ.data) return <InlineError message={orgQ.error instanceof Error ? orgQ.error.message : "Failed to load organization"} />
@@ -181,10 +190,10 @@ export function OrganizationDetailPage() {
   return (
     <div>
       <PageHeader title={org.name} subtitle={org.description ?? org.slug}
-        actions={canManage ? <div className="flex items-center gap-2"><Button variant="ghost" onClick={() => setFolderOpen(true)} icon={<FolderPlus className="size-4" />}>New folder</Button><Button variant="ghost" onClick={() => { setEditRole(null); setRoleErr(''); setRoleOpen(true) }}><Plus size={15} /> New role</Button><Button onClick={() => setMemberOpen(true)}><Plus size={15} /> Add member</Button><Button variant="ghost" className="!text-danger" icon={<Trash2 className="size-4" />} onClick={() => setDeleteOrgOpen(true)}>Delete org</Button></div> : undefined} />
+        actions={canManage ? <div className="flex flex-wrap justify-end gap-2"><Button size="sm" variant="ghost" onClick={() => setFolderOpen(true)} icon={<FolderPlus className="size-4" />}>New folder</Button><Button size="sm" variant="ghost" onClick={() => { setEditRole(null); setRoleErr(''); setRoleOpen(true) }} icon={<Plus className="size-4" />}>New role</Button><Button size="sm" onClick={() => { setMemberErr(''); setMemberForm({ email: '', name: '', role: 'MEMBER' }); setMemberOpen(true) }} icon={<Plus className="size-4" />}>Add member</Button><Button size="sm" variant="ghost" className="!text-danger" icon={<Trash2 className="size-4" />} onClick={() => setDeleteOrgOpen(true)}>Delete org</Button></div> : undefined} />
 
       <div className="space-y-6 pt-6">
-        <div className="grid gap-4 xl:grid-cols-[320px_1fr]">
+        <div className="grid gap-4 lg:grid-cols-[280px_1fr] xl:grid-cols-[320px_1fr]">
           <div className="panel p-5">
             <div className="mb-4 flex items-center gap-2"><ImageIcon size={16} className="text-signal" /><h2 className="font-display text-lg font-semibold">Organization identity</h2></div>
             <div className="mb-4 flex items-center gap-4">
@@ -197,7 +206,7 @@ export function OrganizationDetailPage() {
                 {canManage && <div className="mt-3 max-w-xs"><FileUploadField label="" value={org.logoUrl ?? ''} onChange={(v) => updateLogo.mutate(v || null)} accept="image/*" /></div>}
               </div>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
               <div className="border border-line-soft p-3"><p className="text-[10px] uppercase tracking-[0.18em] text-ink-3">Your role</p><p className="mt-1 font-display text-xl font-semibold text-signal">{org.myRole}</p></div>
               <div className="border border-line-soft p-3"><p className="text-[10px] uppercase tracking-[0.18em] text-ink-3">Members</p><p className="mt-1 font-display text-xl font-semibold">{org._count.members}</p></div>
               <div className="border border-line-soft p-3"><p className="text-[10px] uppercase tracking-[0.18em] text-ink-3">Events</p><p className="mt-1 font-display text-xl font-semibold">{org._count.events}</p></div>
@@ -207,12 +216,16 @@ export function OrganizationDetailPage() {
           <div className="panel p-5">
             <div className="mb-4 flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Folder size={16} className="text-signal" /><h2 className="font-display text-lg font-semibold">Folders & events</h2></div>{canManage && <Button size="sm" variant="ghost" onClick={() => setFolderOpen(true)} icon={<FolderPlus className="size-4" />}>Folder</Button>}</div>
             <div className="mb-4 flex flex-wrap gap-2">
-              <button type="button" onClick={() => setActiveFolderId('all')} className={`border px-3 py-1.5 text-[12px] ${activeFolderId === 'all' ? 'border-signal/40 bg-signal/10 text-signal' : 'border-line text-ink-2'}`}>All ({events.length})</button>
-              <button type="button" onClick={() => setActiveFolderId('none')} className={`border px-3 py-1.5 text-[12px] ${activeFolderId === 'none' ? 'border-signal/40 bg-signal/10 text-signal' : 'border-line text-ink-2'}`}>Unfiled ({events.filter(e => !e.folderId).length})</button>
+              <button type="button" aria-pressed={activeFolderId === 'all'} onClick={() => setActiveFolderId('all')} className={`border px-3 py-1.5 text-[12px] ${activeFolderId === 'all' ? 'border-signal/40 bg-signal/10 text-signal' : 'border-line text-ink-2'}`}>All ({events.length})</button>
+              <button type="button" aria-pressed={activeFolderId === 'none'} onClick={() => setActiveFolderId('none')} className={`border px-3 py-1.5 text-[12px] ${activeFolderId === 'none' ? 'border-signal/40 bg-signal/10 text-signal' : 'border-line text-ink-2'}`}>Unfiled ({events.filter(e => !e.folderId).length})</button>
               {folders.map(f => (
                 <div key={f.id} className={`flex items-center border ${activeFolderId === f.id ? 'border-signal/40 bg-signal/10 text-signal' : 'border-line text-ink-2'}`}>
-                  <button type="button" onClick={() => setActiveFolderId(f.id)} className="px-3 py-1.5 text-[12px]">{f.name} ({f._count?.events ?? events.filter(e => e.folderId === f.id).length})</button>
-                  {canManage && <button type="button" onClick={() => deleteFolder.mutate(f.id)} className="border-l border-line px-2 py-1.5 text-ink-3 hover:text-danger" aria-label="Delete folder"><Trash2 size={12} /></button>}
+                  <button type="button" aria-pressed={activeFolderId === f.id} onClick={() => setActiveFolderId(f.id)} className="px-3 py-1.5 text-[12px]">{f.name} ({f._count?.events ?? events.filter(e => e.folderId === f.id).length})</button>
+                  {canManage && (
+                    <ConfirmDialog title="Delete folder?" body={`Delete "${f.name}"? Events in it will become unfiled.`} confirmLabel="Delete" onConfirm={() => deleteFolder.mutate(f.id)}>
+                      <IconButton className="border-s border-line" tone="quiet-danger" aria-label={`Delete folder ${f.name}`} disabled={deleteFolder.isPending}><Trash2 size={12} /></IconButton>
+                    </ConfirmDialog>
+                  )}
                 </div>
               ))}
             </div>
@@ -222,7 +235,7 @@ export function OrganizationDetailPage() {
                   <Link to={`/app/events/${e.id}`} className="min-w-0 flex-1 truncate text-[13px] font-medium hover:text-signal">{e.name}</Link>
                   <Badge tone={e.status === 'LIVE' ? 'live' : 'default'}>{e.status}</Badge>
                   {canManage && (
-                    <select className="border border-line bg-canvas px-2 py-1 text-[11px] text-ink-2" value={e.folderId ?? ''} onChange={ev => moveEvent.mutate({ eventId: e.id, folderId: ev.target.value || null })}>
+                    <select aria-label={`Folder for ${e.name}`} className="border border-line bg-canvas px-2 py-1 text-[11px] text-ink-2" value={e.folderId ?? ''} onChange={ev => moveEvent.mutate({ eventId: e.id, folderId: ev.target.value || null })}>
                       <option value="">Unfiled</option>
                       {folders.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
                     </select>
@@ -236,18 +249,22 @@ export function OrganizationDetailPage() {
 
         <div className="panel p-5">
           <div className="mb-4 flex items-center gap-2"><Users size={16} className="text-signal" /><h2 className="font-display text-lg font-semibold">Members</h2></div>
-          <Table headers={['Member', 'Email', 'Role', 'Status', '']}>
+          <ResponsiveTable headers={['Member', 'Email', 'Role', 'Status', '']}>
             {(membersQ.data ?? []).map(m => (
               <tr key={m.id}>
                 <Td><span className="font-medium text-ink">{m.user.name}</span></Td>
                 <Td className="text-ink-2">{m.user.email}</Td>
                 <Td><Badge tone={m.role === 'OWNER' ? 'live' : 'default'}>{m.role}</Badge></Td>
                 <Td><Badge tone={m.status === 'ACTIVE' ? 'ok' : 'warn'}>{m.status}</Badge></Td>
-                <Td>{canManage && m.role !== 'OWNER' && <Button size="sm" variant="ghost" className="text-danger" onClick={() => removeMember.mutate(m.id)}><Trash2 size={14} /></Button>}</Td>
+                <Td>{canManage && m.role !== 'OWNER' && (
+                  <ConfirmDialog title="Remove member?" body={`Remove ${m.user.name} from this organization?`} confirmLabel="Remove" onConfirm={() => removeMember.mutate(m.id)}>
+                    <IconButton tone="danger" aria-label={`Remove ${m.user.name}`} disabled={removeMember.isPending}><Trash2 size={14} /></IconButton>
+                  </ConfirmDialog>
+                )}</Td>
               </tr>
             ))}
             {(membersQ.data ?? []).length === 0 && <EmptyState colSpan={5} title="No members" />}
-          </Table>
+          </ResponsiveTable>
         </div>
 
         <div className="panel p-5">
@@ -257,7 +274,7 @@ export function OrganizationDetailPage() {
           </div>
           <p className="mb-4 text-sm text-ink-3">System roles are read-only templates. Create custom roles to assign precise permissions per organization/event scope.</p>
           <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-3">Custom roles</h3>
-          <div className="mb-6 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="mb-6 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {(rolesQ.data?.custom ?? []).map(r => (
               <div key={r.id} className="panel p-4">
                 <div className="flex items-start justify-between gap-3"><div><p className="text-[13px] font-semibold">{r.name}</p><p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">{r.code} · {r.scope}</p></div><Badge tone="default">CUSTOM</Badge></div>
@@ -269,7 +286,7 @@ export function OrganizationDetailPage() {
             {(rolesQ.data?.custom ?? []).length === 0 && <div className="panel p-4 text-sm text-ink-3">No custom roles yet.</div>}
           </div>
           <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-3">System roles</h3>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {(rolesQ.data?.system ?? []).map(r => (
               <div key={r.code} className="panel p-4">
                 <div className="flex items-start justify-between gap-3"><div><p className="text-[13px] font-semibold">{r.name}</p><p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">{r.code} · {r.scope}</p></div><Badge tone="live">SYSTEM</Badge></div>
@@ -286,7 +303,7 @@ export function OrganizationDetailPage() {
         <form onSubmit={(e: FormEvent) => { e.preventDefault(); setMemberErr(''); addMember.mutate() }} className="space-y-4">
           <Field label="Email"><Input type="email" value={memberForm.email} onChange={e => setMemberForm({ ...memberForm, email: e.target.value })} required /></Field>
           <Field label="Name"><Input value={memberForm.name} onChange={e => setMemberForm({ ...memberForm, name: e.target.value })} /></Field>
-          <Field label="Role"><Select value={memberForm.role} onChange={e => setMemberForm({ ...memberForm, role: e.target.value })}><option value="MEMBER">MEMBER</option><option value="ADMIN">ADMIN</option><option value="OWNER">OWNER</option></Select></Field>
+          <Field label="Role"><Select value={memberForm.role} onChange={e => setMemberForm({ ...memberForm, role: e.target.value })}>{assignableRoles.map(r => <option key={r.code} value={r.code}>{r.name === r.code ? r.code : `${r.name} (${r.code})`}</option>)}</Select></Field>
           {memberErr && <p className="text-sm text-danger">{memberErr}</p>}
           <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={() => setMemberOpen(false)}>Cancel</Button><Button type="submit" loading={addMember.isPending}>Add member</Button></div>
         </form>

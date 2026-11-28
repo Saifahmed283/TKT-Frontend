@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input, Textarea, Select, Field } from '@/components/ui/input'
 import { Dialog, ConfirmDialog } from '@/components/ui/dialog'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
+import { IconButton } from '@/components/ui/icon-button'
 import { useState, type FormEvent } from 'react'
 import { motion } from 'motion/react'
 import { ListTodo, Plus, Check, Clock, Flag, Siren, Trash2 } from 'lucide-react'
@@ -143,7 +144,7 @@ export function TasksPage() {
                     <div className="flex items-center gap-1">
                       <PriorityIcon p={t.priority} />
                       <ConfirmDialog title="Delete task?" body={`Delete "${t.title}"?`} confirmLabel="Delete" onConfirm={() => remove.mutate(t.id)}>
-                        <button className="grid min-h-11 min-w-11 place-items-center rounded-none text-ink-3 transition-colors hover:bg-danger/10 hover:text-danger" aria-label="Delete task"><Trash2 className="size-3.5" /></button>
+                        <IconButton tone="quiet-danger" aria-label="Delete task"><Trash2 className="size-3.5" /></IconButton>
                       </ConfirmDialog>
                     </div>
                   </div>

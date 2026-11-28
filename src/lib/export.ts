@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { API_BASE, getAccessToken } from './api'
 import { formatEgyptDateTime } from './time'
+import { BRAND_COLORS, BRAND_RGB } from './domain/brandColors'
 
 const escape = (v: unknown): string => {
   const s = v == null ? '' : String(v)
@@ -36,16 +37,16 @@ export async function downloadAuthFile(path: string, filename: string) {
 
 export function exportPdf(filename: string, title: string, headers: string[], rows: unknown[][]) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
-  doc.setFillColor('#0b0c0d')
+  doc.setFillColor(BRAND_COLORS.ink)
   doc.rect(0, 0, doc.internal.pageSize.getWidth(), 14, 'F')
-  doc.setTextColor('#ffb020')
+  doc.setTextColor(BRAND_COLORS.signal)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(11)
   doc.text('TKT', 10, 9)
-  doc.setTextColor('#ffffff')
+  doc.setTextColor(BRAND_COLORS.white)
   doc.setFontSize(9)
   doc.text(title.toUpperCase(), 20, 9)
-  doc.setTextColor('#8f8f99')
+  doc.setTextColor(BRAND_COLORS.muted)
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(7)
   doc.text(`${formatEgyptDateTime(new Date())}  ·  ${rows.length} rows`, 10, 20)
@@ -54,8 +55,8 @@ export function exportPdf(filename: string, title: string, headers: string[], ro
     body: rows.map((r) => r.map((v) => (v == null ? '' : String(v)))),
     startY: 25,
     styles: { fontSize: 7, cellPadding: 1.6 },
-    headStyles: { fillColor: [11, 12, 13], textColor: [255, 176, 32], fontStyle: 'bold' },
-    alternateRowStyles: { fillColor: [244, 244, 245] },
+    headStyles: { fillColor: BRAND_RGB.ink, textColor: BRAND_RGB.signal, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: BRAND_RGB.tableAlternate },
   })
   doc.save(filename.endsWith('.pdf') ? filename : `${filename}.pdf`)
 }

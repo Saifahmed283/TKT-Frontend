@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input, Textarea, Select, Field } from '@/components/ui/input'
 import { Dialog, ConfirmDialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
+import { IconButton } from '@/components/ui/icon-button'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { useState, type FormEvent } from 'react'
 import { motion } from 'motion/react'
@@ -149,7 +150,7 @@ export function IncidentsPage() {
                   <Badge tone={i.priority === 'CRITICAL' ? 'danger' : 'warn'}>{i.priority}</Badge>
                   <Badge tone={i.status === 'RESOLVED' ? 'ok' : 'default'}>{i.status}</Badge>
                   <ConfirmDialog title="Delete incident?" body={`Delete "${i.title}"?`} confirmLabel="Delete" onConfirm={() => remove.mutate(i.id)}>
-                    <button className="ml-auto rounded-none p-1 text-ink-3 hover:bg-danger/10 hover:text-danger" aria-label="Delete incident"><Trash2 className="size-3.5" /></button>
+                    <IconButton className="ml-auto" tone="quiet-danger" aria-label="Delete incident"><Trash2 className="size-3.5" /></IconButton>
                   </ConfirmDialog>
                 </div>
                 {i.description && <p className="mt-1.5 text-[13px] leading-snug text-ink-3">{i.description}</p>}

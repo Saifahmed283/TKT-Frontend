@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input, Field } from '@/components/ui/input'
 import { Dialog, ConfirmDialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
+import { IconButton } from '@/components/ui/icon-button'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { useState, type FormEvent } from 'react'
 import { MapPin, Plus, Users, Trash2 } from 'lucide-react'
@@ -136,7 +137,7 @@ export function AreasPage() {
                     {a.active ? 'Deactivate area' : 'Reactivate area'}
                   </button>
                   <ConfirmDialog title="Delete area?" body={`Delete ${a.name}? Access logs and assignments may block deletion depending on backend constraints.`} confirmLabel="Delete" onConfirm={() => remove.mutate(a.id)}>
-                    <button className="rounded-none p-1.5 text-danger hover:bg-danger/10" aria-label="Delete area"><Trash2 className="size-4" /></button>
+                    <IconButton tone="danger" aria-label="Delete area"><Trash2 className="size-4" /></IconButton>
                   </ConfirmDialog>
                 </div>
               </div>

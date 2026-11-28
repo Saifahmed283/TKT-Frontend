@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import QRCode from 'qrcode'
+import { BRAND_COLORS } from '@/lib/domain/brandColors'
 
 export type TicketEmailDesign = {
   primaryColor?: string
@@ -53,7 +54,7 @@ export function TicketEmailPreview({
       errorCorrectionLevel: 'M',
       margin: 2,
       width: 360,
-      color: { dark: '#0B0B0C', light: '#FFFFFF' },
+      color: { dark: BRAND_COLORS.qrDark, light: BRAND_COLORS.qrLight },
     })
       .then((url) => { if (active) setQrUrl(url) })
       .catch(() => { if (active) setQrUrl(null) })
@@ -61,11 +62,11 @@ export function TicketEmailPreview({
   }, [])
 
   const palette = {
-    primary: safeColor(design.primaryColor, '#0b1f44'),
-    accent: safeColor(design.accentColor, '#c8a25c'),
-    background: safeColor(design.backgroundColor, '#fdfbf7'),
-    header: safeColor(design.headerColor, '#0b0b0c'),
-    panel: safeColor(design.panelColor, '#f1ede4'),
+    primary: safeColor(design.primaryColor, BRAND_COLORS.emailPrimary),
+    accent: safeColor(design.accentColor, BRAND_COLORS.emailAccent),
+    background: safeColor(design.backgroundColor, BRAND_COLORS.emailBackground),
+    header: safeColor(design.headerColor, BRAND_COLORS.emailHeader),
+    panel: safeColor(design.panelColor, BRAND_COLORS.emailPanel),
   }
   const fontFamily = ['Cairo', 'Tahoma', 'Arial', 'Poppins'].includes(design.fontFamily ?? '')
     ? design.fontFamily!
@@ -83,8 +84,8 @@ export function TicketEmailPreview({
       <section className="px-5 py-7 sm:px-9">
         <h2 dir="rtl" className="text-right text-2xl font-bold leading-relaxed" style={{ color: palette.primary }}>{fill(titleAr)}</h2>
         <p dir="ltr" className="mt-1 text-left text-base font-bold" style={{ color: palette.accent }}>{fill(title)}</p>
-        <p dir="rtl" className="mt-5 whitespace-pre-wrap text-right text-sm leading-8 text-[#172033]">{fill(bodyAr)}</p>
-        <p dir="ltr" className="mt-2 whitespace-pre-wrap text-left text-sm leading-7 text-[#172033]">{fill(body)}</p>
+        <p dir="rtl" className="mt-5 whitespace-pre-wrap text-right text-sm leading-8" style={{ color: BRAND_COLORS.emailText }}>{fill(bodyAr)}</p>
+        <p dir="ltr" className="mt-2 whitespace-pre-wrap text-left text-sm leading-7" style={{ color: BRAND_COLORS.emailText }}>{fill(body)}</p>
       </section>
     ),
     details: (
@@ -99,16 +100,16 @@ export function TicketEmailPreview({
             ['الرقم المرجعي', 'REFERENCE', 'TKT-PREVIEW'],
           ].map(([ar, en, value]) => (
             <div key={en} className="grid grid-cols-[1fr_.8fr_1.2fr] gap-2 py-3 text-[11px] sm:text-xs">
-              <span dir="rtl" className="text-right text-[#6d6a64]">{ar}</span>
-              <span dir="ltr" className="text-left font-semibold tracking-wide text-[#172033]">{en}</span>
-              <span className="break-words text-right font-semibold text-[#172033]">{value}</span>
+              <span dir="rtl" className="text-right" style={{ color: BRAND_COLORS.emailDetailMuted }}>{ar}</span>
+              <span dir="ltr" className="text-left font-semibold tracking-wide" style={{ color: BRAND_COLORS.emailText }}>{en}</span>
+              <span className="break-words text-right font-semibold" style={{ color: BRAND_COLORS.emailText }}>{value}</span>
             </div>
           ))}
         </div>
       </section>
     ),
     qr: (
-      <section className="mx-5 mb-5 flex flex-col items-center gap-4 rounded-2xl p-4 sm:mx-9 sm:flex-row sm:gap-5" style={{ backgroundColor: '#faf8f4' }}>
+      <section className="mx-5 mb-5 flex flex-col items-center gap-4 rounded-2xl p-4 sm:mx-9 sm:flex-row sm:gap-5" style={{ backgroundColor: BRAND_COLORS.emailQrPanel }}>
         <div className="flex size-32 shrink-0 items-center justify-center border-4 border-white bg-white p-2 shadow-sm">
           {qrUrl
             ? <img src={qrUrl} alt="Preview-only QR code" className="size-full" data-testid="ticket-email-preview-qr" />
@@ -116,9 +117,9 @@ export function TicketEmailPreview({
         </div>
         <div className="text-center sm:text-right">
           <p dir="rtl" className="text-sm font-bold leading-7" style={{ color: palette.primary }}>امسح الرمز للتحقق من صلاحية التذكرة</p>
-          <p dir="ltr" className="mt-1 text-xs leading-6 text-[#565e6b]">Scan this code to verify your ticket</p>
+          <p dir="ltr" className="mt-1 text-xs leading-6" style={{ color: BRAND_COLORS.emailQrCaption }}>Scan this code to verify your ticket</p>
           <p dir="rtl" className="mt-2 text-[10px] leading-5" style={{ color: palette.accent }}>هذا رمز معاينة فقط وليس صالحاً للدخول</p>
-          <p dir="ltr" className="mt-1 text-[10px] leading-5 text-[#8a6a35]">Preview QR only — a unique signed code is added to each issued ticket.</p>
+          <p dir="ltr" className="mt-1 text-[10px] leading-5" style={{ color: BRAND_COLORS.emailQrNote }}>Preview QR only — a unique signed code is added to each issued ticket.</p>
         </div>
       </section>
     ),
@@ -130,25 +131,26 @@ export function TicketEmailPreview({
     footer: (
       <section className="mx-5 mb-4 px-1 text-center sm:mx-9">
         <p dir="rtl" className="text-sm font-bold" style={{ color: palette.primary }}>TKT لتنظيم الرحلات والفعاليات والمناسبات</p>
-        <p dir="ltr" className="mt-1 text-xs text-[#687080]">{fill(footer)}</p>
+        <p dir="ltr" className="mt-1 text-xs" style={{ color: BRAND_COLORS.emailFooter }}>{fill(footer)}</p>
       </section>
     ),
     legal: (
-      <section className="mx-5 border-t border-[#e8e3d9] px-1 pb-6 pt-4 text-center sm:mx-9">
-        <p dir="rtl" className="text-[10px] leading-5 text-[#8b8e96]">تم إرسال هذا البريد لتأكيد تفاصيل حجزك مع TKT.</p>
+      <section className="mx-5 border-t px-1 pb-6 pt-4 text-center sm:mx-9" style={{ borderColor: BRAND_COLORS.emailBorder }}>
+        <p dir="rtl" className="text-[10px] leading-5" style={{ color: BRAND_COLORS.emailLegalMuted }}>تم إرسال هذا البريد لتأكيد تفاصيل حجزك مع TKT.</p>
       </section>
     ),
   }
 
   const shellStyle: CSSProperties = {
     backgroundColor: palette.background,
+    borderColor: BRAND_COLORS.emailBorder,
     color: palette.primary,
     fontFamily: fontFamily + ', Tahoma, Arial, sans-serif',
   }
   const headerStyle: CSSProperties = { backgroundColor: palette.header }
 
   return (
-    <div className="mx-auto w-full max-w-[720px] overflow-hidden rounded-2xl border border-[#e8e3d9] shadow-xl" style={shellStyle} data-testid="ticket-email-preview">
+    <div className="mx-auto w-full max-w-[720px] overflow-hidden rounded-2xl border shadow-xl" style={shellStyle} data-testid="ticket-email-preview">
       <div className="flex min-h-20 flex-wrap items-center justify-between gap-4 px-6 py-6 sm:px-9" style={headerStyle}>
         {logoUrl
           ? <img src={logoUrl} alt="TKT logo" className="max-h-11 max-w-32 object-contain" />

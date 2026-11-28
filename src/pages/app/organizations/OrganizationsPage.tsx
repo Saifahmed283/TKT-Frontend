@@ -5,6 +5,7 @@ import { api } from '@/lib/api'
 import { useToast } from '@/components/ui/toast'
 import { PageHeader } from '@/components/layout/page-header'
 import { Badge } from '@/components/ui/badge'
+import { IconButton } from '@/components/ui/icon-button'
 import { Button } from '@/components/ui/button'
 import { Dialog, ConfirmDialog } from '@/components/ui/dialog'
 import { Field, Input, Textarea } from '@/components/ui/input'
@@ -78,19 +79,17 @@ export function OrganizationsPage() {
                 <div className="grid size-10 shrink-0 place-items-center overflow-hidden border border-line bg-elevated text-signal">
                   {o.logoUrl ? <img src={o.logoUrl} alt="" className="h-full w-full object-cover" /> : <span className="font-display text-sm font-semibold">{o.name.slice(0, 1).toUpperCase()}</span>}
                 </div>
-                <div>
+                <div className="min-w-0">
                   <Link to={`/app/organizations/${o.id}`} className="text-[15px] font-semibold hover:text-signal transition-colors">{o.name}</Link>
                   {o.myRole && <Badge tone="live" className="mt-1.5">{typeof o.myRole === 'string' ? o.myRole : o.myRole.name}</Badge>}
+                  <p className="mt-1 text-[11px] text-ink-3">{o._count.members} members · {o._count.folders ?? 0} folders</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] text-ink-3">{o._count.members} members · {o._count.folders ?? 0} folders</span>
-                {(typeof o.myRole === 'string' ? o.myRole : o.myRole?.name) === 'OWNER' && (
-                  <ConfirmDialog title="Delete organization?" body={`Delete "${o.name}" and all its events/data? This cannot be undone.`} confirmLabel="Delete" onConfirm={() => remove.mutate(o.id)}>
-                    <button className="rounded-none p-1.5 text-danger hover:bg-danger/10" aria-label="Delete organization"><Trash2 className="size-4" /></button>
-                  </ConfirmDialog>
-                )}
-              </div>
+              {(typeof o.myRole === 'string' ? o.myRole : o.myRole?.name) === 'OWNER' && (
+                <ConfirmDialog title="Delete organization?" body={`Delete "${o.name}" and all its events/data? This cannot be undone.`} confirmLabel="Delete" onConfirm={() => remove.mutate(o.id)}>
+                  <IconButton tone="danger" aria-label={`Delete ${o.name}`}><Trash2 className="size-4" /></IconButton>
+                </ConfirmDialog>
+              )}
             </div>
             <div className="mt-4 space-y-2 border-t border-line-soft pt-4">
               {o.events.map((e) => (
@@ -102,7 +101,7 @@ export function OrganizationsPage() {
                   <CalendarDays className="size-4 text-ink-3" />
                   <span className="min-w-0 flex-1 truncate">{e.name}</span>
                   <Badge tone={e.status === 'LIVE' ? 'live' : 'default'}>{e.status}</Badge>
-                  <ChevronRight className="size-3.5 text-ink-3 opacity-0 transition-opacity group-hover:opacity-100" />
+                  <ChevronRight className="size-3.5 text-ink-3 opacity-0 transition-opacity group-hover:opacity-100 rtl:rotate-180" />
                 </Link>
               ))}
               {o.events.length === 0 && <p className="text-[12px] text-ink-3">No events in this organization yet.</p>}

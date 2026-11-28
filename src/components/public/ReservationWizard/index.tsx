@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight, Check, Clock3 } from 'lucide-react'
-import { Modal } from '../../ui'
+import { Dialog } from '../../ui/dialog'
 import type { PublicEvent } from '../../../lib/public'
 import { useReservationWizard } from './useReservationWizard'
 import { money } from './shared'
@@ -31,12 +31,13 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
           : ''
 
   return (
-    <Modal
+    <Dialog
       open
       onClose={requestClose}
       title={done ? (done.approval === 'APPROVED' ? t('reservationConfirmed') : t('reservationPending')) : `${t('reserveFor')} ${event.name}`}
       wide
       extraWide
+      closeLabel={t('closeDialog')}
     >
       {done ? (
         <DoneScreen w={w} onClose={onClose} />
@@ -116,7 +117,7 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
           </section>
 
           {activeStep > 0 && (
-            <div data-testid="wizard-summary" className="border border-line-soft bg-elevated/20 px-4 py-3">
+            <div data-testid="wizard-summary" className="sticky top-0 z-10 border border-line-soft bg-elevated px-4 py-3 sm:static sm:bg-elevated/20">
               <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-[13px]">
                 <span className="font-medium text-ink-0">{selected?.name ?? t('ticket')}</span>
                 <span className="font-mono font-semibold text-signal">{money(String(totalPrice), lang, selected?.currency ?? 'EGP')}</span>
@@ -204,6 +205,6 @@ export default function ReservationModal({ event, onClose }: { event: PublicEven
           <p className="text-center font-mono text-[10px] uppercase tracking-[0.18em] text-ink-3">{t('secureBookingBody')}</p>
         </form>
       )}
-    </Modal>
+    </Dialog>
   )
 }

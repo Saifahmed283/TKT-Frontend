@@ -8,6 +8,8 @@ import { useTaxonomy } from '../../../lib/taxonomy'
 import { EmptyState, ErrorBanner, PageHeader, Spinner, fmtDateTime } from '../../../components/ui'
 import { ConfirmDialog } from '../../../components/ui/dialog'
 import { Pagination } from '../../../components/ui/table'
+import { ResponsiveTable } from '../../../components/ui/responsive-table'
+import { IconButton } from '../../../components/ui/icon-button'
 import { exportPdf, downloadAuthFile } from '../../../lib/export'
 
 interface AttendeeRow {
@@ -130,47 +132,35 @@ export default function AttendeesPage() {
       ) : (query.data?.rows.length ?? 0) === 0 ? (
         <EmptyState icon={<Users size={22} />} title="No attendees found" body="Add attendees via the API, bulk import, or registration desk." />
       ) : (
-        <div className="card overflow-x-auto">
-          <table className="w-full min-w-[900px] text-start text-sm">
-            <thead className="border-b border-line-soft bg-elevated text-[11px] font-mono uppercase tracking-[0.14em] text-ink-3">
-              <tr>
-                <th scope="col" className="px-4 py-3 font-medium">Name</th>
-                <th scope="col" className="px-4 py-3 font-medium">Contact</th>
-                <th scope="col" className="px-4 py-3 font-medium">Attendee type</th>
-                <th scope="col" className="px-4 py-3 font-medium">Status</th>
-                <th scope="col" className="px-4 py-3 font-medium">Tickets</th>
-                <th scope="col" className="px-4 py-3 font-medium">Scans</th>
-                <th scope="col" className="px-4 py-3 font-medium">Registered</th>
-                <th scope="col" className="px-4 py-3 font-medium"><span className="sr-only">Actions</span></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line-soft">
-              {query.data?.rows.map((a) => (
-                <tr key={a.id} className="transition-colors hover:bg-elevated/60">
-                  <td className="px-4 py-3 font-medium text-ink-0">{a.name}</td>
-                  <td className="px-4 py-3 text-ink-2">
-                    {a.email}
-                    {a.phone ? <span className="ms-2 text-ink-3">{a.phone}</span> : null}
-                  </td>
-                  <td className="px-4 py-3 text-ink-2">{typeLabel(a.attendeeType)}</td>
-                  <td className="px-4 py-3">
-                    <span className={statusClass[a.status] ?? 'badge-neutral'}>{a.status}</span>
-                  </td>
-                  <td className="px-4 py-3 text-ink-2">{a._count.tickets}</td>
-                  <td className="px-4 py-3 text-ink-2">{a._count.accessLogs}</td>
-                  <td className="px-4 py-3 text-ink-3">{fmtDateTime(a.createdAt)}</td>
-                  <td className="px-4 py-3 text-end">
-                    {a._count.tickets === 0 && a._count.credentials === 0 && a._count.accessLogs === 0 && (
-                      <ConfirmDialog title="Delete attendee?" body={`Delete ${a.name}? This cannot be undone.`} confirmLabel="Delete" onConfirm={() => remove.mutate(a.id)}>
-                        <button aria-label="Delete attendee" className="btn-ghost grid min-h-11 min-w-11 place-items-center text-[11px] text-danger"><Trash2 size={12} /></button>
-                      </ConfirmDialog>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ResponsiveTable
+          dense
+          className="[&_table]:text-start [&_table]:text-sm"
+          headers={['Name', 'Contact', 'Attendee type', 'Status', 'Tickets', 'Scans', 'Registered', '']}
+        >
+          {query.data?.rows.map((a) => (
+            <tr key={a.id} className="transition-colors hover:bg-elevated/60">
+              <td className="px-4 py-3 font-medium text-ink-0">{a.name}</td>
+              <td className="px-4 py-3 text-ink-2">
+                {a.email}
+                {a.phone ? <span className="ms-2 text-ink-3">{a.phone}</span> : null}
+              </td>
+              <td className="px-4 py-3 text-ink-2">{typeLabel(a.attendeeType)}</td>
+              <td className="px-4 py-3">
+                <span className={statusClass[a.status] ?? 'badge-neutral'}>{a.status}</span>
+              </td>
+              <td className="px-4 py-3 text-ink-2">{a._count.tickets}</td>
+              <td className="px-4 py-3 text-ink-2">{a._count.accessLogs}</td>
+              <td className="px-4 py-3 text-ink-3">{fmtDateTime(a.createdAt)}</td>
+              <td className="px-4 py-3 text-end">
+                {a._count.tickets === 0 && a._count.credentials === 0 && a._count.accessLogs === 0 && (
+                  <ConfirmDialog title="Delete attendee?" body={`Delete ${a.name}? This cannot be undone.`} confirmLabel="Delete" onConfirm={() => remove.mutate(a.id)}>
+                    <IconButton aria-label="Delete attendee" tone="danger" className="btn-ghost text-[11px]"><Trash2 size={12} /></IconButton>
+                  </ConfirmDialog>
+                )}
+              </td>
+            </tr>
+          ))}
+        </ResponsiveTable>
       )}
 
       {query.data && query.data.total > query.data.pageSize && (

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input, Textarea, Field } from '@/components/ui/input'
 import { Dialog, ConfirmDialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
+import { IconButton } from '@/components/ui/icon-button'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { useState, type FormEvent } from 'react'
 import { Megaphone, Siren, MessageSquare, Trash2 } from 'lucide-react'
@@ -125,7 +126,7 @@ export function CommsPage() {
                   {a.author.name} · {timeAgo(a.createdAt)}
                 </span>
                 <ConfirmDialog title="Delete announcement?" body={`Delete "${a.title}"?`} confirmLabel="Delete" onConfirm={() => removeAnnouncement.mutate(a.id)}>
-                  <button className="rounded-none p-1 text-ink-3 hover:bg-danger/10 hover:text-danger" aria-label="Delete announcement"><Trash2 className="size-3.5" /></button>
+                  <IconButton tone="quiet-danger" aria-label="Delete announcement"><Trash2 className="size-3.5" /></IconButton>
                 </ConfirmDialog>
               </div>
               <p className="mt-2 text-[13px] leading-relaxed text-ink-2">{a.body}</p>
@@ -146,7 +147,7 @@ export function CommsPage() {
                   <div className="flex items-center gap-2 text-[11px] text-ink-3">
                     <Badge tone={a.resolved ? 'ok' : 'warn'}>{a.type}</Badge><span>{timeAgo(a.createdAt)}</span>
                     <ConfirmDialog title="Delete alert?" body="Delete this alert?" confirmLabel="Delete" onConfirm={() => removeAlert.mutate(a.id)}>
-                      <button className="ml-auto rounded-none p-1 text-ink-3 hover:bg-danger/10 hover:text-danger" aria-label="Delete alert"><Trash2 className="size-3.5" /></button>
+                      <IconButton className="ml-auto" tone="quiet-danger" aria-label="Delete alert"><Trash2 className="size-3.5" /></IconButton>
                     </ConfirmDialog>
                   </div>
                   <p className="text-[12px] text-ink-2 mt-1">{a.message}</p>
@@ -168,7 +169,7 @@ export function CommsPage() {
                   <div className="flex items-center gap-2 text-[11px] text-ink-3">
                     <span>{timeAgo(m.createdAt)}</span>
                     <ConfirmDialog title="Delete message?" body="Delete this chat message?" confirmLabel="Delete" onConfirm={() => removeChat.mutate(m.id)}>
-                      <button className="ml-auto rounded-none p-1 text-ink-3 hover:bg-danger/10 hover:text-danger" aria-label="Delete message"><Trash2 className="size-3.5" /></button>
+                      <IconButton className="ml-auto" tone="quiet-danger" aria-label="Delete message"><Trash2 className="size-3.5" /></IconButton>
                     </ConfirmDialog>
                   </div>
                   <p className="text-[12px] text-ink-2 mt-1">{m.text}</p>

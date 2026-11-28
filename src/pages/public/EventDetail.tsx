@@ -4,7 +4,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowRight, Users, Ticket, QrCode, Shield, ListTodo, AlertTriangle, Megaphone, Play, Archive, UserCog, Check, X, Radar, ClipboardCheck, Layers, Globe, Lock, Unlock, CalendarClock, CreditCard, KeyRound, Smartphone, Plug, BriefcaseBusiness, FileText, MapPinned, Trash2 } from 'lucide-react'
 import { api } from '../../lib/api'
 import type { Overview } from '../../lib/types'
-import { ErrorBanner, PageHeader, Spinner, StatCard, StatusBadge, fmtDateTime, fmtTime, Corners, Blink } from '../../components/ui'
+import { ErrorBanner, PageHeader, Spinner, EventStatusBadge, fmtDateTime, fmtTime, Corners, Blink } from '../../components/ui'
+import { StatCard } from '@/components/motion/primitives'
 import { useConfirm } from '@/components/ui/dialog'
 import { EGYPT_TIME_LABEL, egyptDateTimeLocalToIso, toEgyptDateTimeLocal } from '../../lib/time'
 
@@ -118,7 +119,7 @@ export default function EventDetail() {
         subtitle={`${(event as any).category || event.type} · ${fmtDateTime(event.startAt)} · ${EGYPT_TIME_LABEL}${event.venueName ? ` · ${event.venueName}` : ''}`}
         actions={
           <>
-            <StatusBadge status={event.status} />
+            <EventStatusBadge status={event.status} />
             {(STATUS_FLOW[event.status] ?? []).map((status) => {
               const action = STATUS_ACTIONS[status]
               if (!action) return null

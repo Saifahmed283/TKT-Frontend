@@ -1,10 +1,8 @@
 import { jsPDF } from 'jspdf'
 import QRCode from 'qrcode'
+import { BRAND_COLORS } from './brandColors'
 
-const INK = '#0b0c0d'
-const SIGNAL = '#ffb020'
-const MUTED = '#8f8f99'
-const WHITE = '#ffffff'
+const { ink: INK, signal: SIGNAL, muted: MUTED, white: WHITE } = BRAND_COLORS
 
 export type CardSeat = { label: string; busName?: string | null; passengerName?: string | null }
 
@@ -59,7 +57,7 @@ export async function downloadTicketPdf(c: CardIdentity) {
   doc.text(c.eventDate, 10, 52)
   if (c.venue) doc.text(c.venue, 10, 58)
 
-  doc.setDrawColor('#e2e2e7')
+  doc.setDrawColor(BRAND_COLORS.line)
   doc.line(10, 63, 86, 63)
 
   doc.setTextColor(INK)
@@ -73,7 +71,7 @@ export async function downloadTicketPdf(c: CardIdentity) {
   if (c.seats?.length) {
     const seatText = c.seats.map(s => `${s.busName ? s.busName + ' ' : ''}${s.label}${s.passengerName && s.passengerName !== c.attendeeName ? ` (${s.passengerName})` : ''}`).join(', ')
     doc.setFontSize(7)
-    doc.setTextColor('#b45309')
+    doc.setTextColor(BRAND_COLORS.seat)
     doc.text(doc.splitTextToSize(`SEATS: ${seatText}`, 78), 10, 84)
   }
 
@@ -109,7 +107,7 @@ export async function downloadIdCardPdf(c: CardIdentity) {
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(9)
   doc.text('TKT', 6.5, 11)
-  doc.setTextColor('#ffffff')
+  doc.setTextColor(WHITE)
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(4.6)
   doc.text(doc.splitTextToSize(c.eventName.toUpperCase(), 30), 6.5, 15.5)
@@ -125,13 +123,13 @@ export async function downloadIdCardPdf(c: CardIdentity) {
   doc.text(c.ticketType.toUpperCase(), 6.5, 34)
   if (c.seats?.length) {
     doc.setFontSize(4.8)
-    doc.setTextColor('#fcd34d')
+    doc.setTextColor(BRAND_COLORS.seatLight)
     const seatText = c.seats.map(s => s.label).join(', ')
     doc.text(doc.splitTextToSize(`SEAT ${seatText}`, 38), 6.5, 38)
   }
 
   doc.setFontSize(5)
-  doc.setTextColor('#a1a1aa')
+  doc.setTextColor(BRAND_COLORS.mutedLight)
   doc.text('TICKET CODE', 6.5, 43)
   doc.setFont('courier', 'bold')
   doc.setFontSize(8)
@@ -142,7 +140,7 @@ export async function downloadIdCardPdf(c: CardIdentity) {
   doc.addImage(qr, 'PNG', 52, 10, 26, 26)
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(4.4)
-  doc.setTextColor('#a1a1aa')
+  doc.setTextColor(BRAND_COLORS.mutedLight)
   doc.text('PRESENT AT GATE', 52, 40)
 
   doc.save(`id-card-${(c.shortCode ?? c.code.slice(0, 12)).replace(/[^a-zA-Z0-9-]/g, '')}.pdf`)

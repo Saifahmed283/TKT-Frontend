@@ -99,7 +99,7 @@ export function IntegrationsPage() {
           </Table>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2">
           <div className="space-y-3">
             <h2 className="text-sm font-semibold flex items-center gap-2"><ShieldCheck className="size-4" /> Insurance</h2>
             <form onSubmit={(e: FormEvent) => { e.preventDefault(); createIns.mutate() }} className="space-y-3 rounded-none border border-stroke/30 p-4">

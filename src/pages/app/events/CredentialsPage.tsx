@@ -6,9 +6,11 @@ import { useToast } from '@/components/ui/toast'
 import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Select, Field } from '@/components/ui/input'
-import { Table, Td, EmptyState } from '@/components/ui/table'
+import { Td, EmptyState } from '@/components/ui/table'
+import { ResponsiveTable } from '@/components/ui/responsive-table'
 import { Dialog, ConfirmDialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
+import { IconButton } from '@/components/ui/icon-button'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { useState, type FormEvent } from 'react'
 import { BadgeCheck, QrCode, Ban, Download, CreditCard, Send, Trash2 } from 'lucide-react'
@@ -154,7 +156,7 @@ export function CredentialsPage() {
       />
 
       <div className="pt-5">
-        <Table dense headers={['Credential', 'Attendee', 'Ticket', 'Status', 'Delivery', 'Issued', 'Last used', '']}>
+        <ResponsiveTable dense headers={['Credential', 'Attendee', 'Ticket', 'Status', 'Delivery', 'Issued', 'Last used', '']}>
           {data.length === 0 && <EmptyState colSpan={8} title="No credentials issued" />}
           {data.map((c) => (
             <tr key={c.id} className="group">
@@ -187,26 +189,26 @@ export function CredentialsPage() {
               <Td className="text-[12px] text-ink-3">{c.lastUsedAt ? c.lastUsedAt.split('T')[0] : '—'}</Td>
               <Td>
                 <div className="flex justify-end gap-1">
-                  <button data-testid="credential-reveal" className="grid min-h-11 min-w-11 place-items-center rounded-none text-ink-2 hover:bg-raised" onClick={() => setShowQr(c.id)} aria-label="Show QR"><QrCode className="size-4" /></button>
-                  {c.ticket?.id && <button className="grid min-h-11 min-w-11 place-items-center rounded-none text-ink-2 hover:bg-raised" onClick={() => { setResendTarget(c); setResendEmail(c.attendee?.email ?? '') }} aria-label="Send ticket"><Send className="size-4" /></button>}
-                  <button className="grid min-h-11 min-w-11 place-items-center rounded-none text-ink-2 hover:bg-raised" onClick={() => setHistoryId(c.id)} aria-label="Delivery history"><span className="font-mono text-[10px]">LOG</span></button>
-                  <button className="grid min-h-11 min-w-11 place-items-center rounded-none text-ink-2 hover:bg-raised" onClick={() => void downloadTicketPdf(pdfIdentity(c))} aria-label="Download ticket PDF"><Download className="size-4" /></button>
-                  <button className="grid min-h-11 min-w-11 place-items-center rounded-none text-ink-2 hover:bg-raised" onClick={() => void downloadIdCardPdf(pdfIdentity(c))} aria-label="Download ID card PDF"><CreditCard className="size-4" /></button>
+                  <IconButton data-testid="credential-reveal" tone="neutral" onClick={() => setShowQr(c.id)} aria-label="Show QR"><QrCode className="size-4" /></IconButton>
+                  {c.ticket?.id && <IconButton tone="neutral" onClick={() => { setResendTarget(c); setResendEmail(c.attendee?.email ?? '') }} aria-label="Send ticket"><Send className="size-4" /></IconButton>}
+                  <IconButton tone="neutral" onClick={() => setHistoryId(c.id)} aria-label="Delivery history"><span className="font-mono text-[10px]">LOG</span></IconButton>
+                  <IconButton tone="neutral" onClick={() => void downloadTicketPdf(pdfIdentity(c))} aria-label="Download ticket PDF"><Download className="size-4" /></IconButton>
+                  <IconButton tone="neutral" onClick={() => void downloadIdCardPdf(pdfIdentity(c))} aria-label="Download ID card PDF"><CreditCard className="size-4" /></IconButton>
                   {c.status === 'ACTIVE' && (
                     <ConfirmDialog title="Revoke credential?" body={`Revoke credential for ${c.attendee?.name ?? 'this attendee'}? This disables access.`} confirmLabel="Revoke" onConfirm={() => revoke.mutate(c.id)}>
-                      <button className="grid min-h-11 min-w-11 place-items-center rounded-none text-danger hover:bg-danger/10" aria-label="Revoke"><Ban className="size-4" /></button>
+                      <IconButton tone="danger" aria-label="Revoke"><Ban className="size-4" /></IconButton>
                     </ConfirmDialog>
                   )}
                   {c.status !== 'ACTIVE' && (
                     <ConfirmDialog title="Delete credential?" body="Delete this credential permanently? Only allowed when there are no access logs." confirmLabel="Delete" onConfirm={() => remove.mutate(c.id)}>
-                      <button className="grid min-h-11 min-w-11 place-items-center rounded-none text-danger hover:bg-danger/10" aria-label="Delete"><Trash2 className="size-4" /></button>
+                      <IconButton tone="danger" aria-label="Delete"><Trash2 className="size-4" /></IconButton>
                     </ConfirmDialog>
                   )}
                 </div>
               </Td>
             </tr>
           ))}
-        </Table>
+        </ResponsiveTable>
       </div>
 
       {/* Issue dialog */}

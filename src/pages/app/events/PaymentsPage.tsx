@@ -8,9 +8,11 @@ import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Field, Input } from '@/components/ui/input'
 import { FileUploadField } from '@/components/ui/file-upload'
-import { Table, Td, EmptyState } from '@/components/ui/table'
+import { Td, EmptyState } from '@/components/ui/table'
+import { ResponsiveTable } from '@/components/ui/responsive-table'
 import { Dialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
+import { IconButton } from '@/components/ui/icon-button'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { StatCard, Panel } from '@/components/motion/primitives'
 import { CreditCard, Plus, Trash2, Check, X, ExternalLink, Download, Search, Wallet } from 'lucide-react'
@@ -144,7 +146,7 @@ export function PaymentsPage() {
 
       <div className="space-y-6">
         {summary && (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard label="Confirmed revenue" value={fmtMoney(summary.confirmedRevenue, summary.currency)} sub={`Net ${fmtMoney(summary.netRevenue, summary.currency)}`} icon={<Wallet size={18} />} />
             <StatCard label="Pending revenue" value={fmtMoney(summary.pendingRevenue, summary.currency)} sub={`${summary.byPaymentStatus.find(s => s.status === 'PENDING')?.count ?? 0} pending`} icon={<CreditCard size={18} />} />
             <StatCard label="Remaining tickets" value={summary.remainingTickets == null ? '—' : String(summary.remainingTickets)} sub={summary.totalCapacity ? `${summary.soldTickets}/${summary.totalCapacity} sold` : `${summary.soldTickets} sold`} icon={<Check size={18} />} />
@@ -153,20 +155,20 @@ export function PaymentsPage() {
         )}
 
         {summary && (
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2">
             <Panel>
               <div className="mb-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-3">By category</div>
-              <Table headers={['Category', 'Count', 'Revenue']}>
+              <ResponsiveTable headers={['Category', 'Count', 'Revenue']}>
                 {summary.byCategory.map(c => <tr key={c.category}><Td>{c.category}</Td><Td>{c.count}</Td><Td>{fmtMoney(c.revenue, summary.currency)}</Td></tr>)}
                 {summary.byCategory.length === 0 && <EmptyState colSpan={3} title="No payment categories" />}
-              </Table>
+              </ResponsiveTable>
             </Panel>
             <Panel>
               <div className="mb-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-3">By ticket type / remaining</div>
-              <Table headers={['Ticket type', 'Sold', 'Remaining', 'Revenue']}>
+              <ResponsiveTable headers={['Ticket type', 'Sold', 'Remaining', 'Revenue']}>
                 {summary.byTicketType.map(t => <tr key={t.id}><Td>{t.name}<div className="text-[11px] text-ink-3">{t.category}</div></Td><Td>{t.sold}</Td><Td>{t.remaining == null ? '—' : t.remaining}</Td><Td>{fmtMoney(t.sold * t.price, summary.currency)}</Td></tr>)}
                 {summary.byTicketType.length === 0 && <EmptyState colSpan={4} title="No ticket types" />}
-              </Table>
+              </ResponsiveTable>
             </Panel>
           </div>
         )}
@@ -202,20 +204,20 @@ export function PaymentsPage() {
             </div>
           )}
           {refLookup.trim().length >= 3 && (
-            <Table headers={['Reference', 'Reservation', 'Attendee', 'Proof', 'Status']}>
+            <ResponsiveTable headers={['Reference', 'Reservation', 'Attendee', 'Proof', 'Status']}>
               {(refQ.data ?? []).map(r => {
                 const meta = (r.metadata ?? {}) as Record<string, unknown>
                 const proof = proofSource(r.paymentProofUrl || meta.paymentProofUrl)
                 return <tr key={r.id}><Td className="font-mono text-xs">{String(meta.paymentReference ?? '—')}</Td><Td>{r.reservationCode ?? r.id.slice(0, 8)}</Td><Td>{r.attendee?.name ?? '—'}</Td><Td>{proof ? <a className="text-signal hover:underline" href={proof.url} target="_blank" rel="noreferrer">Open proof</a> : '—'}</Td><Td><Badge tone={String(r.paymentStatus ?? meta.paymentStatus) === 'CONFIRMED' ? 'ok' : 'warn'}>{String(r.paymentStatus ?? meta.paymentStatus ?? '—')}</Badge></Td></tr>
               })}
               {(refQ.data ?? []).length === 0 && <EmptyState colSpan={5} title="No reference match" body="Check reference number and event scope." />}
-            </Table>
+            </ResponsiveTable>
           )}
         </Panel>
 
         <Panel>
           <div data-testid="pending-payments" className="mb-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-3">Pending payment reviews {pending.length > 0 && <span className="ml-1 text-signal">({pending.length})</span>}</div>
-          <Table headers={['Reservation', 'Attendee', 'Amount', 'Reference', 'Proof', 'Status', 'Actions']}>
+          <ResponsiveTable headers={['Reservation', 'Attendee', 'Amount', 'Reference', 'Proof', 'Status', 'Actions']}>
             {pending.map(p => {
               const meta = (p.metadata ?? {}) as Record<string, unknown>
               const paymentStatus = String(p.paymentStatus ?? meta.paymentStatus ?? 'PENDING')
@@ -236,23 +238,23 @@ export function PaymentsPage() {
               )
             })}
             {pending.length === 0 && <EmptyState colSpan={7} title="No pending payments" body="Submitted payment proofs will appear here." />}
-          </Table>
+          </ResponsiveTable>
         </Panel>
 
         <Panel>
           <div className="mb-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-3">Payment providers</div>
-          <Table headers={['Provider', 'Account', 'Phone/Link', 'Active', '']}>
+          <ResponsiveTable headers={['Provider', 'Account', 'Phone/Link', 'Active', '']}>
             {providers.map(p => (
               <tr key={p.id}>
                 <Td><div className="font-medium text-ink">{p.name}</div><div className="text-[11px] text-ink-3">{p.instructions}</div></Td>
                 <Td><div>{p.accountName ?? '—'}</div><div className="text-[11px] text-ink-3">{p.accountNumber ?? ''}</div></Td>
                 <Td><div>{p.paymentPhone ?? '—'}</div>{p.paymentLink && <a className="text-[11px] text-signal hover:underline" href={p.paymentLink} target="_blank" rel="noreferrer">Payment link</a>}</Td>
                 <Td><Badge tone={p.isActive ? 'ok' : 'default'}>{p.isActive ? 'Active' : 'Inactive'}</Badge></Td>
-                <Td><Button size="sm" variant="ghost" className="text-danger" aria-label={`Delete ${p.name}`} onClick={() => setDeleteProviderId(p.id)}><Trash2 size={14} /></Button></Td>
+                <Td><IconButton tone="danger" aria-label={`Delete ${p.name}`} onClick={() => setDeleteProviderId(p.id)}><Trash2 size={14} /></IconButton></Td>
               </tr>
             ))}
             {providers.length === 0 && <EmptyState colSpan={5} title="No providers" body="Add manual or online payment providers for this event." />}
-          </Table>
+          </ResponsiveTable>
         </Panel>
       </div>
 

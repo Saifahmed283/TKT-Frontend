@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Field, Input } from '@/components/ui/input'
 import { Dialog } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
+import { IconButton } from '@/components/ui/icon-button'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { Panel } from '@/components/motion/primitives'
 import { BUS_TEMPLATES, createBusLayout, getBusTemplate, normalizeBusLayout, type BusTemplateId } from '@/lib/busLayouts'
@@ -164,8 +165,8 @@ export function BusesPage() {
                   <div className="truncate text-[13px] font-medium text-ink">{item.name}</div>
                   <div className="text-[11px] text-ink-3">{item._count?.seats ?? 0} seats · {item.currency ?? 'EGP'} {Number(item.seatPrice ?? 0).toFixed(2)}</div>
                 </button>
-                <Button size="sm" variant="ghost" title="Redesign bus" aria-label={`Redesign ${item.name}`} onClick={() => openEditor(item)}><Pencil size={14} /></Button>
-                <Button size="sm" variant="ghost" className="text-danger" aria-label={`Delete ${item.name}`} onClick={() => deleteBus.mutate(item.id)}><Trash2 size={14} /></Button>
+                <IconButton tone="muted" title="Redesign bus" aria-label={`Redesign ${item.name}`} onClick={() => openEditor(item)}><Pencil size={14} /></IconButton>
+                <IconButton tone="danger" aria-label={`Delete ${item.name}`} onClick={() => deleteBus.mutate(item.id)}><Trash2 size={14} /></IconButton>
               </div>
             ))}
             {buses.length === 0 && <div className="text-sm text-ink-3">No buses yet.</div>}

@@ -6,7 +6,8 @@ import { api } from '../../../lib/api'
 import { useDebouncedValue } from '../../../lib/useDebouncedValue'
 import { useTaxonomy } from '../../../lib/taxonomy'
 import { ErrorBanner, PageHeader, Spinner, EmptyState, fmtDateTime } from '../../../components/ui'
-import { Table, Td } from '../../../components/ui/table'
+import { Td } from '../../../components/ui/table'
+import { ResponsiveTable } from '../../../components/ui/responsive-table'
 import { Badge } from '../../../components/ui/badge'
 import { ConfirmDialog } from '../../../components/ui/dialog'
 import { useSse } from '../../../lib/sse'
@@ -252,7 +253,7 @@ export default function TicketsPage() {
           body="Issue tickets to attendees to enable credential minting."
         />
       ) : (
-        <Table headers={['Attendee', 'Type', 'Seats', 'Price', 'Status', 'Credential', 'Issued', '']}>
+        <ResponsiveTable headers={['Attendee', 'Type', 'Seats', 'Price', 'Status', 'Credential', 'Issued', '']}>
           {query.data?.rows.map((t) => (
             <tr key={t.id}>
               <Td>
@@ -284,7 +285,7 @@ export default function TicketsPage() {
               </Td>
             </tr>
           ))}
-        </Table>
+        </ResponsiveTable>
       )}
     </div>
   )

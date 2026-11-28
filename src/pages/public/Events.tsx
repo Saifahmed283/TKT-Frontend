@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { CalendarDays, Plus } from 'lucide-react'
 import { api } from '../../lib/api'
 import type { EventSummary } from '../../lib/types'
-import { PageHeader, StatusBadge, Spinner, ErrorBanner, EmptyState, fmtDateTime, Corners } from '../../components/ui'
+import { PageHeader, EventStatusBadge, Spinner, ErrorBanner, EmptyState, fmtDateTime, Corners } from '../../components/ui'
 import { EventFormModal } from '../../components/events/EventFormModal'
 import { useState } from 'react'
 import { EGYPT_TIME_LABEL } from '../../lib/time'
@@ -49,7 +49,7 @@ export default function EventsPage() {
               <Corners className="opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               <div className="flex items-start justify-between gap-3">
                 <h3 className="font-display text-lg font-semibold uppercase tracking-wide text-ink-0 group-hover:text-signal">{e.name}</h3>
-                <StatusBadge status={e.status} />
+                <EventStatusBadge status={e.status} />
               </div>
               <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">{e.category || e.type}</p>
               <p className="mt-2 line-clamp-2 text-sm text-ink-3">

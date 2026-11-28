@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import { useTaxonomy } from '../../lib/taxonomy'
 import type { Organization } from '../../lib/types'
-import { ErrorBanner, Modal } from '../ui'
+import { ErrorBanner } from '../ui'
+import { Dialog } from '../ui/dialog'
 import { EGYPT_TIME_ZONE, egyptDateTimeLocalToIso, toEgyptDateTimeLocal } from '../../lib/time'
 
 export function EventFormModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -63,7 +64,7 @@ export function EventFormModal({ open, onClose }: { open: boolean; onClose: () =
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="New event">
+    <Dialog open={open} onClose={onClose} title="New event">
       <form onSubmit={onSubmit} className="space-y-4">
         {orgsQ.isLoading ? (
           <p className="text-sm text-ink-400">Loading organizations…</p>
@@ -136,6 +137,6 @@ export function EventFormModal({ open, onClose }: { open: boolean; onClose: () =
           </>
         )}
       </form>
-    </Modal>
+    </Dialog>
   )
 }

@@ -34,7 +34,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div
         aria-live="polite"
-        className="pointer-events-none fixed bottom-4 right-4 z-[100] flex w-[min(20rem,calc(100vw-2rem))] flex-col gap-2 sm:bottom-5 sm:right-5"
+        className="pointer-events-none fixed bottom-4 end-4 z-[100] flex w-[min(20rem,calc(100vw-2rem))] flex-col gap-2 sm:bottom-5 sm:end-5"
       >
         <AnimatePresence>
           {items.map((t) => (
@@ -53,7 +53,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 t.kind === 'warning' && 'border-signal/30',
               )}
             >
-              <div className={cn('absolute inset-y-0 left-0 w-1',
+              <div className={cn('absolute inset-y-0 start-0 w-1',
                 t.kind === 'success' && 'bg-ok', t.kind === 'error' && 'bg-danger', t.kind === 'info' && 'bg-info', t.kind === 'warning' && 'bg-signal')} />
               <div className="flex items-start gap-3">
                 {t.kind === 'success' && <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-ok" />}

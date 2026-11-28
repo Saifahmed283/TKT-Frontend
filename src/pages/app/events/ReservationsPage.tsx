@@ -4,7 +4,8 @@ import { api, ApiError } from '@/lib/api'
 import { timeAgo } from '@/lib/utils'
 import { formatEgyptDateTime } from '@/lib/time'
 import { PageHeader } from '@/components/layout/page-header'
-import { Table, Td, Pagination, EmptyState } from '@/components/ui/table'
+import { Td, Pagination, EmptyState } from '@/components/ui/table'
+import { ResponsiveTable } from '@/components/ui/responsive-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/dialog'
@@ -152,7 +153,7 @@ export function ReservationsPage() {
         }
       />
       <div className="pt-5">
-        <Table dense headers={['Reservation', 'Attendee', 'Ticket', 'Approval', 'Payment', 'QR', 'When', 'Actions']}>
+        <ResponsiveTable dense headers={['Reservation', 'Attendee', 'Ticket', 'Approval', 'Payment', 'QR', 'When', 'Actions']}>
           {data.rows.length === 0 && (
             <EmptyState colSpan={8} title="No reservations in this view" />
           )}
@@ -271,7 +272,7 @@ export function ReservationsPage() {
               </Td>
             </tr>
           ))}
-        </Table>
+        </ResponsiveTable>
         {pages > 1 && <Pagination page={data.page} pages={pages} onPage={setPage} />}
       </div>
 

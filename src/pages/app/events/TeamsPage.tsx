@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Input, Field } from '@/components/ui/input'
 import { EmptyState } from '@/components/ui'
+import { IconButton } from '@/components/ui/icon-button'
 import { Dialog, ConfirmDialog } from '@/components/ui/dialog'
 import { FullPageSpinner, InlineError } from '@/components/ui/spinner'
 import { useState, type FormEvent } from 'react'
@@ -88,7 +89,7 @@ export function TeamsPage() {
                     {t._count.tasks} tasks
                   </span>
                   <ConfirmDialog title="Delete team?" body={`Delete ${t.name}? This removes team assignments.`} confirmLabel="Delete" onConfirm={() => remove.mutate(t.id)}>
-                    <button className="rounded-none p-1.5 text-danger hover:bg-danger/10" aria-label="Delete team"><Trash2 className="size-4" /></button>
+                    <IconButton tone="danger" aria-label="Delete team"><Trash2 className="size-4" /></IconButton>
                   </ConfirmDialog>
                 </div>
               </div>

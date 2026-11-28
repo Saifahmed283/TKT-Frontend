@@ -11,14 +11,18 @@ export function Dialog({
   title,
   children,
   wide,
+  extraWide,
   className,
+  closeLabel,
 }: {
   open: boolean
   onClose: () => void
   title: ReactNode
   children: ReactNode
   wide?: boolean
+  extraWide?: boolean
   className?: string
+  closeLabel?: string
 }) {
   const titleId = useId()
   const panelRef = useRef<HTMLDivElement>(null)
@@ -88,7 +92,7 @@ export function Dialog({
             tabIndex={-1}
             className={cn(
               'tkt-window relative max-h-[calc(100dvh-1rem)] w-full overflow-hidden border border-signal/35 bg-elevated shadow-float outline-none sm:max-h-[calc(100dvh-2rem)]',
-              wide ? 'max-w-2xl' : 'max-w-md',
+              extraWide ? 'max-w-5xl' : wide ? 'max-w-2xl' : 'max-w-md',
               className,
             )}
             initial={{ opacity: 0, scale: 0.97, y: 10 }}
@@ -100,7 +104,7 @@ export function Dialog({
               <h2 id={titleId} className="font-display text-lg font-semibold uppercase tracking-wide">{title}</h2>
               <button
                 onClick={onClose}
-                aria-label="Close dialog"
+                aria-label={closeLabel ?? 'Close dialog'}
                 className="grid min-h-11 min-w-11 place-items-center text-ink-3 transition-colors hover:bg-raised hover:text-ink"
               >
                 <X className="size-4" />

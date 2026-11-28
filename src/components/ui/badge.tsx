@@ -38,6 +38,7 @@ export function Badge({
   )
 }
 
+/** Generic entity statuses (LIVE/ACTIVE/DONE/GRANTED/DENIED/…), not event lifecycle statuses. */
 export function StatusBadge({ status }: { status: string }) {
   const tone: Tone =
     status === 'LIVE' || status === 'ACTIVE' || status === 'DONE' || status === 'RESOLVED' || status === 'GRANTED'
